@@ -190,15 +190,16 @@
     showToast('已关注');
   }
 
-  // 头像跳转逻辑
+    // 修改后的头像跳转逻辑
   function goToProfile() {
-    showToast('正在跳转至主页...');
+    showToast('正在连接客服中心...'); // 修改提示语，更贴合场景
     setTimeout(() => {
-      // 在这里替换成你想要的真实链接
-      window.location.href = "javascript:void(0)"; 
+      // 假设你的客服端文件名叫 kefu.html
+      // 如果是在线网址，请填写 "https://your-link.com"
+      window.location.href = "kefu.html"; 
     }, 800);
   }
-
+  
   // 点赞 (红心)
   let liked = false;
   function toggleLike() {
