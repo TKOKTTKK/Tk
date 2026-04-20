@@ -101,7 +101,7 @@
   .pub-inner { width: 42px; height: 30px; background: #fff; border-radius: 7px; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; color: #000; font-size: 22px; font-weight: 300; line-height: 1; }
 
   /* ── 视频信息 ── */
-  .video-info { position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 0px) + 80px); right: 80px; z-index: 10; pointer-events: none;}
+  .video-info { position: fixed; left: 14px; bottom: calc(env(safe-area-inset-bottom, 10px) + 60px); right: 80px; z-index: 10; pointer-events: none;}
   .vi-username { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
   .vi-desc { font-size: 14px; color: rgba(255,255,255,0.92); line-height: 1.4; }
 
@@ -194,7 +194,7 @@
   function goToProfile() {
     showToast('正在跳转至主页...');
     setTimeout(() => {
-      //https://cccmmm.cc
+      // 在这里替换成你想要的真实链接
       window.location.href = "javascript:void(0)"; 
     }, 800);
   }
