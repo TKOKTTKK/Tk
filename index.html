@@ -3,24 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>视频贴顶版</title>
 <style>
-  /* 基础重置，确保没有默认边距 */
+  /* 1. 暴力清除所有可能导致“白边”或“偏移”的边距 */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100dvh;
     background-color: #000;
     overflow: hidden;
+    position: fixed; /* 防止橡皮筋回弹导致画面歪掉 */
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { box-sizing: border-box; }
 
-  /* 滚动容器 */
+  /* 2. 容器确保从 0,0 坐标开始 */
   .scroll-container {
-    height: 100dvh;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100vw;
+    height: 100dvh;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
@@ -28,31 +31,30 @@
   }
   .scroll-container::-webkit-scrollbar { display: none; }
 
-  /* 视频槽位 */
+  /* 3. 每一个视频层 */
   .video-section {
     width: 100vw;
     height: 100dvh;
     scroll-snap-align: start;
     position: relative;
-    background: #000; /* 底部留黑的背景色 */
+    background: #000; /* 底部自动变黑 */
     overflow: hidden;
   }
 
-  /* 核心修改：贴顶对齐 */
+  /* 4. 视频标签：强制贴顶、左右撑满 */
   .main-video {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    top: 0;      /* 暴力贴顶 */
+    left: 0;     /* 暴力贴左 */
+    width: 100%; /* 强制宽度铺满屏幕 */
+    height: auto; /* 高度自适应，确保不留左右黑边 */
+    min-height: 50%; /* 保证至少显示一半 */
     
-    /* contain: 保证视频完整显示，不被裁剪 */
+    /* 核心属性：contain 配合 top 坐标 */
     object-fit: contain; 
-    
-    /* top: 让视频在容器的最顶部对齐 */
     object-position: top; 
     
     display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
   }
 </style>
 </head>
@@ -80,22 +82,21 @@
 </div>
 
 <script>
-  // 自动播放逻辑
+  // 智能播放与停止
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      const video = entry.target;
       if (entry.isIntersecting) {
-        video.play().catch(() => {});
+        entry.target.play().catch(() => {});
       } else {
-        video.pause();
-        video.currentTime = 0;
+        entry.target.pause();
+        entry.target.currentTime = 0;
       }
     });
   }, { threshold: 0.5 });
 
   document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
 
-  // 移动端权限激活
+  // 解决移动端首次点击播放权限
   document.addEventListener('touchstart', () => {
     const vids = document.querySelectorAll('.main-video');
     vids.forEach(v => {
