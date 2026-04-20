@@ -3,56 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>抖音纯净版 - 彻底修复偏移</title>
 <style>
-  /* 1. 彻底清除所有默认边距，防止“左上黑边” */
+  /* 彻底重置：消除所有可能导致“左上黑边”的默认边距 */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100vw;
+    height: 100dvh; /* 使用 dvh 自动规避手机地址栏高度变化 */
+    background: #000;
+    overflow: hidden;
+  }
+
+  .scroll-container {
     width: 100%;
     height: 100%;
-    background-color: #000;
-    overflow: hidden; /* 禁用系统原生滚动 */
-  }
-
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  /* 2. 滑动容器：使用 dvh 适配移动端动态视口高度 */
-  .scroll-container {
-    height: 100dvh;
-    width: 100vw;
     overflow-y: scroll;
-    scroll-snap-type: y mandatory; /* 垂直强制捕获 */
+    scroll-snap-type: y mandatory;
     scrollbar-width: none;
-    -ms-overflow-style: none;
-    background-color: #000;
   }
   .scroll-container::-webkit-scrollbar { display: none; }
 
-  /* 3. 视频段落：必须占据完整视口 */
   .video-section {
     width: 100vw;
     height: 100dvh;
     scroll-snap-align: start;
     position: relative;
-    background-color: #000;
-    /* 确保视频内容永远居中显示 */
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
+    background: #000;
   }
 
-  /* 4. 视频标签：强制铺满并消除内联元素间隙 */
-  .main-video {
+  video {
+    /* 自动撑满的核心：铺满并裁切 */
     width: 100%;
     height: 100%;
-    object-fit: cover; /* 核心：裁切多余部分以铺满全屏 */
-    display: block;    /* 消除 inline 元素的 baseline 间隙 */
+    object-fit: cover; 
+    
+    /* 绝对定位防止任何 inline 间隙导致的位移 */
     position: absolute;
     top: 0;
     left: 0;
@@ -62,48 +48,28 @@
 <body>
 
 <div class="scroll-container">
-  
   <div class="video-section">
-    <video class="main-video" loop playsinline 
-           src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki">
-    </video>
+    <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki"></video>
   </div>
-
   <div class="video-section">
-    <video class="main-video" loop playsinline 
-           src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea">
-    </video>
+    <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea"></video>
   </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline 
-           src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki">
-    </video>
-  </div>
-
 </div>
 
 <script>
-  // 自动播放与停止逻辑
+  // 自动播放逻辑
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      const video = entry.target;
       if (entry.isIntersecting) {
-        video.play().catch(() => {});
+        entry.target.play().catch(() => {});
       } else {
-        video.pause();
-        video.currentTime = 0;
+        entry.target.pause();
+        entry.target.currentTime = 0;
       }
     });
   }, { threshold: 0.6 });
 
-  document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
-
-  // 激活音频播放权限
-  document.addEventListener('touchstart', () => {
-    const firstVid = document.querySelector('.main-video');
-    if (firstVid) firstVid.play().catch(()=>{});
-  }, { once: true });
+  document.querySelectorAll('video').forEach(vid => observer.observe(vid));
 </script>
 
 </body>
