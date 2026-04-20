@@ -1,61 +1,54 @@
-纯版
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>抖音纯净版 - 10视频循环</title>
+<title>视频贴顶版</title>
 <style>
-  /* ══════════════════════════════
-     核心：彻底清零偏移
-  ══════════════════════════════ */
+  /* 基础重置，确保没有默认边距 */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100%;
     height: 100%;
     background-color: #000;
-    overflow: hidden; /* 必须禁止 body 滚动 */
-    position: fixed;  /* 防止移动端橡皮筋回弹导致的黑边 */
+    overflow: hidden;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* ══════════════════════════════
-     容器：控制滑动
-  ══════════════════════════════ */
+  /* 滚动容器 */
   .scroll-container {
-    height: 100dvh; /* 动态视口高度 */
+    height: 100dvh;
     width: 100vw;
     overflow-y: scroll;
-    scroll-snap-type: y mandatory; /* 垂直吸附 */
+    scroll-snap-type: y mandatory;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
-    background-color: #000;
   }
   .scroll-container::-webkit-scrollbar { display: none; }
 
-  /* ══════════════════════════════
-     视频槽位：统一参数布局
-  ══════════════════════════════ */
+  /* 视频槽位 */
   .video-section {
     width: 100vw;
     height: 100dvh;
     scroll-snap-align: start;
     position: relative;
+    background: #000; /* 底部留黑的背景色 */
     overflow: hidden;
-    background: #000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
-  /* 视频标签：强制自动撑满 */
+  /* 核心修改：贴顶对齐 */
   .main-video {
     width: 100%;
     height: 100%;
-    /* cover: 裁切并完全填满屏幕，不留黑边 */
-    object-fit: cover; 
+    
+    /* contain: 保证视频完整显示，不被裁剪 */
+    object-fit: contain; 
+    
+    /* top: 让视频在容器的最顶部对齐 */
+    object-position: top; 
+    
     display: block;
     position: absolute;
     top: 0;
@@ -65,7 +58,7 @@
 </head>
 <body>
 
-<div class="scroll-container" id="container">
+<div class="scroll-container">
   
   <div class="video-section">
     <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki"></video>
@@ -75,66 +68,37 @@
     <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea"></video>
   </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidbpdoz4mtbk45wisqvcwgdewao4obuvwo2s5narprsr7rypsd76u"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeibafjebhoq6xh3esnbs6w2mao4cun4qfslruyaozgx54wgbjfbxoe"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接05"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接06"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接07"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接08"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接09"></video>
-  </div>
-
-  <div class="video-section">
-    <video class="main-video" loop playsinline src="这里替换你的视频链接10"></video>
-  </div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接03"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接04"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接05"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接06"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接07"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接08"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接09"></video></div>
+  <div class="video-section"><video class="main-video" loop playsinline src="链接10"></video></div>
 
 </div>
 
 <script>
-  /**
-   * 自动切换播放逻辑
-   */
+  // 自动播放逻辑
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const video = entry.target;
       if (entry.isIntersecting) {
-        // 当视频划入屏幕：播放
         video.play().catch(() => {});
       } else {
-        // 当视频划出屏幕：停止并回到开头，防止声音重叠
         video.pause();
         video.currentTime = 0;
       }
     });
-  }, { threshold: 0.6 }); // 只有当视频占据 60% 屏幕时才认为切换了
+  }, { threshold: 0.5 });
 
-  // 绑定所有视频
   document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
 
-  // 移动端激活：用户第一次触摸屏幕后自动开始播放当前视频
+  // 移动端权限激活
   document.addEventListener('touchstart', () => {
-    const allVids = document.querySelectorAll('.main-video');
-    allVids.forEach(v => {
-      // 这里的逻辑是确保当前视口内的那个视频开始播放
+    const vids = document.querySelectorAll('.main-video');
+    vids.forEach(v => {
       const rect = v.getBoundingClientRect();
       if (rect.top >= 0 && rect.top < window.innerHeight) {
         v.play().catch(()=>{});
