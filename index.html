@@ -4,26 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <style>
-  /* 1. 暴力清除所有可能导致“白边”或“偏移”的边距 */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
-    width: 100vw;
-    height: 100dvh;
+    width: 100%;
+    height: 100%;
     background-color: #000;
     overflow: hidden;
-    position: fixed; /* 防止橡皮筋回弹导致画面歪掉 */
+    position: fixed; /* 锁定 body，防止滚动条抖动 */
   }
 
-  * { box-sizing: border-box; }
-
-  /* 2. 容器确保从 0,0 坐标开始 */
+  /* 滑动容器 */
   .scroll-container {
     position: absolute;
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100dvh;
+    height: 100dvh; /* 动态适配屏幕高度 */
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
@@ -31,45 +28,48 @@
   }
   .scroll-container::-webkit-scrollbar { display: none; }
 
-  /* 3. 每一个视频层 */
+  /* 视频槽位 */
   .video-section {
     width: 100vw;
     height: 100dvh;
     scroll-snap-align: start;
     position: relative;
-    background: #000; /* 底部自动变黑 */
+    background: #000;
     overflow: hidden;
   }
 
-  /* 4. 视频标签：强制贴顶、左右撑满 */
+  /* ══════════════════════════════
+     核心修正：强制贴顶逻辑
+  ══════════════════════════════ */
   .main-video {
     position: absolute;
-    top: 0;      /* 暴力贴顶 */
-    left: 0;     /* 暴力贴左 */
-    width: 100%; /* 强制宽度铺满屏幕 */
-    height: auto; /* 高度自适应，确保不留左右黑边 */
-    min-height: 50%; /* 保证至少显示一半 */
+    /* 解决浏览器 UI 压制：使用负 margin 尝试向上冲破 */
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%); /* 确保水平居中 */
     
-    /* 核心属性：contain 配合 top 坐标 */
+    width: 100.5%;  /* 稍微溢出一点点，消除左右可能出现的 1px 缝隙 */
+    height: auto;   /* 保持原始比例 */
+    min-height: 100%; /* 至少覆盖整个视口 */
+    
+    /* 贴顶的核心 */
     object-fit: contain; 
     object-position: top; 
     
     display: block;
+    background: #000;
   }
 </style>
 </head>
 <body>
 
 <div class="scroll-container">
-  
   <div class="video-section">
     <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki"></video>
   </div>
-
   <div class="video-section">
     <video class="main-video" loop playsinline src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea"></video>
   </div>
-
   <div class="video-section"><video class="main-video" loop playsinline src="链接03"></video></div>
   <div class="video-section"><video class="main-video" loop playsinline src="链接04"></video></div>
   <div class="video-section"><video class="main-video" loop playsinline src="链接05"></video></div>
@@ -78,11 +78,10 @@
   <div class="video-section"><video class="main-video" loop playsinline src="链接08"></video></div>
   <div class="video-section"><video class="main-video" loop playsinline src="链接09"></video></div>
   <div class="video-section"><video class="main-video" loop playsinline src="链接10"></video></div>
-
 </div>
 
 <script>
-  // 智能播放与停止
+  // 优化后的自动播放监听
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -96,7 +95,7 @@
 
   document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
 
-  // 解决移动端首次点击播放权限
+  // 这里的脚本会在用户点击屏幕后，尝试全屏隐藏地址栏（仅限部分浏览器）
   document.addEventListener('touchstart', () => {
     const vids = document.querySelectorAll('.main-video');
     vids.forEach(v => {
@@ -105,6 +104,11 @@
         v.play().catch(()=>{});
       }
     });
+    
+    // 技巧：滚动 1 像素触发隐藏地址栏
+    if (window.scrollY === 0) {
+      window.scrollTo(0, 1);
+    }
   }, { once: true });
 </script>
 
