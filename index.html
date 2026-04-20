@@ -1,136 +1,154 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>极简全屏视频</title>
-<style>
-  /* 彻底消除浏览器边距 */
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100%;
-    height: 100%;
-    background-color: #000;
-    overflow: hidden;
-    position: fixed; /* 防止橡皮筋回弹偏移 */
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>全屏沉浸视频</title>
+    <style>
+        /* 彻底消除浏览器边距和偏移 */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            position: fixed; /* 防止移动端橡皮筋回弹导致的位移 */
+        }
 
-  * { box-sizing: border-box; }
+        * { box-sizing: border-box; }
 
-  /* 滑动容器 */
-  .scroll-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100dvh;
-    overflow-y: scroll;
-    scroll-snap-type: y mandatory;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .scroll-container::-webkit-scrollbar { display: none; }
+        /* 滑动容器：适配移动端动态高度 */
+        .scroll-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh; 
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .scroll-container::-webkit-scrollbar { display: none; }
 
-  /* 视频槽位 */
-  .video-section {
-    width: 100vw;
-    height: 100dvh;
-    scroll-snap-align: start;
-    position: relative;
-    background: #000;
-    overflow: hidden;
-  }
+        /* 视频槽位 */
+        .video-section {
+            width: 100vw;
+            height: 100dvh;
+            scroll-snap-align: start;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
 
-  /* 视频标签：贴顶、左右撑满 */
-  .main-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* contain 保证不裁切，top 保证贴顶，底部自然留黑 */
-    object-fit: contain;
-    object-position: top;
-    display: block;
-    background: #000;
-  }
-</style>
+        /* 核心布局：强制贴顶、左右撑满 */
+        .main-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* contain 保持比例不裁切，top 确保贴顶 */
+            object-fit: contain;
+            object-position: top;
+            display: block;
+            background: #000;
+        }
+
+        /* 全屏提示（可选）：告知用户点击屏幕进入全屏 */
+        .fullscreen-hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
 
 <div class="scroll-container">
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeied7iqyfz7fo5tg6jumdcp53cezwlmvouazyt5sqj5nwlzohn7vxm"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeied7iqyfz7fo5tg6jumdcp53cezwlmvouazyt5sqj5nwlzohn7vxm"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeihokl2aj6p2ftxwivc6ty6xg3zx3lu3bw2norvlyhdjmrkb4shaiq"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeihokl2aj6p2ftxwivc6ty6xg3zx3lu3bw2norvlyhdjmrkb4shaiq"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifkqtkjlgcfs6ikmkc5cc6psr23hhuz2kgy62teikohlas63prqou"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifkqtkjlgcfs6ikmkc5cc6psr23hhuz2kgy62teikohlas63prqou"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidsgny5mif27lqu7bt5z7g4a63raoxwjhslhmmegzwhljgjd3iggq"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidsgny5mif27lqu7bt5z7g4a63raoxwjhslhmmegzwhljgjd3iggq"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeiexn5pzogmujgmvwnmzdqw2axyh3s3ixumjlabcei4vbw35abyvhe"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeiexn5pzogmujgmvwnmzdqw2axyh3s3ixumjlabcei4vbw35abyvhe"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidifsdf3xpabcrkypgu4c77i7pmgdru4iea2zus6rlbw6vfjfzvvy"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidifsdf3xpabcrkypgu4c77i7pmgdru4iea2zus6rlbw6vfjfzvvy"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeibafjebhoq6xh3esnbs6w2mao4cun4qfslruyaozgx54wgbjfbxoe"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeibafjebhoq6xh3esnbs6w2mao4cun4qfslruyaozgx54wgbjfbxoe"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidbpdoz4mtbk45wisqvcwgdewao4obuvwo2s5narprsr7rypsd76u"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidbpdoz4mtbk45wisqvcwgdewao4obuvwo2s5narprsr7rypsd76u"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src="https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea"></video>
+    </div>
 
-  <div class="video-section">
-    <video class="main-video" loop playsinline muted preload="auto" src="这里填入第10个视频链接"></video>
-  </div>
+    <div class="video-section">
+        <video class="main-video" loop playsinline muted preload="auto" src=""></video>
+    </div>
 </div>
 
 <script>
-  // 观察者逻辑：进入视口播放，离开视口重置
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const video = entry.target;
-      if (entry.isIntersecting) {
-        video.play().catch(() => {
-          console.log("等待用户交互后取消静音播放");
+    // 1. 自动播放与停止逻辑
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target;
+            if (entry.isIntersecting) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+                video.currentTime = 0;
+            }
         });
-      } else {
-        video.pause();
-        video.currentTime = 0;
-      }
-    });
-  }, { threshold: 0.6 });
+    }, { threshold: 0.6 });
 
-  document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
+    document.querySelectorAll('.main-video').forEach(vid => observer.observe(vid));
 
-  // 核心：用户第一次触摸屏幕后，取消所有视频静音并播放当前视频
-  document.addEventListener('touchstart', () => {
-    const vids = document.querySelectorAll('.main-video');
-    vids.forEach(v => {
-      v.muted = false; // 取消静音
-      const rect = v.getBoundingClientRect();
-      // 只播放当前看得到的这一个
-      if (rect.top >= 0 && rect.top < window.innerHeight) {
-        v.play().catch(()=>{});
-      }
-    });
-  }, { once: true });
+    // 2. 模拟爱奇艺全屏效果：点击屏幕隐藏地址栏并开启声音
+    document.addEventListener('touchstart', function() {
+        // 尝试进入系统全屏模式
+        let docElm = document.documentElement;
+        if (docElm.requestFullscreen) {
+            docElm.requestFullscreen();
+        } else if (docElm.webkitRequestFullscreen) {
+            docElm.webkitRequestFullscreen();
+        }
+
+        // 取消静音并确保当前视频播放
+        const vids = document.querySelectorAll('.main-video');
+        vids.forEach(v => {
+            v.muted = false; 
+            const rect = v.getBoundingClientRect();
+            if (rect.top >= 0 && rect.top < window.innerHeight) {
+                v.play().catch(()=>{});
+            }
+        });
+    }, { once: true });
 </script>
 
 </body>
