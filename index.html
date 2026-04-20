@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>抖音 APP 版 UI 优化</title>
+    <title>短视频 APP 版 UI 精确优化</title>
     <style>
         :root {
             --dy-red: #fe2c55;
@@ -44,126 +44,166 @@
 
         /* ── 阴影遮罩 (保证文字清晰) ── */
         .overlay-top {
-            position: absolute; top: 0; width: 100%; height: 160px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%);
+            position: absolute; top: 0; width: 100%; height: 180px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 100%);
             z-index: 2; pointer-events: none;
         }
 
         .overlay-bottom {
-            position: absolute; bottom: 0; width: 100%; height: 260px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+            position: absolute; bottom: 0; width: 100%; height: 280px;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
             z-index: 2; pointer-events: none;
         }
 
         /* ── 顶部导航 ── */
         .top-nav {
-            position: fixed; top: env(safe-area-inset-top, 20px);
+            position: fixed; top: env(safe-area-inset-top, 24px);
             left: 0; right: 0; z-index: 100;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 15px;
+            padding: 12px 18px;
         }
 
-        .top-left, .top-right { width: 40px; display: flex; align-items: center; }
+        .top-left, .top-right { width: 44px; display: flex; align-items: center; }
         .top-right { justify-content: flex-end; }
 
         .nav-tabs {
-            display: flex; gap: 15px; font-size: 16px; color: rgba(255,255,255,0.6);
-            font-weight: 600; overflow-x: auto; white-space: nowrap;
+            display: flex; gap: 18px; font-size: 17px; color: rgba(255,255,255,0.7);
+            font-weight: 700; overflow-x: auto; white-space: nowrap;
             scrollbar-width: none;
         }
         .nav-tabs::-webkit-scrollbar { display: none; }
         
         .nav-tab.active { color: #fff; position: relative; }
         .nav-tab.active::after {
-            content: ''; position: absolute; bottom: -5px; left: 20%; width: 60%;
+            content: ''; position: absolute; bottom: -6px; left: 15%; width: 70%;
             height: 2px; background: #fff;
         }
 
         /* ── 右侧操作栏 ── */
         .side-bar {
-            position: absolute; right: 8px; bottom: 110px;
-            z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 18px;
+            position: absolute; right: 10px; bottom: 120px;
+            z-index: 100; display: flex; flex-direction: column; align-items: center; gap: 20px;
         }
 
-        .side-icon-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .side-icon-group span { font-size: 12px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .side-icon-group { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+        /* 修复数字模糊搬运逻辑：数字模糊处理，点击抖动模拟变化，不准确计算隐私 */
+        .side-icon-group span { 
+            font-size: 12px; font-weight: 500; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6); 
+            filter: blur(2px); /* 脱敏模糊处理 */
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .side-icon-group.active span { transform: scale(1.1); filter: blur(1.5px); }
 
         .avatar-box {
-            position: relative; width: 50px; height: 50px; margin-bottom: 10px;
+            position: relative; width: 54px; height: 54px; margin-bottom: 12px;
         }
         .avatar-box img { 
-            width: 100%; height: 100%; border-radius: 50%; border: 1px solid #fff; 
+            width: 100%; height: 100%; border-radius: 50%; border: 1.5px solid #fff; 
         }
         .avatar-box .plus {
-            position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
-            width: 20px; height: 20px; background: var(--dy-red); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            width: 22px; height: 22px; background: var(--dy-red); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 300;
         }
 
         /* ── 底部信息 ── */
         .bottom-info {
-            position: absolute; left: 12px; bottom: 100px; right: 80px; z-index: 100;
+            position: absolute; left: 16px; bottom: 110px; right: 90px; z-index: 100;
         }
-        .user-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-        .video-desc { font-size: 15px; line-height: 1.4; margin-bottom: 12px; }
-        .music-box { display: flex; align-items: center; gap: 8px; font-size: 14px; width: 80%; overflow: hidden; }
+        /* 修复文字大小：用户名模糊块对应占位文本大小增加到 18px */
+        .user-name { 
+            font-size: 18px; font-weight: 700; margin-bottom: 10px; 
+            filter: blur(2px); /* 脱敏模糊处理 */
+        }
+        /* 修复文字大小：描述模糊块大小增加到 15px */
+        .video-desc { 
+            font-size: 15px; line-height: 1.5; margin-bottom: 14px; 
+            filter: blur(2px); /* 脱敏模糊处理 */
+        }
+        /* 修复文字大小：音乐模糊块大小增加到 14px */
+        .music-box { display: flex; align-items: center; gap: 8px; font-size: 14px; width: 90%; overflow: hidden; filter: blur(1.5px); /* 脱敏模糊处理 */ }
         
         @keyframes scrollMusic {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }
         }
-        .music-name { white-space: nowrap; animation: scrollMusic 10s linear infinite; }
+        .music-name { white-space: nowrap; animation: scrollMusic 12s linear infinite; }
 
         /* ── 底部导航栏 ── */
         .tab-bar {
             position: fixed; bottom: 0; width: 100%;
-            height: calc(55px + env(safe-area-inset-bottom));
+            height: calc(60px + env(safe-area-inset-bottom));
             background: #000; z-index: 100;
             display: flex; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            border-top: 0.5px solid rgba(255,255,255,0.1);
+            padding-bottom: calc( env(safe-area-inset-bottom) + 5px );
+            border-top: 0.5px solid rgba(255,255,255,0.06);
+            padding-left: 5px; padding-right: 5px;
         }
 
-        .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: #888; }
-        .tab-item.active { color: #fff; }
-        .tab-item span { font-size: 10px; margin-top: 4px; font-weight: 600; }
+        .tab-item { 
+            flex: 1; display: flex; flex-direction: column; align-items: center; color: rgba(255,255,255,0.6); 
+            filter: blur(1.5px); /* 底部文字模糊处理 */
+        }
+        .tab-item.active { color: #fff; filter: blur(0); /* 选中态清晰 */ }
+        .tab-item span { font-size: 10px; margin-top: 5px; font-weight: 700; }
         
-        /* 灵魂组件：发布按钮 */
+        /* 中间发布按钮：立体感还原 */
+        .publish-btn-wrap {
+            position: relative; width: 48px; height: 32px; display: flex; align-items: center; justify-content: center;
+        }
         .publish-btn {
-            width: 45px; height: 28px; background: #fff; border-radius: 8px;
-            position: relative; display: flex; align-items: center; justify-content: center;
-            color: #000; font-size: 20px; font-weight: bold;
+            width: 44px; height: 30px; background: #fff; border-radius: 9px;
+            position: absolute; color: #000; font-size: 22px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
         }
         .publish-btn::before {
-            content: ''; position: absolute; left: -3px; width: 100%; height: 100%;
-            background: var(--dy-cyan); border-radius: 8px; z-index: -1;
+            content: ''; position: absolute; left: -3px; top: -1px; width: calc(100% + 1px); height: calc(100% + 1px);
+            background: var(--dy-cyan); border-radius: 9px; z-index: -1;
         }
         .publish-btn::after {
-            content: ''; position: absolute; right: -3px; width: 100%; height: 100%;
-            background: var(--dy-red); border-radius: 8px; z-index: -2;
+            content: ''; position: absolute; right: -3px; top: -1px; width: calc(100% + 1px); height: calc(100% + 1px);
+            background: var(--dy-red); border-radius: 9px; z-index: -2;
         }
 
         /* 唱片旋转动画 */
         .record-disc {
-            width: 45px; height: 45px; border-radius: 50%;
-            background: radial-gradient(circle, #333 20%, #111 100%);
-            border: 8px solid #222;
-            animation: rotate 5s linear infinite;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: radial-gradient(circle, #333 15%, #111 80%);
+            border: 10px solid #222;
+            animation: rotate 6s linear infinite;
+            position: relative; flex-shrink: 0;
+        }
+        /* 唱片中心孔清晰 */
+        .record-disc::after {
+            content: ''; width: 14px; height: 14px; border-radius: 50%;
+            background: #111; border: 3px solid #444; position: absolute;
+            left: 50%; top: 50%; transform: translate(-50%, -50%);
         }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* 点赞动画心形 */
         .tap-heart {
-            position: absolute; width: 80px; height: 80px;
+            position: absolute; width: 88px; height: 88px;
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23fe2c55"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>') no-repeat;
             z-index: 999; pointer-events: none; transform: translate(-50%, -50%) scale(0);
             animation: heartAnim 0.8s ease-out forwards;
         }
         @keyframes heartAnim {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
+            0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+            25% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(1.1); opacity: 0; }
         }
+        
+        /* 图标点击反馈 */
+        @keyframes iconJump {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .side-icon-group svg { transition: fill 0.2s, transform 0.2s; }
+        .side-icon-group.active svg { animation: iconJump 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
 </head>
 <body>
@@ -174,7 +214,7 @@
 
     <div class="top-nav">
         <div class="top-left">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </div>
         <div class="nav-tabs">
             <div class="nav-tab">成都</div>
@@ -183,7 +223,7 @@
             <div class="nav-tab active">推荐</div>
         </div>
         <div class="top-right">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
     </div>
 
@@ -198,50 +238,45 @@
             <img src="https://dummyimage.com/100/fe2c55/fff&text=Me" alt="头像">
             <div class="plus">+</div>
         </div>
-        <div class="side-icon-group">
-            <svg width="35" height="35" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <div class="side-icon-group" id="likeBtn">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             <span>37.1万</span>
         </div>
-        <div class="side-icon-group">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div class="side-icon-group" id="commentBtn">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="white"><path d="M22 13C22 17.9706 17.5228 22 12 22C10.7027 22 9.4587 21.7828 8.31845 21.3813L3.16109 23.0118C2.6074 23.187 2.0306 22.8427 1.93679 22.288L1.75881 21.2336C1.49392 19.6644 1.70881 18.1189 2.37012 16.7904C1.13781 15.6883 0.333333 14.4173 0.333333 13C0.333333 8.02944 4.8105 4 10.3333 4H12C17.5228 4 22 8.02944 22 13Z"/></svg>
             <span>4982</span>
         </div>
-        <div class="side-icon-group">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+        <div class="side-icon-group" id="collectBtn">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="white" id="starSvg"><path d="M12 2.5L14.77 8.11L21 9.02L16.5 13.41L17.56 19.62L12 16.7L6.44 19.62L7.5 13.41L3 9.02L9.23 8.11L12 2.5Z"/></svg>
             <span>1.7万</span>
         </div>
-        <div class="side-icon-group">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M15 10l5 5-5 5v-4H4v-2h11v-4z"/></svg>
+        <div class="side-icon-group" id="shareBtn">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="white"><path d="M16 1L23 8L16 15V10C10 10 7.5 13.5 6 18C8.5 14.5 11 13 16 13V1L16 1ZM10 18V21H2V6H10V9M10 18Z"/></svg>
             <span>3.2万</span>
         </div>
         <div class="record-disc"></div>
     </div>
 
     <div class="bottom-info">
-        <div class="user-name">@我的Pinata视频</div>
-        <div class="video-desc">这是存在IPFS上的视频 🎉 #去中心化存储 #Web3 #IPFS</div>
-        <div class="music-box">
+        <div class="user-name">占位用户名</div> <div class="video-desc">这是脱敏后的视频描述占位符，字体15px。🎉 #去中心化存储占位 #Web3占位 #IPFS占位</div> <div class="music-box">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm12-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
-            <div class="music-name">原声 - IPFS去中心化存储演示 · 原声 - IPFS去中心化存储演示</div>
-        </div>
+            <div class="music-name">原声 - 脱敏音乐名演示占位符 · 原声 - 脱敏音乐名演示占位符</div> </div>
     </div>
 
     <div class="tab-bar">
         <div class="tab-item active">
-            <span>首页</span>
+            <span>首页占位</span> </div>
+        <div class="tab-item">
+            <span>商城占位</span> </div>
+        <div class="tab-item">
+            <div class="publish-btn-wrap">
+                <div class="publish-btn">+</div>
+            </div>
         </div>
         <div class="tab-item">
-            <span>商城</span>
-        </div>
+            <span>消息占位</span> </div>
         <div class="tab-item">
-            <div class="publish-btn">+</div>
-        </div>
-        <div class="tab-item">
-            <span>消息</span>
-        </div>
-        <div class="tab-item">
-            <span>我</span>
-        </div>
+            <span>我占位</span> </div>
     </div>
 </div>
 
@@ -249,23 +284,54 @@
     const video = document.getElementById('mainVideo');
     const videoLayer = document.getElementById('videoLayer');
 
-    // 自动播放逻辑
+    // 自动播放逻辑：网页端需要交互才能自动播放，默认给一次点击模拟
     document.addEventListener('click', () => {
         video.play();
     }, { once: true });
 
-    // 双击点赞功能
+    // Toast 功能
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed; bottom:130px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:10px 22px; border-radius:22px; font-size:14px; z-index:9999; animation: fadeOut 0.4s 1.5s forwards; white-space:nowrap;';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2000);
+    }
+    document.getElementById('commentBtn').addEventListener('click', () => showToast('评论功能占位~'));
+    document.getElementById('shareBtn').addEventListener('click', () => showToast('分享功能占位~'));
+
+
+    // 点赞功能完善：星星变红，飘心，数字模糊块稍微抖动
+    let liked = false;
+    const likeBtn = document.getElementById('likeBtn');
+    likeBtn.addEventListener('click', function(e) {
+        liked = !liked;
+        const svg = this.querySelector('svg');
+        const span = this.querySelector('span');
+        this.classList.add('active'); // 触发抖动
+        if (liked) {
+            svg.setAttribute('fill', '#fe2c55');
+            spawnHeart(e.clientX, e.clientY);
+        } else {
+            svg.setAttribute('fill', 'white');
+        }
+        setTimeout(() => this.classList.remove('active'), 400); // 移除抖动
+    });
+
+    // 双击点赞功能还原：飘心，不改变星星状态
     let lastTap = 0;
     videoLayer.addEventListener('touchend', function(e) {
         const curTime = new Date().getTime();
         const tapLen = curTime - lastTap;
         if (tapLen < 300 && tapLen > 0) {
             createHeart(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+            // 这里不改变Liked状态，只飘心，匹配原生交互
         }
         lastTap = curTime;
     });
 
-    function createHeart(x, y) {
+    // spawnHeart 用于点击按钮飘心
+    function spawnHeart(x, y) {
         const heart = document.createElement('div');
         heart.className = 'tap-heart';
         heart.style.left = x + 'px';
@@ -273,6 +339,41 @@
         document.body.appendChild(heart);
         setTimeout(() => heart.remove(), 800);
     }
+
+    // createHeart 用于双击屏幕飘心
+    function createHeart(x, y) {
+        spawnHeart(x, y);
+    }
+
+    // 收藏功能完善：默认黄色实心星，点击星星变实心黄，数字模糊块抖动
+    let collected = false;
+    const collectBtn = document.getElementById('collectBtn');
+    collectBtn.addEventListener('click', function() {
+        collected = !collected;
+        const svg = document.getElementById('starSvg');
+        const span = this.querySelector('span');
+        this.classList.add('active'); // 触发抖动
+        if (collected) {
+            svg.setAttribute('fill', '#ffd700'); // 黄色实心星，匹配截图2
+        } else {
+            svg.setAttribute('fill', 'white'); // 灰色实心星，模拟原生点击变黄前状态。用户要实心，我也给实心，默认给灰色模拟“未点击”原生状态（或者默认灰色点击变黄）
+            // 考虑点赞是红色，我默认给灰色（空心？不，用户要实心，我也想给实心，原生点击是实心变实心黄。我默认灰色实心点击变实心黄）
+            // 好的。默认灰色实心，点击变黄实心。
+        }
+        setTimeout(() => this.classList.remove('active'), 400); // 移除抖动
+    });
+
+    // 音乐名脱敏模拟播放状态滚动
+    function startMusicScroll() {
+        const musicScroll = document.querySelector('.music-scroll');
+        const musicName = document.querySelector('.music-name');
+        if (musicScroll.offsetWidth < musicName.offsetWidth) {
+             musicName.style.animation = 'scrollMusic 12s linear infinite';
+        } else {
+             musicName.style.animation = 'none';
+        }
+    }
+    // startMusicScroll(); // 初始化调用。已用 CSS 实现。
 </script>
 
 </body>
