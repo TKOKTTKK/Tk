@@ -450,7 +450,7 @@ function preload(idx) {
     const diff = Math.abs(i - idx);
     if (diff === 0) {
       if (!v.src || !v.src.includes('ipfs')) { v.src = videoUrls[i]; v.load(); }
-    } else if (diff === 2) {
+    } else if (diff === 1 || diff === 2) {
       if (!v.src || !v.src.includes('ipfs')) { v.src = videoUrls[i]; v.preload = 'auto'; v.load(); }
     } else if (diff >= 10) {
       if (v.src) { v.pause(); v.removeAttribute('src'); v.load(); }
