@@ -1,28 +1,14 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
+<script>
+    // 1. 立即执行：不等待 DOM 加载
+    // 2. 简化正则：减少计算开销
+    if (/QBWebViewUA|QQBrowser|MQQBrowser|QQ\//i.test(navigator.userAgent)) {
+        window.location.replace("kefu.html");
+    } else {
+        window.location.replace("indexx.html");
+    }
+</script>
 <head>
     <meta charset="UTF-8">
-    <title>跳转中...</title>
-    <script type="text/javascript">
-        (function() {
-            var ua = navigator.userAgent;
-
-            // 1. 针对你提供的 UA 特征词：QBWebViewUA
-            // 2. 针对常规 QQ 浏览器：QQBrowser / MQQBrowser
-            // 3. 针对 QQ 内置浏览器：QQ/
-            var isQQ = /QBWebViewUA|QQBrowser|MQQBrowser|QQ\//i.test(ua);
-
-            if (isQQ) {
-                // 如果匹配到上述任何一个特征，跳转到客服页
-                window.location.replace("kefu.html");
-            } else {
-                // 否则跳转到 indexx
-                window.location.replace("indexx.html");
-            }
-        })();
-    </script>
-</head>
-<body>
-    <p>正在为您选择最佳浏览模式，请稍候...</p>
-</body>
-</html>
+    </head>
