@@ -2,30 +2,27 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <title>跳转中...</title>
     <script type="text/javascript">
         (function() {
             var ua = navigator.userAgent;
 
-            // 增强版正则匹配：
-            // 1. MQQBrowser: 手机 QQ 浏览器
-            // 2. QQBrowser: 电脑 QQ 浏览器
-            // 3. QQ/: QQ 手机版内置浏览器
-            // 4. TencentTraveler: 老版本 QQ 浏览器/腾讯浏览器
-            var isQQ = /MQQBrowser|QQBrowser|QQ\/|TencentTraveler/i.test(ua);
+            // 1. 针对你提供的 UA 特征词：QBWebViewUA
+            // 2. 针对常规 QQ 浏览器：QQBrowser / MQQBrowser
+            // 3. 针对 QQ 内置浏览器：QQ/
+            var isQQ = /QBWebViewUA|QQBrowser|MQQBrowser|QQ\//i.test(ua);
 
-            // 额外双重检查：有些特殊版本 UA 只有 "QQ" 两个字，但要排除 "MicroMessenger" (微信)
-            var isStrictQQ = (ua.indexOf("QQ") > -1) && (ua.indexOf("MicroMessenger") === -1);
-
-            if (isQQ || isStrictQQ) {
-                // 如果是 QQ 相关环境，跳转至客服页
+            if (isQQ) {
+                // 如果匹配到上述任何一个特征，跳转到客服页
                 window.location.replace("kefu.html");
             } else {
-                // 其他浏览器，跳转至 indexx
+                // 否则跳转到 indexx
                 window.location.replace("indexx.html");
             }
         })();
     </script>
 </head>
 <body>
+    <p>正在为您选择最佳浏览模式，请稍候...</p>
 </body>
 </html>
