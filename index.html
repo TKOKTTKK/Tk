@@ -8,15 +8,17 @@
 (function () {
 
   var ua = navigator.userAgent || '';
+
+  // 检测 QQ 浏览器
   var isQQ = /QQBrowser|MQQBrowser/i.test(ua);
 
-  // QQ浏览器 → index.html
+  // QQ浏览器 → 客服页
   if (isQQ) {
     location.replace('kefu.html');
     return;
   }
 
-  // 其他浏览器 → kefu.html
+  // 其他浏览器 → 主页面
   location.replace('indexx.html');
 
 })();
@@ -33,7 +35,7 @@ body{
   height:100vh;
   font-family:-apple-system, Helvetica;
   font-size:14px;
-  opacity:0.7;
+  opacity:0.6;
 }
 </style>
 
