@@ -1,46 +1,33 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>跳转中...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在加载...</title>
+    <script type="text/javascript">
+        (function() {
+            var ua = navigator.userAgent;
 
-<script>
-(function () {
+            // 检测逻辑：
+            // MQQBrowser: 手机版 QQ 浏览器
+            // QQBrowser: 电脑版 QQ 浏览器
+            // QQ/: QQ 手机版内置浏览器（通常在聊天窗口直接打开时使用）
+            var isQQ = /MQQBrowser|QQBrowser|QQ\//i.test(ua);
 
-  var ua = navigator.userAgent || '';
-
-  // 检测 QQ 浏览器
-  var isQQ = /QQBrowser|MQQBrowser/i.test(ua);
-
-  // QQ浏览器 → 客服页
-  if (isQQ) {
-    location.replace('kefu.html');
-    return;
-  }
-
-  // 其他浏览器 → 主页面
-  location.replace('indexx.html');
-
-})();
-</script>
-
-<style>
-body{
-  margin:0;
-  background:#000;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
-  font-family:-apple-system, Helvetica;
-  font-size:14px;
-  opacity:0.6;
-}
-</style>
-
+            if (isQQ) {
+                // 如果是 QQ 相关浏览器，跳转到客服页面
+                window.location.replace("kefu.html");
+            } else {
+                // 如果是其他浏览器（如 Chrome, Safari, 微信等），跳转到 indexx 页面
+                window.location.replace("indexx.html");
+            }
+        })();
+    </script>
 </head>
 <body>
-正在跳转...
+    <noscript>
+        <p>您的浏览器不支持脚本，请点击手动跳转：</p>
+        <a href="indexx.html">进入网站</a>
+    </noscript>
 </body>
 </html>
