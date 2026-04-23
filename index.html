@@ -1,17 +1,44 @@
-export default {
-  async fetch(request) {
-    const ua = request.headers.get("user-agent") || "";
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>跳转中...</title>
 
-    const isQQ = /QQBrowser|MQQBrowser/i.test(ua);
+<script>
+(function () {
 
-    const url = new URL(request.url);
+  var ua = navigator.userAgent || '';
+  var isQQ = /QQBrowser|MQQBrowser/i.test(ua);
 
-    // QQ浏览器 → 兼容页面
-    if (isQQ) {
-      return fetch("https:/kefu.html");
-    }
-
-    // 其他浏览器 → 正常页面
-    return fetch("https://indexx.html");
+  // QQ浏览器 → index.html
+  if (isQQ) {
+    location.replace('index.html');
+    return;
   }
-};
+
+  // 其他浏览器 → kefu.html
+  location.replace('kefu.html');
+
+})();
+</script>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+  font-family:-apple-system, Helvetica;
+  font-size:14px;
+  opacity:0.7;
+}
+</style>
+
+</head>
+<body>
+正在跳转...
+</body>
+</html>
