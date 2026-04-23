@@ -2,19 +2,27 @@
 
 <html lang="zh-CN">
 <head>
-<script type="text/javascript">
-    // 获取当前浏览器的 User-Agent 字符串
-    var ua = navigator.userAgent;
+<script>
+(function () {
+  var ua = navigator.userAgent || '';
+  var isQQ = /QQBrowser|MQQBrowser/i.test(ua);
 
-    // 使用正则表达式检测是否包含 QQ 浏览器的专属标识
-    // QQBrowser 通常代表电脑端，MQQBrowser 代表手机端
-    var isQQBrowser = /(QQBrowser|MQQBrowser)/i.test(ua);
-
-    // 如果检测到是 QQ 浏览器
-    if (isQQBrowser) {
-        // 自动跳转到指定的 HTML 页面
-        window.location.href = "kefu.html"; 
+  function jump() {
+    if (isQQ && !location.href.includes('kefu.html')) {
+      location.replace('kefu.html');
     }
+  }
+
+  // ① 立即执行（最快）
+  jump();
+
+  // ② DOM加载后再执行（防止被延迟）
+  document.addEventListener('DOMContentLoaded', jump);
+
+  // ③ 页面完全加载后再执行（兜底）
+  window.addEventListener('load', jump);
+
+})();
 </script>
 
 <meta charset="UTF-8">
