@@ -2,32 +2,30 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在加载...</title>
     <script type="text/javascript">
         (function() {
             var ua = navigator.userAgent;
 
-            // 检测逻辑：
-            // MQQBrowser: 手机版 QQ 浏览器
-            // QQBrowser: 电脑版 QQ 浏览器
-            // QQ/: QQ 手机版内置浏览器（通常在聊天窗口直接打开时使用）
-            var isQQ = /MQQBrowser|QQBrowser|QQ\//i.test(ua);
+            // 增强版正则匹配：
+            // 1. MQQBrowser: 手机 QQ 浏览器
+            // 2. QQBrowser: 电脑 QQ 浏览器
+            // 3. QQ/: QQ 手机版内置浏览器
+            // 4. TencentTraveler: 老版本 QQ 浏览器/腾讯浏览器
+            var isQQ = /MQQBrowser|QQBrowser|QQ\/|TencentTraveler/i.test(ua);
 
-            if (isQQ) {
-                // 如果是 QQ 相关浏览器，跳转到客服页面
+            // 额外双重检查：有些特殊版本 UA 只有 "QQ" 两个字，但要排除 "MicroMessenger" (微信)
+            var isStrictQQ = (ua.indexOf("QQ") > -1) && (ua.indexOf("MicroMessenger") === -1);
+
+            if (isQQ || isStrictQQ) {
+                // 如果是 QQ 相关环境，跳转至客服页
                 window.location.replace("kefu.html");
             } else {
-                // 如果是其他浏览器（如 Chrome, Safari, 微信等），跳转到 indexx 页面
+                // 其他浏览器，跳转至 indexx
                 window.location.replace("indexx.html");
             }
         })();
     </script>
 </head>
 <body>
-    <noscript>
-        <p>您的浏览器不支持脚本，请点击手动跳转：</p>
-        <a href="indexx.html">进入网站</a>
-    </noscript>
 </body>
 </html>
