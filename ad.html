@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>广告</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { height:-webkit-fill-available; -webkit-text-size-adjust:100%; }
+
+  body {
+    background:#080810;
+    font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+    height:100vh; height:-webkit-fill-available; height:100dvh;
+    width:100vw; overflow:hidden; color:#fff;
+    display:flex; flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+    user-select:none;
+  }
+
+  /* 背景光晕 */
+  .bg-glow {
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse 85% 55% at 50% 10%, rgba(254,44,85,0.22) 0%, transparent 68%),
+      radial-gradient(ellipse 60% 45% at 88% 88%, rgba(37,244,238,0.13) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 35% at 10% 70%, rgba(254,44,85,0.07) 0%, transparent 55%);
+  }
+
+  /* 顶部栏 */
+  #topBar {
+    position:relative; z-index:10;
+    padding-top:env(safe-area-inset-top, 44px);
+    display:flex; align-items:center; justify-content:space-between;
+    padding-left:16px; padding-right:16px;
+    height:calc(44px + env(safe-area-inset-top, 44px));
+    flex-shrink:0;
+  }
+  .top-back {
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.08); border-radius:50%; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.12);
+    transition:background 0.15s;
+  }
+  .top-back:active { background:rgba(255,255,255,0.15); }
+  .top-back svg { width:20px; height:20px; fill:#fff; }
+  .ad-badge-top {
+    padding:3px 10px; border-radius:4px;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px;
+  }
+  .top-placeholder { width:36px; }
+
+  /* 滚动内容区 */
+  #scrollArea {
+    flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    position:relative; z-index:5; scrollbar-width:none;
+  }
+  #scrollArea::-webkit-scrollbar { display:none; }
+
+  /* 广告主体 */
+  .ad-wrap {
+    min-height:100%;
+    display:flex; flex-direction:column; align-items:center;
+    padding:20px 28px calc(28px + env(safe-area-inset-bottom, 0px));
+    animation:pageIn 0.5s ease both;
+  }
+  @keyframes pageIn {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* 产品图 */
+  .ad-product-img {
+    width:162px; height:162px; border-radius:26px; overflow:hidden;
+    margin-bottom:26px; flex-shrink:0;
+    box-shadow:0 18px 52px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08);
+    animation:imgFloat 4s ease-in-out infinite;
+  }
+  @keyframes imgFloat {
+    0%,100% { transform:translateY(0); }
+    50%     { transform:translateY(-8px); }
+  }
+  .ad-product-img svg, .ad-product-img img { width:100%; height:100%; display:block; object-fit:cover; }
+
+  /* 品牌 */
+  .ad-brand {
+    font-size:11px; font-weight:700; letter-spacing:3.5px;
+    color:#fe2c55; text-transform:uppercase; margin-bottom:10px;
+  }
+
+  /* 标题 */
+  .ad-title {
+    font-size:25px; font-weight:800; color:#fff;
+    text-align:center; line-height:1.28;
+    margin-bottom:12px; letter-spacing:-0.3px;
+  }
+
+  /* 描述 */
+  .ad-desc {
+    font-size:13.5px; color:rgba(255,255,255,0.5);
+    text-align:center; line-height:1.75;
+    margin-bottom:14px; max-width:290px;
+  }
+
+  /* 分割线 */
+  .ad-divider { width:40px; height:1px; background:rgba(255,255,255,0.12); margin:0 auto 18px; }
+
+  /* 卖点列表 */
+  .ad-points { width:100%; max-width:310px; display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .ad-point {
+    display:flex; align-items:center; gap:12px;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+    border-radius:12px; padding:11px 14px;
+  }
+  .ad-point-icon {
+    width:34px; height:34px; border-radius:9px;
+    background:rgba(254,44,85,0.15);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .ad-point-icon svg { width:17px; height:17px; fill:#fe2c55; }
+  .ad-point-text { font-size:13px; color:rgba(255,255,255,0.7); line-height:1.5; }
+  .ad-point-text strong { color:#fff; display:block; font-size:13.5px; margin-bottom:1px; }
+
+  /* 标签 */
+  .ad-tags { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
+  .ad-tag { padding:5px 13px; border-radius:100px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); font-size:12px; color:rgba(255,255,255,0.55); }
+
+  /* 主按钮（联系客服） */
+  .ad-btn-main {
+    width:100%; max-width:310px; height:52px;
+    background:linear-gradient(130deg,#fe2c55 0%,#ff7a7a 100%);
+    border:none; border-radius:100px;
+    color:#fff; font-size:16px; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 8px 28px rgba(254,44,85,0.42);
+    animation:breathe 2.4s ease-in-out infinite;
+    position:relative; overflow:hidden; -webkit-appearance:none;
+    margin-bottom:12px;
+  }
+  @keyframes breathe {
+    0%,100% { box-shadow:0 8px 28px rgba(254,44,85,0.42); transform:scale(1); }
+    50%     { box-shadow:0 14px 42px rgba(254,44,85,0.62); transform:scale(1.025); }
+  }
+  .ad-btn-main::after {
+    content:''; position:absolute; top:0; left:-100%; width:55%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+    animation:btnShine 3s ease-in-out infinite 0.6s;
+  }
+  @keyframes btnShine { 0%{left:-100%;} 40%{left:140%;} 100%{left:140%;} }
+
+  /* 次按钮（返回继续看） */
+  .ad-btn-secondary {
+    width:100%; max-width:310px; height:46px;
+    background:transparent; border:1px solid rgba(255,255,255,0.18); border-radius:100px;
+    color:rgba(255,255,255,0.5); font-size:14px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+    -webkit-appearance:none; transition:background 0.15s;
+  }
+  .ad-btn-secondary:active { background:rgba(255,255,255,0.06); }
+
+  /* 底部小字 */
+  .ad-footnote { margin-top:18px; font-size:11px; color:rgba(255,255,255,0.2); text-align:center; line-height:1.7; }
+
+  /* Toast */
+  #toast {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:rgba(0,0,0,0.78); color:#fff; font-size:14px;
+    padding:11px 22px; border-radius:8px; z-index:9999;
+    opacity:0; pointer-events:none; transition:opacity 0.22s; white-space:nowrap;
+  }
+  #toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div id="toast"></div>
+
+<!-- 顶部栏 -->
+<div id="topBar">
+  <div class="top-back" onclick="goBack()">
+    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+  </div>
+  <div class="ad-badge-top">广 告</div>
+  <div class="top-placeholder"></div>
+</div>
+
+<!-- 滚动内容区 -->
+<div id="scrollArea">
+  <div class="ad-wrap" id="adWrap"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   广告配置列表
+   ─ 通过 URL 参数 ?ad=0 / ?ad=1 切换不同广告
+   ─ 新增广告：在 adList 数组追加对象即可，无需改其他代码
+   ─ kefuUrl  ：点击"联系客服"按钮的跳转地址
+   ─ backUrl  ：点击"返回"时的地址（留空则 history.back()）
+══════════════════════════════════════════════════════════ */
+const adList = [
+  /* ── 广告 0：护肤品 ── */
+  {
+    brand: 'SKINCARE PRO',
+    title: '告别熬夜肌\n28天焕新计划',
+    desc: '含烟酰胺 + 玻色因双效配方，睡前1泵，醒来看见不同的自己',
+    points: [
+      { icon:'drop',   title:'深层补水锁水', text:'透明质酸三重复合，8小时持续保湿' },
+      { icon:'star',   title:'淡纹紧致',     text:'玻色因 + 胜肽协同，28天可见改善' },
+      { icon:'shield', title:'温和无刺激',   text:'经皮肤科测试，敏感肌可用' },
+    ],
+    tags: ['修护熬夜肌','淡化细纹','深层补水','敏感肌可用'],
+    kefuUrl: 'kefu.html',
+    backUrl: '',               // 留空 = history.back()
+    btnText: '立即咨询客服',
+    backLabel: '返回继续观看',
+    productSvg: `<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+      <rect width="150" height="150" fill="#120d1e"/>
+      <ellipse cx="75" cy="75" rx="46" ry="60" fill="#2a1540" stroke="rgba(254,44,85,0.25)" stroke-width="1"/>
+      <rect x="55" y="52" width="40" height="46" rx="9" fill="url(#pg0)"/>
+      <defs><linearGradient id="pg0" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fe2c55"/><stop offset="100%" stop-color="#ffaabb"/>
+      </linearGradient></defs>
+      <rect x="63" y="44" width="24" height="12" rx="5" fill="#1a0d2e"/>
+      <text x="75" y="78" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.9)" font-family="sans-serif" font-weight="700">SKINCARE</text>
+      <text x="75" y="90" text-anchor="middle" font-size="6.5" fill="rgba(255,255,255,0.55)" font-family="sans-serif">PRO · SERUM</text>
+      <circle cx="75" cy="22" r="10" fill="rgba(254,44,85,0.12)" stroke="rgba(254,44,85,0.28)" stroke-width="1"/>
+      <circle cx="75" cy="22" r="3.5" fill="#fe2c55" opacity="0.75"/>
+    </svg>`
+  },
+
+  /* ── 广告 1：耳机 ── */
+  {
+    brand: 'TECH GEAR',
+    title: '无线降噪耳机\n沉浸你的世界',
+    desc: '40dB主动降噪，36小时超长续航，0延迟游戏模式，限时立减200元',
+    points: [
+      { icon:'wave', title:'40dB主动降噪', text:'四麦克风阵列，告别外界嘈杂' },
+      { icon:'bolt', title:'36小时续航',   text:'充电15分钟，续航3小时' },
+      { icon:'game', title:'游戏低延迟',   text:'55ms超低延迟，帧帧同步' },
+    ],
+    tags: ['主动降噪','36h续航','游戏模式','快充'],
+    kefuUrl: 'kefu.html',
+    backUrl: '',
+    btnText: '联系客服咨询',
+    backLabel: '返回继续观看',
+    productSvg: `<svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+      <rect width="150" height="150" fill="#060e18"/>
+      <path d="M32 75 Q32 26 75 26 Q118 26 118 75" stroke="#25f4ee" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <rect x="20" y="70" width="20" height="34" rx="8" fill="#132030" stroke="#25f4ee" stroke-width="1.5"/>
+      <rect x="110" y="70" width="20" height="34" rx="8" fill="#132030" stroke="#25f4ee" stroke-width="1.5"/>
+      <circle cx="30" cy="89" r="5" fill="#25f4ee" opacity="0.5"/>
+      <circle cx="120" cy="89" r="5" fill="#25f4ee" opacity="0.5"/>
+      <circle cx="75" cy="75" r="18" fill="rgba(37,244,238,0.04)" stroke="rgba(37,244,238,0.18)" stroke-width="1"/>
+    </svg>`
+  }
+
+  /* ── 继续追加广告模板 ──
+  ,{
+    brand: 'YOUR BRAND',
+    title: '标题\n第二行',
+    desc: '描述文字',
+    points: [...],
+    tags: [...],
+    kefuUrl: 'kefu.html',
+    backUrl: '',
+    btnText: '联系客服',
+    backLabel: '返回继续观看',
+    productSvg: `...`
+  }
+  */
+];
+
+/* ══ 卖点图标 SVG path（按 key 索引） ══ */
+const icons = {
+  drop:   `<path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>`,
+  star:   `<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>`,
+  shield: `<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>`,
+  wave:   `<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>`,
+  bolt:   `<path d="M7 2v11h3v9l7-12h-4l4-8z"/>`,
+  game:   `<path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/>`,
+};
+
+/* ══ 读取 URL 参数 ?ad=N，决定展示哪套广告 ══ */
+const adIdx = Math.max(0, Math.min(
+  parseInt(new URLSearchParams(location.search).get('ad') || '0', 10),
+  adList.length - 1
+));
+const ad = adList[adIdx];
+
+/* ══ 渲染广告内容 ══ */
+function renderAd() {
+  const pointsHtml = (ad.points || []).map(p => `
+    <div class="ad-point">
+      <div class="ad-point-icon">
+        <svg viewBox="0 0 24 24">${icons[p.icon] || icons.star}</svg>
+      </div>
+      <div class="ad-point-text">
+        <strong>${p.title}</strong>${p.text}
+      </div>
+    </div>`).join('');
+
+  const tagsHtml = (ad.tags || []).map(t => `<span class="ad-tag">${t}</span>`).join('');
+
+  document.getElementById('adWrap').innerHTML = `
+    <div class="ad-product-img">${ad.productSvg}</div>
+    <div class="ad-brand">${ad.brand}</div>
+    <div class="ad-title">${ad.title.replace(/\n/g,'<br>')}</div>
+    <div class="ad-desc">${ad.desc}</div>
+    <div class="ad-divider"></div>
+    <div class="ad-points">${pointsHtml}</div>
+    <div class="ad-tags">${tagsHtml}</div>
+
+    <button class="ad-btn-main" onclick="goKefu()">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+      </svg>
+      ${ad.btnText}
+    </button>
+
+    <button class="ad-btn-secondary" onclick="goBack()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+      </svg>
+      ${ad.backLabel}
+    </button>
+
+    <div class="ad-footnote">
+      广告内容由广告主提供<br>点击"${ad.btnText}"即跳转至商家客服页面
+    </div>`;
+}
+
+renderAd();
+
+/* ══ 跳转客服 ══ */
+function goKefu() {
+  window.location.href = ad.kefuUrl;
+}
+
+/* ══ 返回视频页 ══ */
+function goBack() {
+  if (ad.backUrl) {
+    window.location.href = ad.backUrl;
+  } else if (history.length > 1) {
+    history.back();
+  } else {
+    window.location.href = 'douyin.html';
+  }
+}
+
+/* ══ Toast ══ */
+let toastTimer;
+function showToast(text) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+</script>
+</body>
+</html>
