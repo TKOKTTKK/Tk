@@ -398,7 +398,7 @@ body {
 <!-- 视频信息 -->
 <div class="video-info" id="videoInfo">
   <div class="vi-username">@我的视频</div>
-  <div class="vi-desc">开通会员观看完整版</div>
+  <div class="vi-desc">开通会员可后进主页观看完整版</div>
 </div>
 
 <!-- 进度条 -->
@@ -546,7 +546,7 @@ body {
               </div>
             </div>
             <div class="case-stars">★★★★★</div>
-            <div class="case-quote">我觉得同城功能简直是神器，附近女孩子直接私信聊两句可以就约出来草逼，还不用花钱，太爽了</div>
+            <div class="case-quote">我觉得同城功能简直是神器，附近女孩子直接私信聊两句就可以约出来草逼，还不用花钱，太爽了</div>
           </div>
         </div>
 
@@ -634,15 +634,15 @@ fixVh();
 ════════════════════════════════════════════════════════════ */
 var videoUrls = [
   "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifujvhbbrug4ohmhnbn5o6xbeweowxuhsko7azgo32zdxbvrwsfdi",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeihokl2aj6p2ftxwivc6ty6xg3zx3lu3bw2norvlyhdjmrkb4shaiq",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifkqtkjlgcfs6ikmkc5cc6psr23hhuz2kgy62teikohlas63prqou",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidsgny5mif27lqu7bt5z7g4a63raoxwjhslhmmegzwhljgjd3iggq",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeiexn5pzogmujgmvwnmzdqw2axyh3s3ixumjlabcei4vbw35abyvhe",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidifsdf3xpabcrkypgu4c77i7pmgdru4iea2zus6rlbw6vfjfzvvy",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeibafjebhoq6xh3esnbs6w2mao4cun4qfslruyaozgx54wgbjfbxoe",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeidbpdoz4mtbk45wisqvcwgdewao4obuvwo2s5narprsr7rypsd76u",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeifskd2zsnlquiyp4bdv2q2b2rzukscpr6lurer75buhy6qgb545ea",
-  "https://turquoise-absolute-cheetah-543.mypinata.cloud/ipfs/bafybeie53svjmqhznjlosvlkvtu7cckzrgwexo3h2ljvartpuhzsr3kdki"
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeibevq5smrxgpzt77iouutditqd67xnrefleq4oejq5kvczshb4gpe",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeigtd6apy62iqf6g3adcvtih4ai2v6ck6ijefqouzjcalzxgwjgpce",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeigkurfrx2hntjwhawnmdb5psy7t3h3tscx7dq2oeddsdydso3i4rm",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifjqs6pqmu7qjbnfgouqsvlxevcuzm54t56n4uwkmlem5yxpdz4u4",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeibhdrdoumqsatxufu7t2tnuji6um5dv6gvalfebdue5k4wawajt2a",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifabvpja5d76b4bo26aobvwj6c4b7w6b3nn3aced2hpxuyj4hmjfu",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeiaz6ulxb6gqme7uxdkelf33teh6qfyufgqxl7rglabhu2lj6zyel4",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeieqwtblb3cj5dpsz2pytlchmdzrq7xcxbi6hmumqtnyshsbnefclq",
+  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeihayprwewr5ln3x4mxc5mol7poi65xczpau3ftgnnfsufujt27e5m"
 ];
 
 var PROFILE_URL = '';
@@ -824,9 +824,9 @@ var currentVidIdx = 0;
 function preload(vidIdx) {
   videoEls.forEach(function(v, i) {
     var d = Math.abs(i - vidIdx);
-    if (d === 0 || d <= 2) {
+    if (d === 0 || d <= 3) {
       if (!v.src) { v.src = videoUrls[i]; v.load(); }
-    } else if (d >= 8) {
+    } else if (d >= 15) {
       if (v.src) { v.pause(); v.removeAttribute('src'); v.load(); }
     }
   });
