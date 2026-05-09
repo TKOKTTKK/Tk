@@ -5,103 +5,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>推荐</title>
 <style>
-/* ════════════════════════════════════════════════════════════
-   全局基础配置
-════════════════════════════════════════════════════════════ */
 :root {
   --accent: #fe2c55;
   --bg-dark: #050508;
-  --glass: rgba(255, 255, 255, 0.06);
+  --glass: rgba(255,255,255,0.06);
   --safe-top: env(safe-area-inset-top, 44px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --topbar-h: calc(var(--safe-top) + 44px);
+  --img-top: calc(var(--safe-top) + 44px);
+  --botbar-h: calc(var(--safe-bottom) + 55px);
 }
-
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html { -webkit-text-size-adjust:100%; height:-webkit-fill-available; }
-body {
-  background: var(--bg-dark);
-  font-family: -apple-system, "PingFang SC", sans-serif;
-  color: #fff;
-  overflow: hidden;
-  height: 100vh; height: 100dvh;
-}
+body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-serif; color:#fff; overflow:hidden; height:100vh; height:100dvh; }
 
-/* ════════════════════════════════════════════════════════════
-   主容器 & 滚动吸附
-════════════════════════════════════════════════════════════ */
-#feed {
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100%;
-  overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none;
-}
-#feed::-webkit-scrollbar { display: none; }
+#feed { position:fixed; top:0; left:0; width:100vw; height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none; }
+#feed::-webkit-scrollbar { display:none; }
 
 .page-item {
-  position: relative; width: 100vw; height: 100vh; height: 100dvh;
-  scroll-snap-align: start; display: flex; flex-direction: column;
-  padding-top: calc(var(--safe-top) + 44px);
-  padding-bottom: calc(var(--safe-bottom) + 55px);
+  position:relative; width:100vw; height:100vh; height:100dvh;
+  scroll-snap-align:start; display:flex; flex-direction:column;
+  padding-bottom:var(--botbar-h);
 }
 
-/* ── 上半屏：网格布局 ── */
 .upper-half {
-  padding: 10px; flex-shrink: 0;
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+  padding:10px; flex-shrink:0;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
 }
-.img-box {
-  aspect-ratio: 3/4; background: #111; border-radius: 6px; overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+.media-box {
+  aspect-ratio:3/4; background:#111; border-radius:6px; overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; position:relative;
+  transition:transform 0.15s;
 }
-.img-box img { width: 100%; height: 100%; object-fit: cover; }
+.media-box:active { transform:scale(0.96); }
+.media-box img  { width:100%; height:100%; object-fit:cover; display:block; }
+.media-box video{ width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
 
-/* ── 下半屏：高级感重构 ── */
-.lower-half {
-  flex: 1; display: flex; flex-direction: column; 
-  justify-content: center; align-items: center; padding: 15px 25px;
+.media-box .video-badge {
+  position:absolute; bottom:5px; left:5px;
+  background:rgba(0,0,0,0.6); border-radius:4px; padding:2px 5px;
+  font-size:10px; color:#fff; display:flex; align-items:center; gap:3px;
+  backdrop-filter:blur(4px);
 }
-
-.profile-card {
-  width: 100%; max-width: 340px; position: relative;
+.media-box .video-badge svg { width:10px; height:10px; }
+.media-box .play-overlay {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.2);
 }
+.media-box .play-overlay svg { width:28px; height:28px; opacity:0.9; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-.hero-info { margin-bottom: 20px; text-align: left; width: 100%; }
-.name-row { display: flex; align-items: baseline; gap: 10px; }
-.artist-name { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
-.region-tag {
-  font-size: 13px; color: rgba(255,255,255,0.5);
-  display: flex; align-items: center; gap: 4px;
-}
-
-.stats-grid { display: flex; gap: 12px; width: 100%; margin-bottom: 25px; }
-.stat-pill {
-  flex: 1; background: var(--glass); padding: 12px; border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 4px; display: block; }
-.stat-value { font-size: 17px; font-weight: 600; color: #fff; }
-.stat-value.highlight { color: #fac300; } 
-
-.action-btn {
-  width: 100%; height: 54px; border-radius: 16px; border: none;
-  background: #fff; color: #000; font-size: 16px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  box-shadow: 0 10px 30px rgba(255,255,255,0.15);
-  transition: transform 0.2s; cursor: pointer; -webkit-appearance:none;
-}
-.action-btn:active { transform: scale(0.96); }
-.action-btn svg { width: 20px; height: 20px; }
-
-.bg-glow {
-  position: absolute; width: 150px; height: 150px;
-  background: radial-gradient(circle, rgba(254,44,85,0.2) 0%, transparent 70%);
-  z-index: -1; top: -20px; right: -20px; pointer-events:none;
+/* 资料卡上移修正 */
+.lower-half { 
+  flex:1; 
+  display:flex; 
+  flex-direction:column; 
+  justify-content: flex-start; /* 改为靠上对齐 */
+  align-items:center; 
+  padding: 10px 25px; 
 }
 
-/* ════════════════════════════════════════════════════════════
-   原版顶栏、底栏、遮罩及 Toast 提示
-════════════════════════════════════════════════════════════ */
+.profile-card { width:100%; max-width:340px; position:relative; }
+.hero-info { margin-bottom:15px; text-align:left; width:100%; }
+.name-row { display:flex; align-items:baseline; gap:10px; }
+.artist-name { font-size:32px; font-weight:800; letter-spacing:-1px; }
+.region-tag { font-size:13px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:4px; }
+.stats-grid { display:flex; gap:12px; width:100%; margin-bottom:20px; }
+.stat-pill { 
+  flex:1; background:var(--glass); padding:12px; border-radius:14px; 
+  border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); 
+}
+.stat-label { font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px; display:block; }
+.stat-value { font-size:17px; font-weight:600; color:#fff; }
+.stat-value.highlight { color:#fac300; }
+.action-btn { width:100%; height:54px; border-radius:16px; border:none; background:#fff; color:#000; font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 10px 30px rgba(255,255,255,0.15); transition:transform 0.2s; cursor:pointer; -webkit-appearance:none; }
+.action-btn:active { transform:scale(0.96); }
+.action-btn svg { width:20px; height:20px; }
+.bg-glow { position:absolute; width:150px; height:150px; background:radial-gradient(circle,rgba(254,44,85,0.2) 0%,transparent 70%); z-index:-1; top:-20px; right:-20px; pointer-events:none; }
+
+/* 顶栏与底栏 */
 .mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:2; pointer-events:none; }
-
 .top-nav { position:fixed; top:var(--safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
 .nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
 .nav-menu span { display:block; height:2px; background:#fff; border-radius:1px; width:22px; }
@@ -112,7 +94,6 @@ body {
 .nav-tab.active { color:#fff; font-size:17px; font-weight:700; }
 .nav-tab.active::after { content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
 .nav-search { width:36px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; }
-
 .tab-bar { position:fixed; bottom:0; left:0; right:0; height:calc(55px + var(--safe-bottom)); padding-bottom:var(--safe-bottom); background:#000; border-top:0.5px solid rgba(255,255,255,0.1); z-index:200; display:flex; align-items:center; }
 .tab-item { flex:1; display:flex; align-items:center; justify-content:center; height:100%; cursor:pointer; }
 .tab-item .tab-label { font-size:16px; color:rgba(255,255,255,0.45); font-weight:600; }
@@ -120,8 +101,25 @@ body {
 .tab-publish { flex:1; display:flex; align-items:center; justify-content:center; height:55px; cursor:pointer; }
 .pub-inner { width:36px; height:26px; border:2px solid rgba(255,255,255,0.9); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:300; line-height:1; }
 
+/* Toast */
 #toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.76); color:#fff; font-size:15px; padding:12px 24px; border-radius:8px; z-index:9999; opacity:0; pointer-events:none; transition:opacity 0.25s; white-space:nowrap; }
 #toast.show { opacity:1; }
+
+/* 预览弹窗 */
+#preview-overlay { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0); pointer-events:none; display:flex; align-items:center; justify-content:center; transition:background 0.3s; }
+#preview-overlay.active { background:rgba(0,0,0,0.92); pointer-events:auto; }
+#preview-inner { position:relative; max-width:90vw; max-height:80vh; opacity:0; transform:scale(0.88); transition:opacity 0.28s,transform 0.28s; display:flex; align-items:center; justify-content:center; }
+#preview-overlay.active #preview-inner { opacity:1; transform:scale(1); }
+#preview-img { max-width:90vw; max-height:78vh; border-radius:12px; object-fit:contain; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
+#preview-video { max-width:90vw; max-height:78vh; border-radius:12px; display:none; outline:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); background:#000; }
+#preview-close { position:fixed; top:calc(var(--safe-top) + 10px); right:16px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:#fff; z-index:5001; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#preview-overlay.active #preview-close { opacity:1; pointer-events:auto; }
+#preview-close svg { width:18px; height:18px; }
+#preview-counter { position:fixed; bottom:calc(var(--safe-bottom) + 24px); left:50%; transform:translateX(-50%); font-size:13px; color:rgba(255,255,255,0.6); background:rgba(0,0,0,0.4); padding:5px 14px; border-radius:20px; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#preview-overlay.active #preview-counter { opacity:1; }
+.preview-arrow { position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:5001; }
+#preview-overlay.active .preview-arrow { opacity:1; pointer-events:auto; }
+#arrow-prev { left:12px; } #arrow-next { right:12px; }
 </style>
 </head>
 <body>
@@ -142,9 +140,7 @@ body {
   </div>
 </nav>
 
-<div id="feed">
-  <!-- JavaScript 会在这里生成页面 -->
-</div>
+<div id="feed"></div>
 
 <div class="tab-bar">
   <div class="tab-item active"><span class="tab-label">首页</span></div>
@@ -154,124 +150,192 @@ body {
   <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">我</span></div>
 </div>
 
+<div id="preview-overlay" onclick="closePreview(event)">
+  <div id="preview-inner">
+    <img id="preview-img" alt="预览">
+    <video id="preview-video" controls playsinline></video>
+  </div>
+  <button id="preview-close" onclick="closePreviewDirect()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <div id="preview-counter"></div>
+  <button class="preview-arrow" id="arrow-prev" onclick="previewNav(-1)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="preview-arrow" id="arrow-next" onclick="previewNav(1)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+
 <script>
-/* ════════════════════════════════════════════════════════════
-   1. 数据配置区 (在这里单独修改每一页的信息)
-════════════════════════════════════════════════════════════ */
-// 这是一个数组，包含10个对象，对应10个页面。
-// 你可以自由修改这里的 name(艺名), fee(水费), area(区域后缀)
+/* ── 1. 数据配置 ── */
 const pagesData = [
-  { name: "小星星", fee: "10.00", area: "" }, // 第 1 页
-  { name: "喵喵酱", fee: "15.00", area: "" }, // 第 2 页
-  { name: "安琪拉", fee: "20.00", area: "" }, // 第 3 页
-  { name: "大白兔", fee: "12.00", area: "" }, // 第 4 页
-  { name: "草莓糖", fee: "18.00", area: "" }, // 第 5 页
-  { name: "冰淇淋", fee: "10.00", area: "" }, // 第 6 页
-  { name: "小可乐", fee: "15.00", area: "" }, // 第 7 页
-  { name: "布丁",   fee: "25.00", area: "" }, // 第 8 页
-  { name: "抹茶",   fee: "10.00", area: "" }, // 第 9 页
-  { name: "提拉米", fee: "30.00", area: "" }  // 第 10 页
+  { name:"小星星", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"video",src:"",poster:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"安琪拉", fee:"20.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"大白兔", fee:"12.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"草莓糖", fee:"18.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"冰淇淋", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"小可乐", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"布丁",   fee:"25.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"抹茶",   fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"提拉米", fee:"30.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
 ];
 
-/* ════════════════════════════════════════════════════════════
-   2. 页面生成逻辑
-════════════════════════════════════════════════════════════ */
+/* ── 2. 页面生成 ── */
 const feed = document.getElementById('feed');
-
-// 循环生成10个页面
-for (let i = 0; i < 10; i++) {
-  // 获取当前页面的配置数据，如果没有就用默认的
-  const data = pagesData[i] || { name: "神秘人", fee: "10.00", area: "市区" };
-  
+for (let i = 0; i < pagesData.length; i++) {
+  const data = pagesData[i];
   const page = document.createElement('div');
   page.className = 'page-item';
-  
-  // 生成6个网格图 (此处用的随机图作为演示，你也可以在数组里加上图片的配置)
-  let gridHTML = '';
-  for(let j=0; j<6; j++) {
-    gridHTML += `<div class="img-box"><img src="https://picsum.photos/300/400?random=${i*6+j}"></div>`;
-  }
-
-  // 注意看这里的 <span class="dynamic-city">同城</span>，稍后会被 JS 自动替换为真实定位
+  let g = '';
+  data.media.forEach((m, j) => {
+    const seed = i*10+j;
+    const src = m.src || `https://picsum.photos/300/400?random=${seed}`;
+    if (m.type === 'video') {
+        g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}" loading="lazy"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>视频</div></div>`;
+    } else {
+        g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}" loading="lazy"></div>`;
+    }
+  });
   page.innerHTML = `
-    <div class="upper-half">
-      ${gridHTML}
-    </div>
+    <div class="upper-half">${g}</div>
     <div class="lower-half">
       <div class="profile-card">
         <div class="bg-glow"></div>
-        
         <div class="hero-info">
           <div class="name-row">
             <span class="artist-name">${data.name}</span>
             <span class="region-tag">
               <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
-              <span class="dynamic-city">同城</span> ${data.area}
+              <span class="dynamic-city">定位中…</span>${data.area?' '+data.area:''}
             </span>
           </div>
         </div>
-
         <div class="stats-grid">
-          <div class="stat-pill">
-            <span class="stat-label">地区范围</span>
-            <span class="stat-value">全城可约</span>
-          </div>
-          <div class="stat-pill">
-            <span class="stat-label">所需水费</span>
-            <span class="stat-value highlight">${data.fee}</span>
-          </div>
+          <div class="stat-pill"><span class="stat-label">地区范围</span><span class="stat-value">全城</span></div>
+          <div class="stat-pill"><span class="stat-label">所需</span><span class="stat-value highlight">${data.fee}</span></div>
         </div>
-
         <button class="action-btn" onclick="location.href='kefu.html'">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           立即联系在线客服
         </button>
       </div>
-    </div>
-  `;
+    </div>`;
   feed.appendChild(page);
 }
 
-/* ════════════════════════════════════════════════════════════
-   3. 获取真实IP定位并无感替换
-════════════════════════════════════════════════════════════ */
-// 使用一个免费的公共 API 获取访客地理位置 (返回带 city 的 JSON)
-fetch('https://myip.ipip.net/json')
-  .then(response => response.json())
-  .then(data => {
-    // 如果成功获取到了城市名（比如 "Chengdu" 或 "北京市"）
-    if (data && data.city) {
-      let currentCity = data.city;
-      // 找出页面上所有占位用的 "同城" 标签
-      const cityElements = document.querySelectorAll('.dynamic-city');
-      // 批量替换为真实的城市名
-      cityElements.forEach(el => {
-        el.innerText = currentCity;
-      });
-    }
-  })
-  .catch(error => {
-    console.log("定位获取失败，将继续使用默认的'同城'显示", error);
-  });
+/* ── 3. 核心定位逻辑（已完全恢复你原来的逻辑） ── */
+const CITY_MAP = {
+  "Beijing":"北京市","Shanghai":"上海市","Guangzhou":"广州市","Shenzhen":"深圳市",
+  "Chengdu":"成都市","Chongqing":"重庆市","Hangzhou":"杭州市","Wuhan":"武汉市",
+  "Xian":"西安市","Xi'an":"西安市","Nanjing":"南京市","Tianjin":"天津市",
+  "Suzhou":"苏州市","Zhengzhou":"郑州市","Changsha":"长沙市","Qingdao":"青岛市",
+  "Dongguan":"东莞市","Shenyang":"沈阳市","Ningbo":"宁波市","Kunming":"昆明市",
+  "Hefei":"合肥市","Harbin":"哈尔滨市","Fuzhou":"福州市","Jinan":"济南市",
+  "Wenzhou":"温州市","Nanchang":"南昌市","Shijiazhuang":"石家庄市","Guiyang":"贵阳市",
+  "Taiyuan":"太原市","Urumqi":"乌鲁木齐市","Nanning":"南宁市","Xiamen":"厦门市",
+  "Changchun":"长春市","Lanzhou":"兰州市","Wuxi":"无锡市","Foshan":"佛山市",
+  "Dalian":"大连市","Zhuhai":"珠海市","Haikou":"海口市","Sanya":"三亚市",
+  "Baoding":"保定市","Tangshan":"唐山市","Weifang":"潍坊市","Linyi":"临沂市",
+  "Xuzhou":"徐州市","Luoyang":"洛阳市","Zibo":"淄博市","Nantong":"南通市",
+  "Yantai":"烟台市","Handan":"邯郸市","Jiaxing":"嘉兴市","Huizhou":"惠州市",
+  "Zhongshan":"中山市","Yangzhou":"扬州市","Shaoxing":"绍兴市","Changzhou":"常州市",
+  "Zhenjiang":"镇江市","Hohhot":"呼和浩特市","Yinchuan":"银川市","Xining":"西宁市",
+  "Lhasa":"拉萨市","Zunyi":"遵义市","Liuzhou":"柳州市","Guilin":"桂林市",
+  "Mianyang":"绵阳市","Nanchong":"南充市","Yibin":"宜宾市","Dazhou":"达州市",
+  "Guang'an":"广安市","Bazhong":"巴中市","Ziyang":"资阳市","Deyang":"德阳市",
+  "Suining":"遂宁市","Panzhihua":"攀枝花市","Aba":"阿坝州","Ganzi":"甘孜州",
+  "Liangshan":"凉山州","Bijie":"毕节市","Tongren":"铜仁市","Liupanshui":"六盘水市",
+  "Anshun":"安顺市","Qiannan":"黔南州","Qiandongnan":"黔东南州","Qianxinan":"黔西南州",
+  "Lijiang":"丽江市","Dali":"大理市","Baoshan":"保山市","Zhaotong":"昭通市",
+  "Yuxi":"玉溪市","Qujing":"曲靖市","Wenshan":"文山州","Xishuangbanna":"西双版纳州",
+  "Dehong":"德宏州","Nujiang":"怒江州","Diqing":"迪庆州","Lincang":"临沧市",
+  "Jiayuguan":"嘉峪关市","Jiuquan":"酒泉市","Zhangye":"张掖市","Wuwei":"武威市",
+  "Baiyin":"白银市","Tianshui":"天水市","Pingliang":"平凉市","Qingyang":"庆阳市",
+  "Dingxi":"定西市","Longnan":"陇南市","Linxia":"临夏州","Gannan":"甘南州"
+};
 
-
-/* ════════════════════════════════════════════════════════════
-   4. 其他辅助脚本 (Safari 高度修复与 Toast)
-════════════════════════════════════════════════════════════ */
-function fixVh() {
-  var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+function translateCity(raw) {
+  if (!raw) return null;
+  if (CITY_MAP[raw]) return CITY_MAP[raw];
+  const clean = raw.replace(/\s*(City|city)$/,'').trim();
+  if (CITY_MAP[clean]) return CITY_MAP[clean];
+  if (/[\u4e00-\u9fff]/.test(raw)) return raw.endsWith('市') ? raw : raw + '市';
+  return raw;
 }
-fixVh();
-(window.visualViewport || window).addEventListener('resize', fixVh);
 
-var toastTimer;
-function showToast(text) {
-  var t = document.getElementById('toast');
-  t.textContent = text;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function() { t.classList.remove('show'); }, 1600);
+function setCityText(city) {
+  document.querySelectorAll('.dynamic-city').forEach(el => { el.textContent = city; });
+}
+
+async function locateByPconline() {
+  const res = await fetch('https://whois.pconline.com.cn/ipJson.jsp?json=true');
+  const text = await res.text();
+  const clean = text.replace(/[^\x09\x0A\x0D\x20-\x7E\u4E00-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/g,'');
+  const d = JSON.parse(clean);
+  if (d.city && d.city.length > 0) return d.city.endsWith('市') ? d.city : d.city+'市';
+  throw new Error('no city');
+}
+
+async function locateByIpApi() {
+  const res = await fetch('https://ip-api.com/json/?fields=city,regionName&lang=zh-CN');
+  const d = await res.json();
+  const c = translateCity(d.city);
+  if (c) return c;
+  throw new Error('no city');
+}
+
+async function locateByIpInfo() {
+  const res = await fetch('https://ipinfo.io/json');
+  const d = await res.json();
+  const c = translateCity(d.city);
+  if (c) return c;
+  throw new Error('no city');
+}
+
+async function startLocate() {
+  for (const fn of [locateByPconline, locateByIpApi, locateByIpInfo]) {
+    try {
+      const city = await Promise.race([fn(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4000))]);
+      if (city) { setCityText(city); return; }
+    } catch(e) {}
+  }
+  setCityText('同城');
+}
+
+/* ── 4. 预览与适配 ── */
+let pPI=0, pMI=0;
+const overlay=document.getElementById('preview-overlay');
+const prevImg=document.getElementById('preview-img');
+const prevVid=document.getElementById('preview-video');
+const counter=document.getElementById('preview-counter');
+
+function openPreview(pi,mi){pPI=pi;pMI=mi;renderPreview();overlay.classList.add('active');}
+function renderPreview(){
+  const m=pagesData[pPI].media[pMI];
+  prevImg.style.display='none';prevVid.style.display='none';prevVid.pause();prevVid.src='';
+  counter.textContent=`${pMI+1} / ${pagesData[pPI].media.length}`;
+  if(m.type==='video'&&m.src){prevVid.src=m.src;prevVid.style.display='block';prevVid.play().catch(()=>{});}
+  else{prevImg.src=m.src||`https://picsum.photos/600/800?random=${pPI*10+pMI}`;prevImg.style.display='block';}
+}
+function previewNav(d){const l=pagesData[pPI].media.length;pMI=(pMI+d+l)%l;renderPreview();}
+function closePreviewDirect(){overlay.classList.remove('active');prevVid.pause();prevVid.src='';}
+function closePreview(e){if(e.target===overlay)closePreviewDirect();}
+
+function applyTopPadding() {
+  var nav = document.querySelector('.top-nav');
+  var navBottom = nav ? nav.getBoundingClientRect().bottom : 88;
+  document.querySelectorAll('.page-item').forEach(el => { el.style.paddingTop = navBottom + 'px'; });
+}
+
+window.addEventListener('resize', applyTopPadding);
+requestAnimationFrame(()=>{ applyTopPadding(); startLocate(); });
+
+function showToast(t){
+  var el=document.getElementById('toast');
+  el.textContent=t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1600);
 }
 </script>
 </body>
