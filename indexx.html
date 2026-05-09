@@ -206,7 +206,7 @@ for (let i = 0; i < 10; i++) {
             <span class="artist-name">${data.name}</span>
             <span class="region-tag">
               <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
-              <span class="dynamic-city">同城</span> · ${data.area}
+              <span class="dynamic-city">同城</span> ${data.area}
             </span>
           </div>
         </div>
@@ -273,97 +273,6 @@ function showToast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function() { t.classList.remove('show'); }, 1600);
 }
-</script>
-<script>
-async function getBestCity() {
-
-  const results = [];
-
-  // 腾讯定位
-  try {
-
-    const tencent = await fetch(
-      'https://apis.map.qq.com/ws/location/v1/ip?key=你的KEY'
-    );
-
-    const tData = await tencent.json();
-
-    const city =
-      tData.result.ad_info.city.replace('市','');
-
-    results.push(city);
-
-  } catch(e){}
-
-  // 百度定位
-  try {
-
-    const baidu = await fetch(
-      'https://qifu-api.baidubce.com/ip/local/geo/v1/district'
-    );
-
-    const bData = await baidu.json();
-
-    const city =
-      (bData.data.city || bData.data.province)
-      .replace('市','');
-
-    results.push(city);
-
-  } catch(e){}
-
-  // IPIP定位
-  try {
-
-    const ipip = await fetch(
-      'https://myip.ipip.net/json'
-    );
-
-    const iData = await ipip.json();
-
-    const city =
-      iData.data.location[2].replace('市','');
-
-    results.push(city);
-
-  } catch(e){}
-
-  // 统计票数
-  const count = {};
-
-  results.forEach(city => {
-
-    count[city] = (count[city] || 0) + 1;
-
-  });
-
-  // 找出票数最多的城市
-  let bestCity = '同城';
-  let max = 0;
-
-  for (const city in count) {
-
-    if (count[city] > max) {
-
-      max = count[city];
-      bestCity = city;
-
-    }
-  }
-
-  return bestCity;
-}
-
-getBestCity().then(city => {
-
-  document.querySelectorAll('.dynamic-city')
-    .forEach(el => {
-
-      el.innerText = city;
-
-    });
-
-});
 </script>
 </body>
 </html>
