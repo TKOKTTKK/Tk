@@ -1,280 +1,108 @@
+初代3.0
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<!--
-  ╔══════════════════════════════════════════════════════════╗
-  ║  防拦截策略说明                                           ║
-  ║  1. 所有内容页 class 使用语义化名称，不含 ad/banner/promo  ║
-  ║  2. 按钮文案使用中性服务类词语，不含促销类词语             ║
-  ║  3. 客服入口通过 JS 跳转，不使用 <a href>                  ║
-  ║  4. 内容页与视频页共用 .video-item 基类，DOM结构一致       ║
-  ║  5. x5 内核属性完整，防 QQ/微信 视频吞 UI                  ║
-  ╚══════════════════════════════════════════════════════════╝
--->
 <title>推荐</title>
 <style>
 /* ════════════════════════════════════════════════════════════
-   CSS 变量 & 全局重置
+   全局基础配置
 ════════════════════════════════════════════════════════════ */
 :root {
-  --red:   #fe2c55;
-  --cyan:  #25f4ee;
-  --gold:  #fac300;
-  --safe-top:    env(safe-area-inset-top, 44px);
+  --accent: #fe2c55;
+  --bg-dark: #050508;
+  --glass: rgba(255, 255, 255, 0.06);
+  --safe-top: env(safe-area-inset-top, 44px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html { -webkit-text-size-adjust:100%; height:-webkit-fill-available; }
-
 body {
-  background:#000;
-  font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
-  -webkit-font-smoothing:antialiased;
-  overflow:hidden;
-  /* 三重高度保障：兼容 Safari / Android / 现代浏览器 */
-  height:100vh; height:-webkit-fill-available; height:100dvh;
-  width:100vw; color:#fff; user-select:none;
-  /* Safari+搜狗输入法修复：用 JS 动态写入 --vh */
-  height:calc(var(--vh,1dvh) * 100);
+  background: var(--bg-dark);
+  font-family: -apple-system, "PingFang SC", sans-serif;
+  color: #fff;
+  overflow: hidden;
+  height: 100vh; height: 100dvh;
 }
 
 /* ════════════════════════════════════════════════════════════
-   滚动容器
-   - scroll-snap 实现吸附滑动
-   - -webkit-overflow-scrolling 兼容旧 iOS
+   主容器 & 滚动吸附
 ════════════════════════════════════════════════════════════ */
 #feed {
-  position:fixed; top:0; left:0;
-  width:100vw; height:100vh; height:100dvh;
-  height:calc(var(--vh,1dvh) * 100);
-  overflow-y:scroll;
-  scroll-snap-type:y mandatory;
-  scrollbar-width:none;
-  -webkit-overflow-scrolling:touch;
-  z-index:1;
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100%;
+  overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none;
 }
-#feed::-webkit-scrollbar { display:none; }
+#feed::-webkit-scrollbar { display: none; }
+
+.page-item {
+  position: relative; width: 100vw; height: 100vh; height: 100dvh;
+  scroll-snap-align: start; display: flex; flex-direction: column;
+  padding-top: calc(var(--safe-top) + 44px);
+  padding-bottom: calc(var(--safe-bottom) + 55px);
+}
+
+/* ── 上半屏：网格布局 ── */
+.upper-half {
+  padding: 10px; flex-shrink: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+}
+.img-box {
+  aspect-ratio: 3/4; background: #111; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.img-box img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ── 下半屏：高级感重构 ── */
+.lower-half {
+  flex: 1; display: flex; flex-direction: column; 
+  justify-content: center; align-items: center; padding: 15px 25px;
+}
+
+.profile-card {
+  width: 100%; max-width: 340px; position: relative;
+}
+
+.hero-info { margin-bottom: 20px; text-align: left; width: 100%; }
+.name-row { display: flex; align-items: baseline; gap: 10px; }
+.artist-name { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+.region-tag {
+  font-size: 13px; color: rgba(255,255,255,0.5);
+  display: flex; align-items: center; gap: 4px;
+}
+
+.stats-grid { display: flex; gap: 12px; width: 100%; margin-bottom: 25px; }
+.stat-pill {
+  flex: 1; background: var(--glass); padding: 12px; border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.stat-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 4px; display: block; }
+.stat-value { font-size: 17px; font-weight: 600; color: #fff; }
+.stat-value.highlight { color: #fac300; } 
+
+.action-btn {
+  width: 100%; height: 54px; border-radius: 16px; border: none;
+  background: #fff; color: #000; font-size: 16px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 10px 30px rgba(255,255,255,0.15);
+  transition: transform 0.2s; cursor: pointer; -webkit-appearance:none;
+}
+.action-btn:active { transform: scale(0.96); }
+.action-btn svg { width: 20px; height: 20px; }
+
+.bg-glow {
+  position: absolute; width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(254,44,85,0.2) 0%, transparent 70%);
+  z-index: -1; top: -20px; right: -20px; pointer-events:none;
+}
 
 /* ════════════════════════════════════════════════════════════
-   基础页面单元（video-item）
-   视频页、内容页、结束页均继承此基类
-   防拦截：内容页使用 video-item + 语义子类，不单独命名
+   原版顶栏、底栏、遮罩及 Toast 提示
 ════════════════════════════════════════════════════════════ */
-.video-item {
-  position:relative;
-  width:100vw; height:100vh; height:100dvh;
-  height:calc(var(--vh,1dvh) * 100);
-  scroll-snap-align:start;
-  overflow:hidden;
-  flex-shrink:0;
-}
+.mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:2; pointer-events:none; }
 
-/* ── 视频页 ── */
-.video-item.is-video { background:#111; }
-.feed-video { width:100%; height:100%; object-fit:cover; display:block; }
-
-/* ── 骨架屏 ── */
-.skeleton {
-  position:absolute; inset:0; z-index:3; pointer-events:none;
-  background:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 50%,#1a1a1a 100%);
-  background-size:200% 200%;
-  animation:shimmer 1.5s ease-in-out infinite;
-  transition:opacity 0.3s;
-}
-.skeleton.gone { opacity:0; pointer-events:none; }
-@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-/* ── 暂停蒙层 ── */
-.pause-mask {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:68px; height:68px;
-  background:rgba(0,0,0,0.38);
-  border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity 0.2s;
-  z-index:5; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
-}
-.pause-mask svg { width:34px; height:34px; margin-left:5px; fill:rgba(255,255,255,0.92); }
-.video-item.is-paused .pause-mask { opacity:1; }
-
-/* ── 缓冲圈 ── */
-.buf-ring {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:40px; height:40px;
-  border:3px solid rgba(255,255,255,0.18);
-  border-top-color:rgba(255,255,255,0.8);
-  border-radius:50%;
-  animation:spin 0.8s linear infinite;
-  z-index:6; opacity:0; pointer-events:none; transition:opacity 0.2s;
-}
-.video-item.is-buffering .buf-ring { opacity:1; }
-@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
-
-/* ════════════════════════════════════════════════════════════
-   内容页基础样式
-   class: video-item  +  product-page / service-page / case-page / detail-page / story-page
-   防拦截核心：不出现 ad / banner / promo 任何字样
-════════════════════════════════════════════════════════════ */
-
-/* 内容页公共背景 */
-.video-item.product-page,
-.video-item.service-page,
-.video-item.case-page,
-.video-item.detail-page,
-.video-item.story-page {
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  background:#080812;
-  /* 防止内容页被识别为广告：内容区使用标准文档流布局 */
-}
-
-/* 内容页背景光晕（CSS 实现，无 JS 依赖） */
-.page-glow {
-  position:absolute; inset:0; pointer-events:none; z-index:0;
-}
-.page-glow::before {
-  content:''; position:absolute; inset:0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%,   rgba(254,44,85,0.18) 0%,transparent 65%),
-    radial-gradient(ellipse 55% 40% at 90% 90%,   rgba(37,244,238,0.10) 0%,transparent 55%),
-    radial-gradient(ellipse 45% 35% at 5%  70%,   rgba(254,44,85,0.06) 0%,transparent 50%);
-}
-
-/* 内容滚动区（内容超长时不可滚动） */
-.page-scroll {
-  position:relative; z-index:5;
-  width:100%; flex:1;
-  overflow-y:hidden;
-  scrollbar-width:none;
-  padding:calc(var(--safe-top) + 54px) 0 calc(var(--safe-bottom) + 66px);
-  touch-action: pan-y;
-  overscroll-behavior-y: contain;
-}
-
-/* 内容主体居中 */
-.page-body {
-  display:flex; flex-direction:column; align-items:center;
-  padding:0 26px 20px;
-  min-height:100%;
-}
-
-/* 图片容器 */
-.page-img {
-  width:148px; height:148px;
-  border-radius:22px; overflow:hidden; flex-shrink:0;
-  margin-bottom:22px;
-  box-shadow:0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.07);
-  animation:imgFloat 4s ease-in-out infinite;
-}
-@keyframes imgFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-.page-img svg, .page-img img { width:100%; height:100%; display:block; object-fit:cover; }
-
-/* 分类标签（替代"广告角标"） */
-.page-category {
-  font-size:11px; font-weight:700; letter-spacing:3px;
-  color:var(--red); text-transform:uppercase; margin-bottom:9px;
-}
-
-/* 标题 */
-.page-title {
-  font-size:23px; font-weight:800; color:#fff;
-  text-align:center; line-height:1.28; margin-bottom:11px; letter-spacing:-0.3px;
-}
-
-/* 描述 */
-.page-desc {
-  font-size:13.5px; color:rgba(255,255,255,0.5);
-  text-align:center; line-height:1.75;
-  margin-bottom:14px; max-width:290px;
-}
-
-/* 分隔线 */
-.page-divider { width:38px; height:1px; background:rgba(255,255,255,0.12); margin:0 auto 16px; }
-
-/* 特性列表（替代"卖点") */
-.feature-list { width:100%; max-width:316px; display:flex; flex-direction:column; gap:9px; margin-bottom:18px; }
-.feature-item {
-  display:flex; align-items:center; gap:11px;
-  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
-  border-radius:12px; padding:10px 13px;
-}
-.feature-icon {
-  width:32px; height:32px; border-radius:9px;
-  background:rgba(254,44,85,0.14);
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
-.feature-icon svg { width:16px; height:16px; fill:var(--red); }
-.feature-text { font-size:13px; color:rgba(255,255,255,0.7); line-height:1.45; }
-.feature-text b { color:#fff; display:block; font-size:13.5px; margin-bottom:1px; }
-
-/* 标签组 */
-.tag-row { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:24px; }
-.tag-pill { padding:5px 12px; border-radius:100px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.11); font-size:12px; color:rgba(255,255,255,0.52); }
-
-/* 用户案例卡片组 */
-.case-list { width:100%; max-width:316px; display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
-.case-card {
-  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
-  border-radius:14px; padding:13px 14px;
-}
-.case-header { display:flex; align-items:center; gap:9px; margin-bottom:7px; }
-.case-avatar { width:34px; height:34px; border-radius:50%; overflow:hidden; flex-shrink:0; background:#2a1540; }
-.case-avatar svg { width:100%; height:100%; }
-.case-name { font-size:13.5px; font-weight:600; color:#fff; }
-.case-tag  { font-size:11px; color:rgba(255,255,255,0.38); margin-top:1px; }
-.case-stars { color:var(--gold); font-size:13px; margin-bottom:5px; }
-.case-quote { font-size:13px; color:rgba(255,255,255,0.62); line-height:1.6; }
-
-/* ── 主操作按钮（防拦截：文案使用中性服务词语） ── */
-.page-cta {
-  width:100%; max-width:316px; height:50px;
-  background:linear-gradient(130deg, #fe2c55 0%, #ff7070 100%);
-  border:none; border-radius:100px;
-  color:#fff; font-size:16px; font-weight:700;
-  cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:8px;
-  box-shadow:0 8px 26px rgba(254,44,85,0.4);
-  animation:breathe 2.4s ease-in-out infinite;
-  position:relative; overflow:hidden;
-  -webkit-appearance:none; margin-bottom:10px;
-}
-@keyframes breathe {
-  0%,100% { box-shadow:0 8px 26px rgba(254,44,85,0.4); transform:scale(1); }
-  50%     { box-shadow:0 14px 40px rgba(254,44,85,0.6); transform:scale(1.025); }
-}
-.page-cta::after {
-  content:''; position:absolute; top:0; left:-100%; width:55%; height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
-  animation:shine 3s ease-in-out infinite 0.5s;
-}
-@keyframes shine { 0%{left:-100%} 40%{left:140%} 100%{left:140%} }
-
-/* 次要按钮 */
-.page-sub-btn {
-  width:100%; max-width:316px; height:44px;
-  background:transparent; border:1px solid rgba(255,255,255,0.18); border-radius:100px;
-  color:rgba(255,255,255,0.5); font-size:14px;
-  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
-  -webkit-appearance:none; transition:background 0.15s;
-}
-.page-sub-btn:active { background:rgba(255,255,255,0.07); }
-
-/* 底部注释文字 */
-.page-note { margin-top:14px; font-size:11px; color:rgba(255,255,255,0.2); text-align:center; line-height:1.65; }
-
-/* ════════════════════════════════════════════════════════════
-   全局固定层：渐变遮罩、顶栏、侧栏、视频信息、进度条、底栏
-   内容页进入时，侧栏 & 视频信息 & 进度条自动通过 JS 隐藏
-════════════════════════════════════════════════════════════ */
-.mask-top    { position:fixed; top:0; left:0; right:0; height:180px; background:linear-gradient(to bottom,rgba(0,0,0,0.42),transparent); z-index:2; pointer-events:none; }
-.mask-bottom { position:fixed; bottom:0; left:0; right:0; height:280px; background:linear-gradient(to top,rgba(0,0,0,0.55),rgba(0,0,0,0.1) 60%,transparent); z-index:2; pointer-events:none; }
-
-/* 顶部导航 */
 .top-nav { position:fixed; top:var(--safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
 .nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
 .nav-menu span { display:block; height:2px; background:#fff; border-radius:1px; width:22px; }
@@ -286,33 +114,6 @@ body {
 .nav-tab.active::after { content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
 .nav-search { width:36px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; }
 
-/* 右侧操作栏 */
-.side-bar { position:fixed; right:10px; bottom:calc(var(--safe-bottom) + 100px); z-index:100; display:flex; flex-direction:column; align-items:center; transition:opacity 0.25s, visibility 0.25s; }
-.side-bar.hidden { opacity:0; visibility:hidden; }
-
-.avatar-wrap { width:52px; height:52px; position:relative; margin-bottom:20px; cursor:pointer; }
-.avatar-img  { width:50px; height:50px; border-radius:50%; border:1.8px solid #fff; background:#333; overflow:hidden; }
-.avatar-img svg { width:100%; height:100%; }
-.avatar-plus { position:absolute; bottom:-12px; left:50%; transform:translateX(-50%); width:18px; height:18px; background:var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; transition:opacity 0.25s,transform 0.25s; cursor:pointer; box-shadow:0 1px 4px rgba(254,44,85,0.5); line-height:1; }
-.avatar-plus.gone { opacity:0; pointer-events:none; transform:translateX(-50%) scale(0.5); }
-
-.side-btn { display:flex; flex-direction:column; align-items:center; margin-bottom:10px; cursor:pointer; }
-.side-btn .icon-wrap { width:45px; height:45px; display:flex; align-items:center; justify-content:center; }
-.side-btn .icon-wrap svg { transition:transform 0.15s; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.4)); }
-.side-btn .label { font-size:12px; color:#fff; font-weight:500; text-shadow:0 1px 3px rgba(0,0,0,0.5); margin-top:2px; }
-
-/* 视频信息 */
-.video-info { position:fixed; left:14px; bottom:calc(var(--safe-bottom) + 65px); right:80px; z-index:100; pointer-events:none; transition:opacity 0.25s, visibility 0.25s; }
-.video-info.hidden { opacity:0; visibility:hidden; }
-.vi-username { font-size:17px; font-weight:700; margin-bottom:6px; text-shadow:0 1px 4px rgba(0,0,0,0.5); }
-.vi-desc     { font-size:14px; color:rgba(255,255,255,0.92); line-height:1.4; text-shadow:0 1px 3px rgba(0,0,0,0.4); }
-
-/* 进度条 */
-.prog-bar  { position:fixed; bottom:calc(var(--safe-bottom) + 55px); left:0; right:0; height:2px; background:rgba(255,255,255,0.18); z-index:100; transition:opacity 0.25s; }
-.prog-bar.hidden { opacity:0; }
-.prog-fill { height:100%; width:0%; border-radius:1px; background:rgba(255,255,255,0.75); transition:width 0.3s linear; }
-
-/* 底部导航 */
 .tab-bar { position:fixed; bottom:0; left:0; right:0; height:calc(55px + var(--safe-bottom)); padding-bottom:var(--safe-bottom); background:#000; border-top:0.5px solid rgba(255,255,255,0.1); z-index:200; display:flex; align-items:center; }
 .tab-item { flex:1; display:flex; align-items:center; justify-content:center; height:100%; cursor:pointer; }
 .tab-item .tab-label { font-size:16px; color:rgba(255,255,255,0.45); font-weight:600; }
@@ -320,44 +121,17 @@ body {
 .tab-publish { flex:1; display:flex; align-items:center; justify-content:center; height:55px; cursor:pointer; }
 .pub-inner { width:36px; height:26px; border:2px solid rgba(255,255,255,0.9); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:300; line-height:1; }
 
-/* 静音提示 */
-#muteBar { position:fixed; top:calc(var(--safe-top) + 50px); left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.65); color:#fff; font-size:13px; padding:8px 18px; border-radius:20px; z-index:9998; display:flex; align-items:center; gap:6px; opacity:0; pointer-events:none; transition:opacity 0.3s; white-space:nowrap; }
-#muteBar.show { opacity:1; }
-#muteBar svg { width:16px; height:16px; fill:#fff; flex-shrink:0; }
-
-/* Toast */
 #toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.76); color:#fff; font-size:15px; padding:12px 24px; border-radius:8px; z-index:9999; opacity:0; pointer-events:none; transition:opacity 0.25s; white-space:nowrap; }
 #toast.show { opacity:1; }
-
-/* 飘心 */
-.tap-heart { position:fixed; width:80px; height:80px; pointer-events:none; z-index:999; transform:translate(-50%,-50%) scale(0); animation:heartPop .85s ease-out forwards; }
-@keyframes heartPop {
-  0%  { transform:translate(-50%,-50%) scale(.3); opacity:0; }
-  20% { transform:translate(-50%,-50%) scale(1.3); opacity:1; }
-  65% { transform:translate(-50%,-110%) scale(1.1); opacity:.8; }
-  100%{ transform:translate(-50%,-200%) scale(.8); opacity:0; }
-}
-
-/* 结束页 */
-.video-item.end-page { background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
-.end-page .end-title { font-size:17px; font-weight:600; color:rgba(255,255,255,0.7); }
-.end-page .end-sub   { font-size:13px; color:rgba(255,255,255,0.35); }
 </style>
 </head>
 <body>
 
 <div id="toast"></div>
-<div id="muteBar">
-  <svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-  点击屏幕开启声音
-</div>
-
 <div class="mask-top"></div>
-<div class="mask-bottom"></div>
 
-<!-- 顶部导航 -->
 <nav class="top-nav">
-  <div class="nav-menu" onclick="showToast('请开通会员使用')"><span></span><span></span><span></span></div>
+  <div class="nav-menu" onclick="showToast('开通会员使用')"><span></span><span></span><span></span></div>
   <div class="nav-tabs">
     <div class="nav-tab" onclick="showToast('开通会员使用')">精选</div>
     <div class="nav-tab" onclick="showToast('开通会员使用')">热点</div>
@@ -369,258 +143,121 @@ body {
   </div>
 </nav>
 
-<!-- 右侧操作栏 -->
-<div class="side-bar" id="sideBar">
-  <div class="avatar-wrap">
-    <div class="avatar-img" onclick="goToProfile()">
-      <svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#1a1a2e"/><ellipse cx="50" cy="62" rx="28" ry="22" fill="#f5c5a3"/><ellipse cx="50" cy="48" rx="22" ry="24" fill="#f5c5a3"/><ellipse cx="50" cy="36" rx="24" ry="20" fill="#1a1a1a"/><rect x="26" y="30" width="10" height="36" rx="4" fill="#1a1a1a"/><rect x="64" y="30" width="10" height="36" rx="4" fill="#1a1a1a"/><ellipse cx="50" cy="26" rx="22" ry="14" fill="#1a1a1a"/><ellipse cx="40" cy="50" rx="5" ry="6" fill="#1a1a1a"/><ellipse cx="60" cy="50" rx="5" ry="6" fill="#1a1a1a"/><circle cx="41.5" cy="48.5" r="1.5" fill="#fff"/><circle cx="61.5" cy="48.5" r="1.5" fill="#fff"/><path d="M44 60 Q50 65 56 60" stroke="#d4896a" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
-    </div>
-    <div class="avatar-plus" id="followBtn" onclick="handleFollow(event)">+</div>
-  </div>
-  <div class="side-btn" onclick="toggleLike()">
-    <div class="icon-wrap"><svg id="heartIcon" width="38" height="38" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
-    <span class="label" id="likeCount">37.1万</span>
-  </div>
-  <div class="side-btn" onclick="showToast('开通会员使用')">
-    <div class="icon-wrap"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-    <span class="label">4982</span>
-  </div>
-  <div class="side-btn" onclick="toggleFavorite()">
-    <div class="icon-wrap"><svg id="starIcon" width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
-    <span class="label">1.7万</span>
-  </div>
-  <div class="side-btn" onclick="showToast('开通会员使用')">
-    <div class="icon-wrap"><svg width="32" height="32" viewBox="0 0 24 24" fill="#fff"><path d="M14 4.5V1l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg></div>
-    <span class="label" style="margin-top:-5px">3.2万</span>
-  </div>
-</div>
-
-<!-- 视频信息 -->
-<div class="video-info" id="videoInfo">
-  <div class="vi-username">@我的视频</div>
-  <div class="vi-desc">开通会员后进主页观看完整版</div>
-</div>
-
-<!-- 进度条 -->
-<div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill"></div></div>
-
-<!-- ════════════════════════════════════════════════════════
-     Feed 滚动容器
-     页面顺序：视频 视频 视频 产品页 视频 视频 视频 服务页 视频 视频 视频 案例页 视频...
-     注意：内容页全部使用 video-item + 语义子类，无任何广告类名
-════════════════════════════════════════════════════════ -->
 <div id="feed">
+  <!-- JavaScript 会在这里生成页面 -->
+</div>
 
-  <!-- ══ JS 动态插入视频页 ══ -->
-
-  <!-- ══════════════════════════════════════════
-       内容页 #1：产品介绍页（product-page）
-       防拦截：class=video-item product-page
-       按钮文案：了解详情 / 查看方案
-  ══════════════════════════════════════════ -->
-  <div class="video-item product-page" data-page-type="content" id="productPage1">
-    <div class="page-glow"></div>
-    <div class="page-scroll">
-      <div class="page-body">
-
-        <div class="page-category">会员介绍</div>
-        <div class="page-title">20元开通会员<br></div>
-        <div class="page-desc">会员权益</div>
-        <div class="page-divider"></div>
-
-        <div class="feature-list">
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></div>
-            <div class="feature-text"><b>会员权益一</b>解锁全部视频 完整版视频</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
-            <div class="feature-text"><b>会员权益二</b>解锁全部功能 直播 同城</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></div>
-            <div class="feature-text"><b>会员权益三</b>会员永久有效 保障终身使用</div>
-          </div>
-        </div>
-
-        <!--
-          防拦截核心：
-          1. 使用 <button> + onclick JS跳转，不用 <a href>
-          2. 文案：「了解详情」而非「立即购买/联系客服」
-        -->
-        <button class="page-cta" onclick="openService('product')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-          联系客服开通会员
-        </button>
-        <button class="page-sub-btn" onclick="continueFeed()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-          上滑继续浏览
-        </button>
-        <div class="page-note"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       内容页 #2：服务说明页（service-page）
-       防拦截：class=video-item service-page
-       按钮文案：查看方案 / 获取帮助
-  ══════════════════════════════════════════ -->
-  <div class="video-item service-page" data-page-type="content" id="servicePage1">
-    <div class="page-glow"></div>
-    <div class="page-scroll">
-      <div class="page-body">
-
-
-        <div class="page-category">会员介绍</div>
-        <div class="page-title">20元开通会员<br></div>
-        <div class="page-desc">会员权益</div>
-        <div class="page-divider"></div>
-
-        <div class="feature-list">
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></div>
-            <div class="feature-text"><b>会员权益一</b>解锁全部完整版视频</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg></div>
-            <div class="feature-text"><b>会员权益二</b>解锁全部功能 直播 同城 私信</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/></svg></div>
-            <div class="feature-text"><b>会员权益三</b>会员永久有效 保障终身使用</div>
-          </div>
-        </div>
-
-        <button class="page-cta" onclick="openService('service')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-          联系客服开通会员
-        </button>
-        <button class="page-sub-btn" onclick="continueFeed()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-          上滑继续浏览
-        </button>
-        <div class="page-note"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       内容页 #3：用户案例页（case-page）
-       防拦截：class=video-item case-page
-       按钮文案：在线沟通 / 获取帮助
-  ══════════════════════════════════════════ -->
-  <div class="video-item case-page" data-page-type="content" id="casePage1">
-    <div class="page-glow"></div>
-    <div class="page-scroll">
-      <div class="page-body">
-
-        <div class="page-desc">来自用户的真实使用体验</div>
-        <div class="page-divider"></div>
-
-        <div class="case-list">
-          <div class="case-card">
-            <div class="case-header">
-              <div class="case-avatar">
-                <svg viewBox="0 0 34 34"><rect width="34" height="34" fill="#2a1a3e"/><ellipse cx="17" cy="22" rx="10" ry="8" fill="#f5c5a3"/><ellipse cx="17" cy="15" rx="8" ry="9" fill="#f5c5a3"/><ellipse cx="17" cy="10" rx="9" ry="6" fill="#1a1a1a"/></svg>
-              </div>
-              <div>
-                <div class="case-name">遇见· 北京</div>
-                <div class="case-tag">使用3个月</div>
-              </div>
-            </div>
-            <div class="case-stars">★★★★★</div>
-            <div class="case-quote">跟刷抖音一样，看片太方便了，每次撸都用这个看片，质量太顶了，再也不用到处找片了</div>
-          </div>
-
-          
-
-          <div class="case-card">
-            <div class="case-header">
-              <div class="case-avatar">
-                <svg viewBox="0 0 34 34"><rect width="34" height="34" fill="#1a2e1a"/><ellipse cx="17" cy="22" rx="10" ry="8" fill="#f0c8a0"/><ellipse cx="17" cy="15" rx="8" ry="9" fill="#f0c8a0"/><ellipse cx="17" cy="10" rx="9" ry="6" fill="#1a3a1a"/></svg>
-              </div>
-              <div>
-                <div class="case-name">努力挣钱· 成都</div>
-                <div class="case-tag">使用2个月</div>
-              </div>
-            </div>
-            <div class="case-stars">★★★★★</div>
-            <div class="case-quote">我觉得同城功能简直是神器，附近女孩子直接私信聊两句就可以约出来草逼，还不用花钱，太爽了</div>
-          </div>
-        </div>
-
-        <button class="page-cta" onclick="openService('case')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
-          联系客服开通会员
-        </button>
-        <button class="page-sub-btn" onclick="continueFeed()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-          上滑继续浏览
-        </button>
-        <div class="page-note"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       内容页 #4：官方详情页（detail-page）
-       防拦截：class=video-item detail-page
-       按钮文案：专属顾问 / 查看更多
-  ══════════════════════════════════════════ -->
-  <div class="video-item detail-page" data-page-type="content" id="detailPage1">
-    <div class="page-glow"></div>
-    <div class="page-scroll">
-      <div class="page-body">
-
-        <div class="page-category">会员介绍</div>
-        <div class="page-title">20元开通会员<br></div>
-        <div class="page-desc">会员权益</div>
-        <div class="page-divider"></div>
-
-        <div class="feature-list">
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
-            <div class="feature-text"><b>会员权益一</b>解锁全部完整版视频</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div>
-            <div class="feature-text"><b>会员权益二</b>解锁全部功能 直播 同城</div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
-            <div class="feature-text"><b>会员权益三</b>会员永久有效 保障终身使用</div>
-          </div>
-        </div>
-
-        <button class="page-cta" onclick="openService('detail')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          联系客服开通会员
-        </button>
-        <button class="page-sub-btn" onclick="continueFeed()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-          上滑继续浏览
-        </button>
-        <div class="page-note"></div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /#feed 内容页部分结束，视频页由 JS 动态插入 -->
-
-<!-- 底部导航 -->
 <div class="tab-bar">
   <div class="tab-item active"><span class="tab-label">首页</span></div>
   <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">同城</span></div>
-  <div class="tab-publish" onclick="showToast('开通会员使用')"><div class="pub-btn"><div class="pub-inner">+</div></div></div>
+  <div class="tab-publish" onclick="showToast('开通会员使用')"><div class="pub-inner">+</div></div>
   <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">消息</span></div>
   <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">我</span></div>
 </div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
-   Safari + 搜狗输入法白块修复
-   visualViewport.resize 监听真实可见高度并写入 --vh
+   1. 数据配置区 (在这里单独修改每一页的信息)
+════════════════════════════════════════════════════════════ */
+// 这是一个数组，包含10个对象，对应10个页面。
+// 你可以自由修改这里的 name(艺名), fee(水费), area(区域后缀)
+const pagesData = [
+  { name: "小星星", fee: "10.00", area: "" }, // 第 1 页
+  { name: "喵喵酱", fee: "15.00", area: "" }, // 第 2 页
+  { name: "安琪拉", fee: "20.00", area: "" }, // 第 3 页
+  { name: "大白兔", fee: "12.00", area: "" }, // 第 4 页
+  { name: "草莓糖", fee: "18.00", area: "" }, // 第 5 页
+  { name: "冰淇淋", fee: "10.00", area: "" }, // 第 6 页
+  { name: "小可乐", fee: "15.00", area: "" }, // 第 7 页
+  { name: "布丁",   fee: "25.00", area: "" }, // 第 8 页
+  { name: "抹茶",   fee: "10.00", area: "" }, // 第 9 页
+  { name: "提拉米", fee: "30.00", area: "" }  // 第 10 页
+];
+
+/* ════════════════════════════════════════════════════════════
+   2. 页面生成逻辑
+════════════════════════════════════════════════════════════ */
+const feed = document.getElementById('feed');
+
+// 循环生成10个页面
+for (let i = 0; i < 10; i++) {
+  // 获取当前页面的配置数据，如果没有就用默认的
+  const data = pagesData[i] || { name: "神秘人", fee: "10.00", area: "市区" };
+  
+  const page = document.createElement('div');
+  page.className = 'page-item';
+  
+  // 生成6个网格图 (此处用的随机图作为演示，你也可以在数组里加上图片的配置)
+  let gridHTML = '';
+  for(let j=0; j<6; j++) {
+    gridHTML += `<div class="img-box"><img src="https://picsum.photos/300/400?random=${i*6+j}"></div>`;
+  }
+
+  // 注意看这里的 <span class="dynamic-city">同城</span>，稍后会被 JS 自动替换为真实定位
+  page.innerHTML = `
+    <div class="upper-half">
+      ${gridHTML}
+    </div>
+    <div class="lower-half">
+      <div class="profile-card">
+        <div class="bg-glow"></div>
+        
+        <div class="hero-info">
+          <div class="name-row">
+            <span class="artist-name">${data.name}</span>
+            <span class="region-tag">
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+              <span class="dynamic-city">同城</span> · ${data.area}
+            </span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-pill">
+            <span class="stat-label">地区范围</span>
+            <span class="stat-value">全城可约</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-label">所需水费</span>
+            <span class="stat-value highlight">${data.fee}</span>
+          </div>
+        </div>
+
+        <button class="action-btn" onclick="location.href='kefu.html'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          立即联系在线客服
+        </button>
+      </div>
+    </div>
+  `;
+  feed.appendChild(page);
+}
+
+/* ════════════════════════════════════════════════════════════
+   3. 获取真实IP定位并无感替换
+════════════════════════════════════════════════════════════ */
+// 使用一个免费的公共 API 获取访客地理位置 (返回带 city 的 JSON)
+fetch('https://ipapi.co/json/')
+  .then(response => response.json())
+  .then(data => {
+    // 如果成功获取到了城市名（比如 "Chengdu" 或 "北京市"）
+    if (data && data.city) {
+      let currentCity = data.city;
+      // 找出页面上所有占位用的 "同城" 标签
+      const cityElements = document.querySelectorAll('.dynamic-city');
+      // 批量替换为真实的城市名
+      cityElements.forEach(el => {
+        el.innerText = currentCity;
+      });
+    }
+  })
+  .catch(error => {
+    console.log("定位获取失败，将继续使用默认的'同城'显示", error);
+  });
+
+
+/* ════════════════════════════════════════════════════════════
+   4. 其他辅助脚本 (Safari 高度修复与 Toast)
 ════════════════════════════════════════════════════════════ */
 function fixVh() {
   var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -628,375 +265,6 @@ function fixVh() {
 }
 fixVh();
 (window.visualViewport || window).addEventListener('resize', fixVh);
-
-/* ════════════════════════════════════════════════════════════
-   视频列表
-════════════════════════════════════════════════════════════ */
-var videoUrls = [
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifujvhbbrug4ohmhnbn5o6xbeweowxuhsko7azgo32zdxbvrwsfdi",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeibevq5smrxgpzt77iouutditqd67xnrefleq4oejq5kvczshb4gpe",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeigtd6apy62iqf6g3adcvtih4ai2v6ck6ijefqouzjcalzxgwjgpce",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeigkurfrx2hntjwhawnmdb5psy7t3h3tscx7dq2oeddsdydso3i4rm",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifjqs6pqmu7qjbnfgouqsvlxevcuzm54t56n4uwkmlem5yxpdz4u4",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeibhdrdoumqsatxufu7t2tnuji6um5dv6gvalfebdue5k4wawajt2a",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeifabvpja5d76b4bo26aobvwj6c4b7w6b3nn3aced2hpxuyj4hmjfu",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeiaz6ulxb6gqme7uxdkelf33teh6qfyufgqxl7rglabhu2lj6zyel4",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeigdmi47vtcofnotnswwzj54bxtia36cerjzlbvi46k3vskt6oukvq",
-  "https://salmon-imperial-jay-950.mypinata.cloud/ipfs/bafybeihayprwewr5ln3x4mxc5mol7poi65xczpau3ftgnnfsufujt27e5m"
-];
-
-var PROFILE_URL = '';
-var KEFU_URL    = 'kefu.html';
-
-/* ════════════════════════════════════════════════════════════
-   Feed 排布计划
-   通过 feedPlan 数组定义整个 feed 的页面顺序
-   类型：
-     { type:'video', idx:N }   → 第 N 个视频
-     { type:'content', id:'...' } → 已在 DOM 中的内容页 ID
-
-   当前顺序：
-   v0 v1 v2  → product-page → v3 v4 v5 → service-page → v6 v7 → case-page → v8 v9 → detail-page → end
-════════════════════════════════════════════════════════════ */
-var feedPlan = [
-  { type:'video',   idx:0 },
-  { type:'video',   idx:1 },
-  { type:'video',   idx:2 },
-  { type:'content', id:'productPage1' },
-  { type:'video',   idx:3 },
-  { type:'video',   idx:4 },
-  { type:'video',   idx:5 },
-  { type:'content', id:'servicePage1' },
-  { type:'video',   idx:6 },
-  { type:'video',   idx:7 },
-  { type:'content', id:'casePage1' },
-  { type:'video',   idx:8 },
-  { type:'video',   idx:9 },
-  { type:'content', id:'detailPage1' }
-];
-
-/* ════════════════════════════════════════════════════════════
-   构建 Feed DOM
-   - 视频页：JS 动态创建，插入到 #feed 最前面（内容页之前）
-   - 内容页：已静态存在于 DOM，按顺序移动到正确位置
-   - 结束页：追加到末尾
-════════════════════════════════════════════════════════════ */
-var feed       = document.getElementById('feed');
-var allSections = [];  // 按 feedPlan 顺序存储所有 section
-var videoSecs   = [];  // 仅视频 section，与 videoUrls 下标对应
-var videoEls    = [];  // 仅视频 <video> 元素
-var secTypes    = [];  // 每个 section 的类型：'video' | 'content'
-var videoIdxMap = [];  // section → videoUrls 下标（内容页为 -1）
-
-// 临时容器（视频页插入用）
-var frag = document.createDocumentFragment();
-var tempVideos = {};  // idx → { section, video }
-
-feedPlan.forEach(function(plan) {
-  if (plan.type === 'video') {
-    var sec = buildVideoSection(plan.idx);
-    tempVideos[plan.idx] = sec;
-    allSections.push(sec.section);
-    videoSecs.push(sec.section);
-    videoEls.push(sec.video);
-    secTypes.push('video');
-    videoIdxMap.push(plan.idx);
-  } else {
-    var el = document.getElementById(plan.id);
-    allSections.push(el);
-    secTypes.push('content');
-    videoIdxMap.push(-1);
-  }
-});
-
-// 按 feedPlan 顺序重排 DOM
-allSections.forEach(function(sec) { feed.appendChild(sec); });
-
-// 追加结束页
-var endEl = document.createElement('div');
-endEl.className = 'video-item end-page';
-endEl.innerHTML =
-  '<svg style="width:56px;height:56px;opacity:.4" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5">' +
-    '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859M12 3v8.25m0 0l-3-3m3 3l3-3"/>' +
-  '</svg>' +
-  '<div class="end-title">你还不是会员 无法继续观看</div>' +
-  '<div class="end-sub">请联系客服开通会员解锁全部功能和视频</div>';
-feed.appendChild(endEl);
-
-/* ════════════════════════════════════════════════════════════
-   构建视频页
-   x5-video-player-type / x5-video-player-fullscreen：
-   防止 QQ/微信 X5 内核视频层级覆盖 UI
-════════════════════════════════════════════════════════════ */
-function buildVideoSection(vidIdx) {
-  var sec = document.createElement('div');
-  sec.className = 'video-item is-video';
-
-  var skel = document.createElement('div');
-  skel.className = 'skeleton';
-
-  var vid = document.createElement('video');
-  vid.className = 'feed-video';
-  vid.loop = true;
-  vid.playsInline = true;
-  vid.muted = true;
-  /* x5 兼容属性：防止 QQ/微信 浏览器强制全屏 & 吞 UI */
-  vid.setAttribute('playsinline', '');
-  vid.setAttribute('webkit-playsinline', '');
-  vid.setAttribute('x5-video-player-type', 'h5');
-  vid.setAttribute('x5-video-player-fullscreen', 'false');
-  vid.setAttribute('x5-playsinline', '');
-  vid.setAttribute('preload', 'metadata');
-
-  var pauseMask = document.createElement('div');
-  pauseMask.className = 'pause-mask';
-  pauseMask.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-
-  var bufRing = document.createElement('div');
-  bufRing.className = 'buf-ring';
-
-  vid.addEventListener('canplay', function() {
-    skel.classList.add('gone');
-    setTimeout(function() { if (skel.parentNode) skel.remove(); }, 400);
-  });
-  vid.addEventListener('playing', function() {
-    sec.classList.remove('is-buffering');
-    if (!isMuted) vid.muted = false;
-  });
-  vid.addEventListener('waiting',        function() { sec.classList.add('is-buffering'); });
-  vid.addEventListener('canplaythrough', function() { sec.classList.remove('is-buffering'); });
-
-  sec.appendChild(vid);
-  sec.appendChild(skel);
-  sec.appendChild(pauseMask);
-  sec.appendChild(bufRing);
-
-  return { section: sec, video: vid };
-}
-
-/* ════════════════════════════════════════════════════════════
-   静音管理
-════════════════════════════════════════════════════════════ */
-var isMuted  = true;
-var muteBar  = document.getElementById('muteBar');
-var muteTimer;
-function showMuteBar() {
-  if (!isMuted) return;
-  muteBar.classList.add('show');
-  clearTimeout(muteTimer);
-  muteTimer = setTimeout(function() { muteBar.classList.remove('show'); }, 2500);
-}
-
-function unmuteAll() {
-  if (!isMuted) return;
-  isMuted = false;
-  muteBar.classList.remove('show');
-  videoEls.forEach(function(v) { v.muted = false; });
-}
-
-/* ════════════════════════════════════════════════════════════
-   固定层控制
-   视频页进入：显示侧栏、视频信息、进度条
-   内容页进入：隐藏侧栏、视频信息、进度条（内容页自带服务入口）
-════════════════════════════════════════════════════════════ */
-var sideBar   = document.getElementById('sideBar');
-var videoInfo = document.getElementById('videoInfo');
-var progBar   = document.getElementById('progBar');
-var progFill  = document.getElementById('progFill');
-
-function showVideoHUD() {
-  sideBar.classList.remove('hidden');
-  videoInfo.classList.remove('hidden');
-  progBar.classList.remove('hidden');
-}
-
-function hideVideoHUD() {
-  sideBar.classList.add('hidden');
-  videoInfo.classList.add('hidden');
-  progBar.classList.add('hidden');
-}
-
-/* ════════════════════════════════════════════════════════════
-   预加载：仅对视频页，跳过内容页
-════════════════════════════════════════════════════════════ */
-var currentVidIdx = 0;
-
-function preload(vidIdx) {
-  videoEls.forEach(function(v, i) {
-    var d = Math.abs(i - vidIdx);
-    if (d === 0 || d <= 3) {
-      if (!v.src) { v.src = videoUrls[i]; v.load(); }
-    } else if (d >= 15) {
-      if (v.src) { v.pause(); v.removeAttribute('src'); v.load(); }
-    }
-  });
-}
-
-/* ════════════════════════════════════════════════════════════
-   IntersectionObserver
-   视频页  → 播放/暂停 + 显示 HUD
-   内容页  → 暂停所有视频 + 隐藏 HUD
-════════════════════════════════════════════════════════════ */
-var observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(entry) {
-    var sIdx = allSections.indexOf(entry.target);
-    if (sIdx === -1) return;
-
-    var type   = secTypes[sIdx];
-    var vIdx   = videoIdxMap[sIdx];
-
-    if (entry.isIntersecting) {
-      if (type === 'content') {
-        /* 内容页进入 */
-        videoEls.forEach(function(v) { v.pause(); });
-        hideVideoHUD();
-        clearInterval(progTimer);
-        progFill.style.width = '0%';
-      } else {
-        /* 视频页进入 */
-        currentVidIdx = vIdx;
-        var v = videoEls[vIdx];
-        if (!v.src) v.src = videoUrls[vIdx];
-        v.currentTime = 0;
-        v.muted = isMuted;
-        v.play().catch(function(){});
-        entry.target.classList.remove('is-paused');
-        showVideoHUD();
-        startProgress(v);
-        preload(vIdx);
-        if (vIdx === 0) setTimeout(showMuteBar, 800);
-      }
-    } else {
-      if (type === 'video') {
-        var v2 = videoEls[vIdx];
-        v2.pause();
-        if (Math.abs(vIdx - currentVidIdx) > 1) v2.currentTime = 0;
-        entry.target.classList.remove('is-paused', 'is-buffering');
-      }
-    }
-  });
-}, { threshold: 0.55 });
-
-allSections.forEach(function(s) { observer.observe(s); });
-observer.observe(endEl);
-preload(0);
-setTimeout(showMuteBar, 1000);
-
-/* ════════════════════════════════════════════════════════════
-   进度条
-════════════════════════════════════════════════════════════ */
-var progTimer;
-function startProgress(v) {
-  clearInterval(progTimer);
-  progFill.style.transition = 'none';
-  progFill.style.width = '0%';
-  requestAnimationFrame(function() {
-    progFill.style.transition = 'width 0.3s linear';
-    progTimer = setInterval(function() {
-      if (v.duration) progFill.style.width = (v.currentTime / v.duration * 100) + '%';
-    }, 300);
-  });
-}
-
-/* ════════════════════════════════════════════════════════════
-   点击事件：解除静音 / 暂停播放
-   内容页点击不触发（已在选择器中排除）
-════════════════════════════════════════════════════════════ */
-feed.addEventListener('click', function(e) {
-  if (e.target.closest('.side-bar,.top-nav,.tab-bar,.video-info,.product-page,.service-page,.case-page,.detail-page,.story-page,.info-page')) return;
-  var sec = e.target.closest('.is-video');
-  if (!sec) return;
-  var sIdx = allSections.indexOf(sec);
-  if (sIdx === -1) return;
-  var v = videoEls[videoIdxMap[sIdx]];
-  if (!v) return;
-
-  if (isMuted) { unmuteAll(); if (v.paused) v.play().catch(function(){}); return; }
-
-  if (v.paused) { v.play(); sec.classList.remove('is-paused'); }
-  else          { v.pause(); sec.classList.add('is-paused'); }
-});
-
-feed.addEventListener('touchstart', function() {
-  if (isMuted) unmuteAll();
-}, { passive: true });
-
-/* ════════════════════════════════════════════════════════════
-   双击飘心（仅视频页）
-════════════════════════════════════════════════════════════ */
-var lastTap = 0;
-feed.addEventListener('touchend', function(e) {
-  if (e.target.closest('.side-bar,.top-nav,.tab-bar,.video-info,.product-page,.service-page,.case-page,.detail-page')) return;
-  if (!e.target.closest('.is-video')) return;
-  var now = Date.now();
-  if (now - lastTap < 280) {
-    var t = e.changedTouches[0];
-    spawnHeart(t.pageX, t.pageY);
-    if (!liked) toggleLike();
-  }
-  lastTap = now;
-});
-
-function spawnHeart(x, y) {
-  var el = document.createElement('div');
-  el.className = 'tap-heart';
-  el.style.cssText = 'left:' + x + 'px;top:' + y + 'px';
-  el.innerHTML = '<svg viewBox="0 0 24 24" fill="#fe2c55"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
-  document.body.appendChild(el);
-  setTimeout(function() { el.remove(); }, 870);
-}
-
-/* ════════════════════════════════════════════════════════════
-   防拦截：客服跳转统一通过 JS 函数执行
-   不使用 <a href>，不使用 window.open（部分浏览器会拦截）
-   source 参数用于统计来源（可接入数据平台）
-════════════════════════════════════════════════════════════ */
-function openService(source) {
-  /* 埋点统计（可替换为实际统计代码） */
-  try {
-    if (typeof _czc !== 'undefined') _czc.push(['_trackEvent', '服务入口', '点击', source]);
-    if (typeof gtag !== 'undefined')  gtag('event', 'service_click', { source: source });
-  } catch(e) {}
-
-  /* 跳转客服页 */
-  window.location.href = KEFU_URL;
-}
-
-/* 内容页"继续浏览"按钮：滚动到下一个视频页 */
-function continueFeed() {
-  var cur = feed.scrollTop;
-  var pageH = window.innerHeight;
-  feed.scrollTo({ top: cur + pageH, behavior: 'smooth' });
-}
-
-/* ════════════════════════════════════════════════════════════
-   互动功能
-════════════════════════════════════════════════════════════ */
-var liked = false;
-function toggleLike() {
-  liked = !liked;
-  var icon = document.getElementById('heartIcon');
-  icon.setAttribute('fill', liked ? '#fe2c55' : '#fff');
-  icon.style.transform = 'scale(1.3)';
-  setTimeout(function() { icon.style.transform = ''; }, 200);
-}
-
-var favorited = false;
-function toggleFavorite() {
-  favorited = !favorited;
-  var icon = document.getElementById('starIcon');
-  icon.setAttribute('fill', favorited ? '#fac300' : '#fff');
-  icon.style.transform = 'scale(1.3)';
-  setTimeout(function() { icon.style.transform = ''; }, 200);
-}
-
-function handleFollow(e) {
-  e.stopPropagation();
-  document.getElementById('followBtn').classList.add('gone');
-  showToast('已关注');
-}
-
-function goToProfile() { showToast('开通会员使用'); }
 
 var toastTimer;
 function showToast(text) {
