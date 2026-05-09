@@ -12,56 +12,49 @@
   --safe-top: env(safe-area-inset-top, 44px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --topbar-h: calc(var(--safe-top) + 44px);
-  --img-top: calc(var(--safe-top) + 44px);
   --botbar-h: calc(var(--safe-bottom) + 55px);
 }
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html { -webkit-text-size-adjust:100%; height:-webkit-fill-available; }
 body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-serif; color:#fff; overflow:hidden; height:100vh; height:100dvh; }
 
-#feed { position:fixed; top:0; left:0; width:100vw; height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none; }
+#feed { position:fixed; top:0; left:0; width:100vw; height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none; -webkit-overflow-scrolling: touch; }
 #feed::-webkit-scrollbar { display:none; }
 
 .page-item {
-  position:relative; width:100vw; height:100vh; height:100dvh;
-  scroll-snap-align:start; display:flex; flex-direction:column;
-  padding-bottom:var(--botbar-h);
+position:relative; width:100vw; height:100vh; height:100dvh;
+scroll-snap-align:start; display:flex; flex-direction:column;
+padding-bottom:var(--botbar-h);
 }
 
 .upper-half {
-  padding:10px; flex-shrink:0;
-  display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+padding:10px; flex-shrink:0;
+display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
 }
 .media-box {
-  aspect-ratio:3/4; background:#111; border-radius:6px; overflow:hidden;
-  box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; position:relative;
-  transition:transform 0.15s;
+aspect-ratio:3/4; background:#111; border-radius:6px; overflow:hidden;
+box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; position:relative;
+transition:transform 0.15s;
 }
 .media-box:active { transform:scale(0.96); }
 .media-box img  { width:100%; height:100%; object-fit:cover; display:block; }
 .media-box video{ width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
 
 .media-box .video-badge {
-  position:absolute; bottom:5px; left:5px;
-  background:rgba(0,0,0,0.6); border-radius:4px; padding:2px 5px;
-  font-size:10px; color:#fff; display:flex; align-items:center; gap:3px;
-  backdrop-filter:blur(4px);
+position:absolute; bottom:5px; left:5px;
+background:rgba(0,0,0,0.6); border-radius:4px; padding:2px 5px;
+font-size:10px; color:#fff; display:flex; align-items:center; gap:3px;
+backdrop-filter:blur(4px);
 }
 .media-box .video-badge svg { width:10px; height:10px; }
-.media-box .play-overlay {
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,0.2);
-}
-.media-box .play-overlay svg { width:28px; height:28px; opacity:0.9; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-/* 资料卡上移修正 */
-.lower-half { 
-  flex:1; 
-  display:flex; 
-  flex-direction:column; 
-  justify-content: flex-start; /* 改为靠上对齐 */
-  align-items:center; 
-  padding: 10px 25px; 
+.lower-half {
+flex:1;
+display:flex;
+flex-direction:column;
+justify-content: flex-start;
+align-items:center;
+padding: 10px 25px;
 }
 
 .profile-card { width:100%; max-width:340px; position:relative; }
@@ -70,9 +63,9 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
 .artist-name { font-size:32px; font-weight:800; letter-spacing:-1px; }
 .region-tag { font-size:13px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:4px; }
 .stats-grid { display:flex; gap:12px; width:100%; margin-bottom:20px; }
-.stat-pill { 
-  flex:1; background:var(--glass); padding:12px; border-radius:14px; 
-  border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); 
+.stat-pill {
+flex:1; background:var(--glass); padding:12px; border-radius:14px;
+border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
 }
 .stat-label { font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px; display:block; }
 .stat-value { font-size:17px; font-weight:600; color:#fff; }
@@ -82,7 +75,6 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
 .action-btn svg { width:20px; height:20px; }
 .bg-glow { position:absolute; width:150px; height:150px; background:radial-gradient(circle,rgba(254,44,85,0.2) 0%,transparent 70%); z-index:-1; top:-20px; right:-20px; pointer-events:none; }
 
-/* 顶栏与底栏 */
 .mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:2; pointer-events:none; }
 .top-nav { position:fixed; top:var(--safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
 .nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
@@ -101,21 +93,19 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
 .tab-publish { flex:1; display:flex; align-items:center; justify-content:center; height:55px; cursor:pointer; }
 .pub-inner { width:36px; height:26px; border:2px solid rgba(255,255,255,0.9); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:300; line-height:1; }
 
-/* Toast */
 #toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.76); color:#fff; font-size:15px; padding:12px 24px; border-radius:8px; z-index:9999; opacity:0; pointer-events:none; transition:opacity 0.25s; white-space:nowrap; }
 #toast.show { opacity:1; }
 
-/* 预览弹窗 */
 #preview-overlay { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0); pointer-events:none; display:flex; align-items:center; justify-content:center; transition:background 0.3s; }
 #preview-overlay.active { background:rgba(0,0,0,0.92); pointer-events:auto; }
-#preview-inner { position:relative; max-width:90vw; max-height:80vh; opacity:0; transform:scale(0.88); transition:opacity 0.28s,transform 0.28s; display:flex; align-items:center; justify-content:center; }
+#preview-inner { position:relative; max-width:90vw; max-height:80vh; opacity:0; transform:scale(0.88); transition:opacity 0.28s,transform 0.28s; display:flex; flex-direction:column; align-items:center; justify-content:center; }
 #preview-overlay.active #preview-inner { opacity:1; transform:scale(1); }
-#preview-img { max-width:90vw; max-height:78vh; border-radius:12px; object-fit:contain; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
-#preview-video { max-width:90vw; max-height:78vh; border-radius:12px; display:none; outline:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); background:#000; }
-#preview-close { position:fixed; top:calc(var(--safe-top) + 10px); right:16px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:#fff; z-index:5001; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#preview-img { max-width:90vw; max-height:75vh; border-radius:12px; object-fit:contain; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
+#preview-video { max-width:90vw; max-height:75vh; border-radius:12px; display:none; outline:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); background:#000; }
+#preview-close { position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:#fff; z-index:5001; opacity:0; pointer-events:none; transition:opacity 0.25s; }
 #preview-overlay.active #preview-close { opacity:1; pointer-events:auto; }
-#preview-close svg { width:18px; height:18px; }
-#preview-counter { position:fixed; bottom:calc(var(--safe-bottom) + 24px); left:50%; transform:translateX(-50%); font-size:13px; color:rgba(255,255,255,0.6); background:rgba(0,0,0,0.4); padding:5px 14px; border-radius:20px; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#preview-close svg { width:16px; height:16px; }
+#preview-counter { font-size:13px; color:rgba(255,255,255,0.7); background:rgba(0,0,0,0.4); padding:5px 14px; border-radius:20px; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity 0.25s; margin-top:10px; }
 #preview-overlay.active #preview-counter { opacity:1; }
 .preview-arrow { position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:5001; }
 #preview-overlay.active .preview-arrow { opacity:1; pointer-events:auto; }
@@ -154,11 +144,11 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
   <div id="preview-inner">
     <img id="preview-img" alt="预览">
     <video id="preview-video" controls playsinline></video>
+    <button id="preview-close" onclick="closePreviewDirect()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="preview-counter"></div>
   </div>
-  <button id="preview-close" onclick="closePreviewDirect()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-  <div id="preview-counter"></div>
   <button class="preview-arrow" id="arrow-prev" onclick="previewNav(-1)">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
   </button>
@@ -171,7 +161,7 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
 /* ── 1. 数据配置 ── */
 const pagesData = [
   { name:"小星星", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
-  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/1/IMG_1890.jpeg"},{type:"image",src:""},{type:"video",src:"",poster:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"video",src:"",poster:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"安琪拉", fee:"20.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"大白兔", fee:"12.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"草莓糖", fee:"18.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
@@ -225,86 +215,53 @@ for (let i = 0; i < pagesData.length; i++) {
   feed.appendChild(page);
 }
 
-/* ── 3. 核心定位逻辑（已完全恢复你原来的逻辑） ── */
-const CITY_MAP = {
-  "Beijing":"北京市","Shanghai":"上海市","Guangzhou":"广州市","Shenzhen":"深圳市",
-  "Chengdu":"成都市","Chongqing":"重庆市","Hangzhou":"杭州市","Wuhan":"武汉市",
-  "Xian":"西安市","Xi'an":"西安市","Nanjing":"南京市","Tianjin":"天津市",
-  "Suzhou":"苏州市","Zhengzhou":"郑州市","Changsha":"长沙市","Qingdao":"青岛市",
-  "Dongguan":"东莞市","Shenyang":"沈阳市","Ningbo":"宁波市","Kunming":"昆明市",
-  "Hefei":"合肥市","Harbin":"哈尔滨市","Fuzhou":"福州市","Jinan":"济南市",
-  "Wenzhou":"温州市","Nanchang":"南昌市","Shijiazhuang":"石家庄市","Guiyang":"贵阳市",
-  "Taiyuan":"太原市","Urumqi":"乌鲁木齐市","Nanning":"南宁市","Xiamen":"厦门市",
-  "Changchun":"长春市","Lanzhou":"兰州市","Wuxi":"无锡市","Foshan":"佛山市",
-  "Dalian":"大连市","Zhuhai":"珠海市","Haikou":"海口市","Sanya":"三亚市",
-  "Baoding":"保定市","Tangshan":"唐山市","Weifang":"潍坊市","Linyi":"临沂市",
-  "Xuzhou":"徐州市","Luoyang":"洛阳市","Zibo":"淄博市","Nantong":"南通市",
-  "Yantai":"烟台市","Handan":"邯郸市","Jiaxing":"嘉兴市","Huizhou":"惠州市",
-  "Zhongshan":"中山市","Yangzhou":"扬州市","Shaoxing":"绍兴市","Changzhou":"常州市",
-  "Zhenjiang":"镇江市","Hohhot":"呼和浩特市","Yinchuan":"银川市","Xining":"西宁市",
-  "Lhasa":"拉萨市","Zunyi":"遵义市","Liuzhou":"柳州市","Guilin":"桂林市",
-  "Mianyang":"绵阳市","Nanchong":"南充市","Yibin":"宜宾市","Dazhou":"达州市",
-  "Guang'an":"广安市","Bazhong":"巴中市","Ziyang":"资阳市","Deyang":"德阳市",
-  "Suining":"遂宁市","Panzhihua":"攀枝花市","Aba":"阿坝州","Ganzi":"甘孜州",
-  "Liangshan":"凉山州","Bijie":"毕节市","Tongren":"铜仁市","Liupanshui":"六盘水市",
-  "Anshun":"安顺市","Qiannan":"黔南州","Qiandongnan":"黔东南州","Qianxinan":"黔西南州",
-  "Lijiang":"丽江市","Dali":"大理市","Baoshan":"保山市","Zhaotong":"昭通市",
-  "Yuxi":"玉溪市","Qujing":"曲靖市","Wenshan":"文山州","Xishuangbanna":"西双版纳州",
-  "Dehong":"德宏州","Nujiang":"怒江州","Diqing":"迪庆州","Lincang":"临沧市",
-  "Jiayuguan":"嘉峪关市","Jiuquan":"酒泉市","Zhangye":"张掖市","Wuwei":"武威市",
-  "Baiyin":"白银市","Tianshui":"天水市","Pingliang":"平凉市","Qingyang":"庆阳市",
-  "Dingxi":"定西市","Longnan":"陇南市","Linxia":"临夏州","Gannan":"甘南州"
-};
-
-function translateCity(raw) {
-  if (!raw) return null;
-  if (CITY_MAP[raw]) return CITY_MAP[raw];
-  const clean = raw.replace(/\s*(City|city)$/,'').trim();
-  if (CITY_MAP[clean]) return CITY_MAP[clean];
-  if (/[\u4e00-\u9fff]/.test(raw)) return raw.endsWith('市') ? raw : raw + '市';
-  return raw;
-}
-
+/* ── 3. 核心定位逻辑 (静默版) ── */
 function setCityText(city) {
   document.querySelectorAll('.dynamic-city').forEach(el => { el.textContent = city; });
 }
 
-async function locateByPconline() {
-  const res = await fetch('https://whois.pconline.com.cn/ipJson.jsp?json=true');
-  const text = await res.text();
-  const clean = text.replace(/[^\x09\x0A\x0D\x20-\x7E\u4E00-\u9FFF\u3000-\u303F\uFF00-\uFFEF]/g,'');
-  const d = JSON.parse(clean);
-  if (d.city && d.city.length > 0) return d.city.endsWith('市') ? d.city : d.city+'市';
-  throw new Error('no city');
+function startLocate() {
+  const key = "UXBBZ-RELWI-JJXG2-5YBRI-XPWW3-D3FIJ";
+  window.handleLbs = function(res) {
+    if (res.status === 0 && res.result) {
+      const ad = res.result.ad_info;
+      const locationText = ad.district || ad.city || '同城';
+      setCityText(locationText);
+    } else {
+      setCityText('同城');
+    }
+    const s = document.getElementById('lbs-jsonp');
+    if(s) s.remove();
+    delete window.handleLbs;
+  };
+  const script = document.createElement('script');
+  script.id = 'lbs-jsonp';
+  script.src = `https://apis.map.qq.com/ws/location/v1/ip?key=${key}&output=jsonp&callback=handleLbs`;
+  script.onerror = function() { setCityText('同城'); };
+  document.body.appendChild(script);
+  setTimeout(() => {
+    const el = document.querySelector('.dynamic-city');
+    if (el && el.textContent === '定位中…') { setCityText('同城'); }
+  }, 4000);
 }
 
-async function locateByIpApi() {
-  const res = await fetch('https://ip-api.com/json/?fields=city,regionName&lang=zh-CN');
-  const d = await res.json();
-  const c = translateCity(d.city);
-  if (c) return c;
-  throw new Error('no city');
-}
+/* ── 4. 滚动监听：最后一个视频下滑提示 ── */
+(function(){
+  let isEndToastShowing = false;
+  feed.addEventListener('scroll', function() {
+    // 允许 5 像素的误差
+    const isAtBottom = feed.scrollHeight - feed.scrollTop <= feed.clientHeight + 5;
+    
+    if (isAtBottom && !isEndToastShowing) {
+      isEndToastShowing = true;
+      showToast('没有更多了');
+      // 2秒内不再重复触发
+      setTimeout(() => { isEndToastShowing = false; }, 2000);
+    }
+  }, { passive: true });
+})();
 
-async function locateByIpInfo() {
-  const res = await fetch('https://ipinfo.io/json');
-  const d = await res.json();
-  const c = translateCity(d.city);
-  if (c) return c;
-  throw new Error('no city');
-}
-
-async function startLocate() {
-  for (const fn of [locateByPconline, locateByIpApi, locateByIpInfo]) {
-    try {
-      const city = await Promise.race([fn(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4000))]);
-      if (city) { setCityText(city); return; }
-    } catch(e) {}
-  }
-  setCityText('同城');
-}
-
-/* ── 4. 预览与适配 ── */
+/* ── 5. 其他功能逻辑 (预览、适配等) ── */
 let pPI=0, pMI=0;
 const overlay=document.getElementById('preview-overlay');
 const prevImg=document.getElementById('preview-img');
@@ -323,6 +280,27 @@ function previewNav(d){const l=pagesData[pPI].media.length;pMI=(pMI+d+l)%l;rende
 function closePreviewDirect(){overlay.classList.remove('active');prevVid.pause();prevVid.src='';}
 function closePreview(e){if(e.target===overlay)closePreviewDirect();}
 
+(function(){
+  var startX=0, startY=0, swiped=false;
+  overlay.addEventListener('touchstart',function(e){
+    if(!overlay.classList.contains('active')) return;
+    startX=e.touches[0].clientX; startY=e.touches[0].clientY; swiped=false;
+  },{passive:true});
+  overlay.addEventListener('touchmove',function(e){
+    if(!overlay.classList.contains('active')) return;
+    var dx=e.touches[0].clientX-startX;
+    var dy=e.touches[0].clientY-startY;
+    if(!swiped && Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>10){ swiped=true; }
+  },{passive:true});
+  overlay.addEventListener('touchend',function(e){
+    if(!overlay.classList.contains('active')||!swiped) return;
+    var dx=e.changedTouches[0].clientX-startX;
+    if(Math.abs(dx)<40) return;
+    previewNav(dx<0?1:-1);
+    swiped=false;
+  },{passive:true});
+})();
+
 function applyTopPadding() {
   var nav = document.querySelector('.top-nav');
   var navBottom = nav ? nav.getBoundingClientRect().bottom : 88;
@@ -338,5 +316,5 @@ function showToast(t){
   setTimeout(()=>el.classList.remove('show'),1600);
 }
 </script>
+
 </body>
-</html>
