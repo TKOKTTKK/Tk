@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -24,7 +25,7 @@ body { background:var(--bg-dark); font-family:-apple-system,"PingFang SC",sans-s
 .page-item {
 position:relative; width:100vw; height:100vh; height:100dvh;
 scroll-snap-align:start; display:flex; flex-direction:column;
-padding-bottom:var(--botbar-h);
+padding-bottom:var(–botbar-h);
 }
 
 .upper-half {
@@ -65,7 +66,7 @@ padding: 10px 25px; /* 恢复原版内边距 */
 .region-tag { font-size:13px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:4px; }
 .stats-grid { display:flex; gap:12px; width:100%; margin-bottom:20px; }
 .stat-pill {
-flex:1; background:var(--glass); padding:12px; border-radius:14px; /* 14px圆角 */
+flex:1; background:var(–glass); padding:12px; border-radius:14px; /* 14px圆角 */
 border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
 }
 .stat-label { font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px; display:block; }
@@ -78,7 +79,7 @@ border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-bac
 /* ── 下半屏参数结束 ── */
 
 .mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:2; pointer-events:none; }
-.top-nav { position:fixed; top:var(--safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
+.top-nav { position:fixed; top:var(–safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
 .nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
 .nav-menu span { display:block; height:2px; background:#fff; border-radius:1px; width:22px; }
 .nav-menu span:nth-child(2) { width:16px; }
@@ -86,9 +87,9 @@ border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-bac
 .nav-tabs::-webkit-scrollbar { display:none; }
 .nav-tab { flex-shrink:0; font-size:16px; color:rgba(255,255,255,0.65); font-weight:500; padding:0 10px; cursor:pointer; white-space:nowrap; position:relative; line-height:44px; }
 .nav-tab.active { color:#fff; font-size:17px; font-weight:700; }
-.nav-tab.active::after { content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
+.nav-tab.active::after { content:’’; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
 .nav-search { width:36px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; }
-.tab-bar { position:fixed; bottom:0; left:0; right:0; height:calc(55px + var(--safe-bottom)); padding-bottom:var(--safe-bottom); background:#000; border-top:0.5px solid rgba(255,255,255,0.1); z-index:200; display:flex; align-items:center; }
+.tab-bar { position:fixed; bottom:0; left:0; right:0; height:calc(55px + var(–safe-bottom)); padding-bottom:var(–safe-bottom); background:#000; border-top:0.5px solid rgba(255,255,255,0.1); z-index:200; display:flex; align-items:center; }
 .tab-item { flex:1; display:flex; align-items:center; justify-content:center; height:100%; cursor:pointer; }
 .tab-item .tab-label { font-size:16px; color:rgba(255,255,255,0.45); font-weight:600; }
 .tab-item.active .tab-label { color:#fff; }
@@ -113,6 +114,7 @@ border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-bac
 #preview-overlay.active .preview-arrow { opacity:1; pointer-events:auto; }
 #arrow-prev { left:12px; } #arrow-next { right:12px; }
 </style>
+
 </head>
 <body>
 
@@ -162,10 +164,9 @@ border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-bac
 <script>
 /* ── 1. 数据配置 ── */
 const pagesData = [
-  
- { name:"小梦", fee:"600元", area:"", media:[{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1912.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1913.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1914.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1915.JPG"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1972.webp"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/2/IMG_1956.webp"}] },
-  { name:"西米露", fee:"600元", area:"", media:[{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/IMG_1977.webp"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/IMG_1981.webp"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/IMG_1980.webp"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/IMG_1979.webp"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/1778444227414725.MP4"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/3/IMG_1990.webp"}] },
-  { name:"Cc", fee:"600元", area:"", media:[{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/IMG_1919.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/IMG_1920.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/IMG_1922.JPG"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/IMG_1923.jpg"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/1778449944704131.MP4"},{type:"image",src:"https://pub-1ddb46d546034a6e945c9c42603bb8ce.r2.dev/4/IMG_1997.webp"}] },
+  { name:"小星星", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"video",src:"",poster:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"安琪拉", fee:"20.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"大白兔", fee:"12.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"草莓糖", fee:"18.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"冰淇淋", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
@@ -206,7 +207,7 @@ for (let i = 0; i < pagesData.length; i++) {
           </div>
         </div>
         <div class="stats-grid">
-          <div class="stat-pill"><span class="stat-label">地区范围</span><span class="stat-value">全城可约</span></div>
+          <div class="stat-pill"><span class="stat-label">地区范围</span><span class="stat-value">全城</span></div>
           <div class="stat-pill"><span class="stat-label">所需</span><span class="stat-value highlight">${data.fee}</span></div>
         </div>
         <button class="action-btn" onclick="location.href='kefu.html'">
@@ -330,6 +331,47 @@ function showToast(t){
   el.textContent=t;el.classList.add('show');
   setTimeout(()=>el.classList.remove('show'),1600);
 }
+
+/* ── 6. 后台恢复修复（解决挂后台卡死/黑屏/点击无响应）── */
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState !== 'visible') return;
+
+  // 记录当前所在页索引
+  const pageH = feed.clientHeight;
+  const currentIndex = Math.round(feed.scrollTop / pageH);
+
+  // 暂时禁用 scroll-snap，强制重排后还原，解决 snap 状态错乱
+  feed.style.scrollSnapType = 'none';
+  feed.style.overflow = 'hidden';
+
+  requestAnimationFrame(() => {
+    // 精确跳回当前页（避免位置偏移）
+    feed.scrollTop = currentIndex * pageH;
+
+    requestAnimationFrame(() => {
+      feed.style.overflow = 'scroll';
+      feed.style.scrollSnapType = 'y mandatory';
+
+      // 强制 fixed 元素重绘，解决点击无响应
+      document.querySelectorAll('.top-nav, .tab-bar, .mask-top').forEach(el => {
+        el.style.display = 'none';
+        void el.offsetHeight; // 触发 reflow
+        el.style.display = '';
+      });
+
+      // 刷新当前页及相邻页的图片，解决黑屏
+      document.querySelectorAll('.page-item').forEach((page, i) => {
+        if (Math.abs(i - currentIndex) <= 1) {
+          page.querySelectorAll('img').forEach(img => {
+            const s = img.src;
+            img.src = '';
+            img.src = s;
+          });
+        }
+      });
+    });
+  });
+});
 </script>
 
 </body>
