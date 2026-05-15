@@ -1,3 +1,4 @@
+同城第四代
 <!DOCTYPE html>
 
 <html lang="zh-CN">
@@ -189,8 +190,8 @@ transform:translateZ(0);
 <script>
 /* ── 1. 数据配置 ── */
 const pagesData = [
-  { name:"小星星", fee:"10.00", area:"", media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/1778444227414725-ezgif.com-video-to-webp-converter%209.webp",animated:true},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
-  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"video",src:"",poster:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"小星星", fee:"10.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
+  { name:"喵喵酱", fee:"15.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:"",poster:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/1778444227414725.MP4"},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"安琪拉", fee:"20.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"大白兔", fee:"12.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
   { name:"草莓糖", fee:"18.00", area:"", media:[{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""},{type:"image",src:""}] },
@@ -211,11 +212,10 @@ for (let i = 0; i < pagesData.length; i++) {
   data.media.forEach((m, j) => {
     const seed = i * 10 + j;
     const src = m.src || `https://picsum.photos/300/400?random=${seed}`;
-    const animated = m.animated ? ' data-animated="true"' : '';
     if (m.type === 'video') {
       g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}" loading="lazy" decoding="async"><div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>视频</div></div>`;
     } else {
-      g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}"${animated} loading="lazy" decoding="async"></div>`;
+      g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}" loading="lazy" decoding="async"></div>`;
     }
   });
   page.innerHTML = `
@@ -347,30 +347,42 @@ function showToast(t) {
   el._timer = setTimeout(() => el.classList.remove('show'), 1600);
 }
 
-/* ── 8. iOS 黑屏修复 ── */
+/* ── 8. iOS 黑屏修复（移植自 GPT 方案）── */
 (function () {
   var restoreLock = false;
+
   function restorePage() {
     if (restoreLock) return;
     restoreLock = true;
+
+    // opacity 微调强制重新合成整个页面
     document.body.style.opacity = '0.99';
+    // overflow 切换强制 feed 滚动容器重建合成层
     feed.style.overflowY = 'hidden';
+
     requestAnimationFrame(function () {
-      feed.offsetHeight;
+      feed.offsetHeight; // 强制 reflow
       feed.style.overflowY = 'scroll';
+
       requestAnimationFrame(function () {
         document.body.style.opacity = '';
         restoreLock = false;
       });
     });
   }
+
+  // iOS BFCache 恢复（最可靠的 iOS 钩子）
   window.addEventListener('pageshow', restorePage);
+
+  // 通用：从后台回到前台
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') setTimeout(restorePage, 60);
+    if (document.visibilityState === 'visible') {
+      setTimeout(restorePage, 60);
+    }
   });
 })();
 
-/* ── 9. Service Worker 注册 ── */
+/* ── 9. Service Worker 注册（图片缓存）── */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
@@ -380,56 +392,6 @@ requestAnimationFrame(function () {
   applyTopPadding();
   startLocate();
 });
-
-/* ── 11. 动图按页播放控制 ── */
-(function () {
-  var pages = Array.from(document.querySelectorAll('.page-item'));
-  var visibleIdx = -1;
-
-  // 暂停某页所有动图：把 src 存到 data-live-src，然后清空 src
-  function pauseAnimated(pageEl) {
-    pageEl.querySelectorAll('img[data-animated="true"]').forEach(function (img) {
-      var live = img.src;
-      if (live && live !== window.location.href) { // 排除 src="" 被解析成页面URL的情况
-        img.dataset.liveSrc = live;
-        img.src = '';
-      }
-    });
-  }
-
-  // 恢复某页所有动图：从 data-live-src 还原 src
-  function playAnimated(pageEl) {
-    pageEl.querySelectorAll('img[data-animated="true"]').forEach(function (img) {
-      var live = img.dataset.liveSrc;
-      if (live && !img.src) {
-        img.src = live;
-      }
-    });
-  }
-
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      var idx = pages.indexOf(entry.target);
-      if (idx === -1) return;
-
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-        // 新页进入：先暂停旧页，再播放新页
-        if (visibleIdx !== -1 && visibleIdx !== idx) {
-          pauseAnimated(pages[visibleIdx]);
-        }
-        visibleIdx = idx;
-        playAnimated(pages[idx]);
-      } else {
-        // 离屏：暂停（但不暂停当前可见页，防止滑动中误触发）
-        if (visibleIdx !== idx) {
-          pauseAnimated(entry.target);
-        }
-      }
-    });
-  }, { threshold: 0.5 });
-
-  pages.forEach(function (p) { io.observe(p); });
-})();
 </script>
 
 </body>
