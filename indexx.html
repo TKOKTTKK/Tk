@@ -303,7 +303,7 @@ function renderPreview() {
   if (m.type === 'video' && m.src) {
     prevVid.src = m.src; prevVid.style.display = 'block'; prevVid.play().catch(() => {});
   } else {
-    prevImg.src = m.src || `https://picsum.photos/600/800?random=${pPI * 10 + pMI}`;
+    prevImg.src = m.preview || m.src || `https://picsum.photos/600/800?random=${pPI * 10 + pMI}`;
     prevImg.style.display = 'block';
   }
 }
