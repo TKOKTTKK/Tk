@@ -1,452 +1,680 @@
+担保2
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta http-equiv="Cache-Control" content="no-store">
-<title>推荐</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>担保交易</title>
 <style>
 :root {
-  --accent: #fe2c55;
-  --bg-dark: #050508;
-  --glass: rgba(255,255,255,0.06);
-  --safe-top: env(safe-area-inset-top, 44px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --topbar-h: calc(var(--safe-top) + 44px);
-  --botbar-h: calc(var(--safe-bottom) + 55px);
+  --ink: #0a0a0a; --sub: #6b7280; --line: #e8e8e8;
+  --bg: #f7f6f3; --card: #ffffff;
+  --blue: #1677FF; --green: #00b96b; --amber: #f59e0b;
+  --radius: 16px; --tab-h: 56px;
 }
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html { -webkit-text-size-adjust:100%; height:-webkit-fill-available; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+/* ── 关键滚动修复：不用 overflow:hidden on body ── */
+html { height: 100%; }
 body {
-  background:var(--bg-dark);
-  font-family:-apple-system,"PingFang SC",sans-serif;
-  color:#fff;
-  overflow:hidden;
-  height:100svh;
-  min-height:-webkit-fill-available;
-  -webkit-font-smoothing:antialiased;
-  transform:translate3d(0,0,0);
+  height: 100%;
+  background: var(--bg);
+  font-family: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  color: var(--ink);
+  /* 不设 overflow:hidden，让 .app-wrap 自己管理布局 */
 }
 
-#feed {
-position:fixed; top:0; left:0; width:100vw; height:100%;
-overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none;
--webkit-overflow-scrolling:touch;
-backface-visibility:hidden; transform:translateZ(0);
-}
-#feed::-webkit-scrollbar { display:none; }
-
-.page-item {
-position:relative; width:100vw; height:100svh;
-scroll-snap-align:start; display:flex; flex-direction:column;
-padding-bottom:var(–botbar-h);
-backface-visibility:hidden;
+/* 整个 app 用绝对定位撑满屏幕 */
+.app-wrap {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
 }
 
-.upper-half {
-padding:10px; flex-shrink:0;
-display:grid; grid-template-columns:repeat(3,1fr);
-grid-template-rows:repeat(2, 1fr);
-gap:6px;
-/* 限制图片区最大高度为屏幕的55%，确保下方按钮始终可见 */
-max-height:55svh;
-overflow:hidden;
-}
-.media-box {
-/* aspect-ratio 去掉，改用 height:100% 跟随 grid 行高自适应 */
-background:#111; border-radius:6px; overflow:hidden;
-box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; position:relative;
-transition:transform 0.15s; transform:translateZ(0);
-}
-.media-box:active { transform:scale(0.96); }
-.media-box img   { width:100%; height:100%; object-fit:cover; display:block; }
-.media-box video {
-width:100%; height:100%; object-fit:cover; display:block;
-pointer-events:none;
-}
-.media-box .video-badge {
-position:absolute; bottom:5px; left:5px;
-background:rgba(0,0,0,0.6); border-radius:4px; padding:2px 5px;
-font-size:10px; color:#fff; display:flex; align-items:center; gap:3px;
-backdrop-filter:blur(4px);
-}
-.media-box .video-badge svg { width:10px; height:10px; }
-
-.lower-half {
-flex:1; display:flex; flex-direction:column;
-justify-content:center; align-items:center; padding:8px 25px;
-overflow:hidden;
-}
-.profile-card { width:100%; max-width:340px; position:relative; }
-.hero-info { margin-bottom:10px; text-align:left; width:100%; }
-.name-row { display:flex; align-items:baseline; gap:10px; }
-.artist-name { font-size:32px; font-weight:800; letter-spacing:-1px; }
-.region-tag { font-size:13px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:4px; }
-.stats-grid { display:flex; gap:12px; width:100%; margin-bottom:20px; }
-.stat-pill {
-flex:1; background:var(–glass); padding:12px; border-radius:14px;
-border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-}
-.stat-label { font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px; display:block; }
-.stat-value { font-size:17px; font-weight:600; color:#fff; }
-.stat-value.highlight { color:#fac300; }
-.action-btn {
-width:100%; height:54px; border-radius:16px; border:none;
-background:#fff; color:#000; font-size:16px; font-weight:700;
-display:flex; align-items:center; justify-content:center; gap:10px;
-box-shadow:0 10px 30px rgba(255,255,255,0.15); transition:transform 0.2s;
-cursor:pointer; -webkit-appearance:none;
-}
-.action-btn:active { transform:scale(0.96); }
-.action-btn svg { width:20px; height:20px; }
-.bg-glow {
-position:absolute; width:150px; height:150px;
-background:radial-gradient(circle,rgba(254,44,85,0.2) 0%,transparent 70%);
-z-index:-1; top:-20px; right:-20px; pointer-events:none;
+/* 滚动容器：明确给 height，不依赖 flex:1 */
+.scroll-host {
+  width: 100%;
+  /* height = 100% 减去底部 tab 高度 */
+  height: calc(100% - var(--tab-h) - env(safe-area-inset-bottom, 0px));
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
 }
 
-.mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:2; pointer-events:none; }
-.top-nav { position:fixed; top:var(–safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
-.nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
-.nav-menu span { display:block; height:2px; background:#fff; border-radius:1px; width:22px; }
-.nav-menu span:nth-child(2) { width:16px; }
-.nav-tabs { flex:1; display:flex; align-items:center; justify-content:center; overflow-x:auto; scrollbar-width:none; }
-.nav-tabs::-webkit-scrollbar { display:none; }
-.nav-tab { flex-shrink:0; font-size:16px; color:rgba(255,255,255,0.65); font-weight:500; padding:0 10px; cursor:pointer; white-space:nowrap; position:relative; line-height:44px; }
-.nav-tab.active { color:#fff; font-size:17px; font-weight:700; }
-.nav-tab.active::after { content:’’; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
-.nav-search { width:36px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; }
+.inner {
+  width: 100%; max-width: 480px; margin: 0 auto;
+  padding: 0 16px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
 
+.app-header {
+  width: 100%; max-width: 480px; margin: 0 auto;
+  padding: 14px 20px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-title { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+.app-title span { color: var(--blue); }
+.header-tag { font-size: 11px; font-weight: 600; color: var(--sub); background: var(--line); border-radius: 20px; padding: 4px 10px; }
+
+.card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+.card-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
+.card-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.card-icon.blue  { background: #e8f1ff; }
+.card-icon.green { background: #e6f9f1; }
+.card-icon.amber { background: #fff7e6; }
+.card-title { font-size: 15px; font-weight: 700; }
+.card-sub   { font-size: 12px; color: var(--sub); margin-top: 1px; }
+.card-body  { padding: 14px 18px; display: flex; flex-direction: column; gap: 11px; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-label { font-size: 12px; font-weight: 600; color: var(--sub); }
+.field input,.field textarea {
+  border: 1.5px solid var(--line); border-radius: 10px;
+  padding: 11px 13px; font-size: 15px; font-family: inherit;
+  color: var(--ink); outline: none; background: #fafafa;
+  width: 100%; resize: none; transition: border-color .18s;
+}
+.field input:focus,.field textarea:focus { border-color: var(--blue); background: #fff; }
+.field input.mono { font-family: 'SF Mono',monospace; letter-spacing: 2px; font-size: 20px; text-align: center; }
+
+.btn { border: none; border-radius: 12px; padding: 13px 18px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; width: 100%; transition: opacity .15s,transform .12s; }
+.btn:active { opacity: .8; transform: scale(.97); }
+.btn-blue  { background: var(--blue); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-ghost { background: #f0f0f0; color: #444; font-weight: 600; }
+.btn-sm { border: none; border-radius: 8px; padding: 8px 13px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+.btn-sm:active { opacity: .75; }
+.btn-sm.blue  { background: var(--blue); color: #fff; }
+.btn-sm.green { background: var(--green); color: #fff; }
+.btn-sm.ghost { background: #f0f0f0; color: #555; }
+
+.token-display {
+  background: linear-gradient(135deg,#0a0a0a,#1a1a2e);
+  border-radius: 14px; padding: 22px 18px; text-align: center; position: relative; overflow: hidden;
+}
+.token-display::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 30% 50%,rgba(22,119,255,.28),transparent 60%),
+              radial-gradient(ellipse at 80% 20%,rgba(0,185,107,.18),transparent 50%);
+}
+.token-hint { font-size:11px; color:rgba(255,255,255,.5); letter-spacing:1px; margin-bottom:8px; position:relative; }
+.token-num  { font-size:40px; font-weight:900; color:#fff; letter-spacing:10px; font-family:'SF Mono',monospace; position:relative; margin-bottom:14px; text-shadow:0 0 30px rgba(22,119,255,.7); }
+.token-actions { display:flex; gap:8px; position:relative; }
+
+.order-card { border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+.order-top  { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+.order-token-label { font-size: 12px; color: var(--sub); margin-bottom: 2px; }
+.order-token-val   { font-size: 22px; font-weight: 900; font-family: 'SF Mono',monospace; letter-spacing: 4px; }
+.status-pill { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; flex-shrink: 0; }
+.status-pill.pending { background: #fff7e6; color: #d97706; }
+.status-pill.done    { background: #e6f9f1; color: #00875a; }
+.order-meta { padding: 0 18px 12px; display: flex; flex-direction: column; gap: 5px; }
+.meta-row { display: flex; justify-content: space-between; font-size: 13px; }
+.meta-key { color: var(--sub); }
+.meta-val { color: var(--ink); font-weight: 500; }
+.order-kw { margin: 0 18px 14px; border-radius: 10px; padding: 13px 15px; text-align: center; }
+.order-kw.locked   { background: #f5f5f5; }
+.order-kw.unlocked { background: #e6f9f1; }
+.kw-locked-txt { font-size: 13px; color: var(--sub); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.kw-val { font-size: 15px; font-weight: 700; color: #00875a; line-height: 1.6; word-break: break-all; }
+.order-actions { padding: 0 18px 14px; display: flex; gap: 8px; }
+
+.steps { display: flex; flex-direction: column; }
+.step-item { display: flex; gap: 13px; align-items: flex-start; padding: 13px 18px; }
+.step-item + .step-item { border-top: 1px solid var(--line); }
+.step-circle { width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-circle.green { background: var(--green); }
+.step-who  { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.step-desc { font-size: 12px; color: var(--sub); line-height: 1.5; }
+
+.empty-state { text-align: center; padding: 28px 0; color: var(--sub); font-size: 14px; }
+.empty-icon  { font-size: 34px; margin-bottom: 8px; }
+
+/* Tab：固定在 app-wrap 底部 */
 .tab-bar {
-position:fixed; bottom:0; left:0; right:0;
-height:calc(55px + var(–safe-bottom)); padding-bottom:var(–safe-bottom);
-background:#000; border-top:0.5px solid rgba(255,255,255,0.1);
-z-index:200; display:flex; align-items:center;
-transform:translateZ(0);
+  width: 100%;
+  height: calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
+  background: rgba(255,255,255,.96);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line);
+  display: flex; flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom,0px);
 }
-.tab-item { flex:1; display:flex; align-items:center; justify-content:center; height:100%; cursor:pointer; }
-.tab-item .tab-label { font-size:16px; color:rgba(255,255,255,0.45); font-weight:600; }
-.tab-item.active .tab-label { color:#fff; }
-.tab-publish { flex:1; display:flex; align-items:center; justify-content:center; height:55px; cursor:pointer; }
-.pub-inner { width:36px; height:26px; border:2px solid rgba(255,255,255,0.9); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:300; line-height:1; }
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; }
+.tab:active { opacity: .6; }
+.tab-icon  { font-size: 21px; }
+.tab-label { font-size: 10px; font-weight: 600; color: var(--sub); }
+.tab.active .tab-label { color: var(--blue); }
 
-#toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.76); color:#fff; font-size:15px; padding:12px 24px; border-radius:8px; z-index:9999; opacity:0; pointer-events:none; transition:opacity 0.25s; white-space:nowrap; }
-#toast.show { opacity:1; }
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 12px);
+  left: 50%; transform: translateX(-50%);
+  background: rgba(10,10,10,.88); backdrop-filter: blur(8px);
+  color: #fff; padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 600; z-index: 999;
+  opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
 
-#preview-overlay { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0); pointer-events:none; display:flex; align-items:center; justify-content:center; transition:background 0.3s; }
-#preview-overlay.active { background:rgba(0,0,0,0.92); pointer-events:auto; }
-#preview-inner { position:relative; max-width:90vw; max-height:80vh; opacity:0; transform:scale(0.88); transition:opacity 0.28s,transform 0.28s; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-#preview-overlay.active #preview-inner { opacity:1; transform:scale(1); }
-#preview-img { max-width:90vw; max-height:75vh; border-radius:12px; object-fit:contain; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
-#preview-video { max-width:90vw; max-height:75vh; border-radius:12px; display:none; outline:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); background:#000; }
-#preview-close {
-position:fixed;
-top:max(16px, env(safe-area-inset-top, 16px));
-right:max(16px, env(safe-area-inset-right, 16px));
-width:36px; height:36px; border-radius:50%;
-background:rgba(0,0,0,0.55); backdrop-filter:blur(8px);
-display:flex; align-items:center; justify-content:center;
-cursor:pointer; border:none; color:#fff; z-index:5001;
-opacity:0; pointer-events:none; transition:opacity 0.25s;
+.loading-mask {
+  position: fixed; inset: 0; background: rgba(247,246,243,.8);
+  backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center;
+  z-index: 500; opacity: 0; pointer-events: none; transition: opacity .2s;
 }
-#preview-overlay.active #preview-close { opacity:1; pointer-events:auto; }
-#preview-close svg { width:16px; height:16px; }
-#preview-counter {
-font-size:13px; color:rgba(255,255,255,0.7);
-background:rgba(0,0,0,0.4); padding:5px 14px; border-radius:20px;
-backdrop-filter:blur(6px); opacity:0; pointer-events:none;
-transition:opacity 0.25s; margin-top:10px;
-/* 确保不被底部 tab bar 遮住 */
-margin-bottom:calc(var(–botbar-h) + 8px);
+.loading-mask.show { opacity: 1; pointer-events: auto; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  backdrop-filter: blur(4px); z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .22s;
 }
-#preview-overlay.active #preview-counter { opacity:1; }
-.preview-arrow {
-position:fixed; top:50%; transform:translateY(-50%);
-width:44px; height:44px; border-radius:50%;
-background:rgba(255,255,255,0.12); border:none; color:#fff;
-cursor:pointer; display:flex; align-items:center; justify-content:center;
-opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:5001;
+.modal-mask.show { opacity: 1; pointer-events: auto; }
+.modal {
+  background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: 480px;
+  padding: 26px 20px calc(28px + env(safe-area-inset-bottom,0px));
+  display: flex; flex-direction: column; gap: 13px;
+  transform: translateY(40px); transition: transform .28s cubic-bezier(.32,1,.42,1);
+  max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
-#preview-overlay.active .preview-arrow { opacity:1; pointer-events:auto; }
-#arrow-prev { left:max(12px, env(safe-area-inset-left, 12px)); }
-#arrow-next { right:max(12px, env(safe-area-inset-right, 12px)); }
+.modal-mask.show .modal { transform: translateY(0); }
+.modal-title { font-size: 18px; font-weight: 800; }
+.modal-sub   { font-size: 13px; color: var(--sub); margin-top: -5px; line-height: 1.5; }
+
+@keyframes pop { 0%{transform:scale(.93);opacity:0} 100%{transform:scale(1);opacity:1} }
+.pop { animation: pop .2s ease forwards; }
+
+.page { display: none; flex-direction: column; gap: 12px; }
+.page.active { display: flex; }
+
+.sync-bar { border-radius: 10px; padding: 9px 14px; font-size: 12px; display: flex; align-items: center; gap: 7px; }
+.sync-bar.ok   { background: #eff6ff; color: #1677FF; }
+.sync-bar.err  { background: #fef2f2; color: #dc2626; }
+.sync-bar.warn { background: #fff7e6; color: #d97706; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 </style>
-
 </head>
 <body>
 
-<div id="toast"></div>
-<div class="mask-top"></div>
+<div class="toast" id="toast"></div>
+<div class="loading-mask" id="loading"><div class="spinner"></div></div>
 
-<nav class="top-nav">
-  <div class="nav-menu" onclick="showToast('开通会员使用')"><span></span><span></span><span></span></div>
-  <div class="nav-tabs">
-    <div class="nav-tab" onclick="showToast('开通会员使用')">精选</div>
-    <div class="nav-tab" onclick="showToast('开通会员使用')">热点</div>
-    <div class="nav-tab" onclick="showToast('开通会员使用')">直播</div>
-    <div class="nav-tab active">推荐</div>
+<!-- 弹窗：创建担保 -->
+<div class="modal-mask" id="modal-create">
+  <div class="modal">
+    <div class="modal-title">买家创建担保</div>
+    <div class="modal-sub">输入你的支付宝口令，获得6位担保码发给卖家</div>
+    <div class="field">
+      <div class="field-label">支付宝口令</div>
+      <textarea id="c-kw" placeholder="粘贴你的支付宝口令" rows="3"></textarea>
+    </div>
+    <div class="field">
+      <div class="field-label">交易金额（元）</div>
+      <input type="number" id="c-price" placeholder="0.00" step="0.01" inputmode="decimal">
+    </div>
+    <div class="field">
+      <div class="field-label">备注（选填）</div>
+      <input type="text" id="c-note" placeholder="商品描述">
+    </div>
+    <div class="field">
+      <div class="field-label">设一个4位数字密码（用于确认收货）</div>
+      <input type="password" id="c-pin" placeholder="····" maxlength="4" inputmode="numeric" class="mono">
+    </div>
+    <button class="btn btn-blue" onclick="doCreate()">生成担保码 →</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-create')">取消</button>
   </div>
-  <div class="nav-search" onclick="showToast('开通会员使用')">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-  </div>
-</nav>
-
-<div id="feed"></div>
-
-<div class="tab-bar">
-  <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">首页</span></div>
-  <div class="tab-item active"><span class="tab-label">同城</span></div>
-  <div class="tab-publish" onclick="showToast('开通会员使用')"><div class="pub-inner">+</div></div>
-  <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">消息</span></div>
-  <div class="tab-item" onclick="showToast('开通会员使用')"><span class="tab-label">我</span></div>
 </div>
 
-<div id="preview-overlay" onclick="closePreview(event)">
-  <div id="preview-inner">
-    <img id="preview-img" alt="预览">
-    <video id="preview-video" controls playsinline></video>
-    <div id="preview-counter"></div>
+<!-- 弹窗：确认收货 -->
+<div class="modal-mask" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-title">确认收货</div>
+    <div class="modal-sub">确认后口令立即对卖家可见，请确认已收到商品/服务</div>
+    <div class="field">
+      <div class="field-label">担保码</div>
+      <input type="text" id="cf-token" placeholder="6位担保码" maxlength="6" class="mono" style="text-transform:uppercase">
+    </div>
+    <div class="field">
+      <div class="field-label">你设置的4位密码</div>
+      <input type="password" id="cf-pin" placeholder="····" maxlength="4" inputmode="numeric" class="mono">
+    </div>
+    <button class="btn btn-green" onclick="doConfirm()">✅ 确认收货，释放口令</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">取消</button>
   </div>
-  <button id="preview-close" onclick="closePreviewDirect()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-  <button class="preview-arrow" id="arrow-prev" onclick="previewNav(-1)">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-  </button>
-  <button class="preview-arrow" id="arrow-next" onclick="previewNav(1)">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-  </button>
+</div>
+
+<!-- 弹窗：卖家查询 -->
+<div class="modal-mask" id="modal-query">
+  <div class="modal">
+    <div class="modal-title">输入担保码</div>
+    <div class="modal-sub">买家确认收货后自动显示口令</div>
+    <div class="field">
+      <input type="text" id="q-token" placeholder="输入6位担保码" maxlength="6" class="mono"
+        style="text-transform:uppercase;font-size:28px;letter-spacing:8px;text-align:center">
+    </div>
+    <button class="btn btn-blue" onclick="doQuery()">查询 →</button>
+    <button class="btn btn-ghost" onclick="closeModal('modal-query')">取消</button>
+  </div>
+</div>
+
+<!-- ── 主体 ── -->
+<div class="app-wrap">
+  <div class="scroll-host" id="scroll-host">
+    <div class="app-header">
+      <div class="app-title">担保<span>交易</span></div>
+      <div class="header-tag">支付宝口令托管</div>
+    </div>
+    <div class="inner">
+
+      <!-- 买家页 -->
+      <div class="page active" id="page-buyer">
+        <div id="sync-status"></div>
+        <div class="card">
+          <div class="card-body" style="flex-direction:row;gap:10px;padding:14px">
+            <button class="btn btn-blue" style="flex:1.4" onclick="openModal('modal-create')">🔒 创建担保</button>
+            <button class="btn btn-ghost" style="flex:1" onclick="openConfirmModal()">✅ 确认收货</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon blue">📋</div>
+            <div>
+              <div class="card-title">我的担保订单</div>
+              <div class="card-sub">输入密码查看历史订单</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:8px">
+              <input type="password" id="list-pin" placeholder="4 位密码" maxlength="4" inputmode="numeric"
+                class="mono" style="flex:1;text-align:center;font-size:20px;letter-spacing:4px">
+              <button class="btn-sm blue" onclick="loadMyOrders()">查询</button>
+            </div>
+            <div id="my-orders"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon amber">💡</div>
+            <div><div class="card-title">怎么用</div></div>
+          </div>
+          <div class="steps">
+            <div class="step-item">
+              <div class="step-circle">1</div>
+              <div class="step-body">
+                <div class="step-who">买家创建担保</div>
+                <div class="step-desc">输入支付宝口令和金额，设4位密码，获得6位担保码</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-circle">2</div>
+              <div class="step-body">
+                <div class="step-who">把担保码发给卖家</div>
+                <div class="step-desc">卖家凭码查询订单，此时口令是隐藏的</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-circle">3</div>
+              <div class="step-body">
+                <div class="step-who">卖家完成交付</div>
+                <div class="step-desc">发货/完成服务后通知买家确认</div>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-circle green">4</div>
+              <div class="step-body">
+                <div class="step-who">买家确认收货</div>
+                <div class="step-desc">输入担保码+密码确认，口令立即对卖家解锁</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卖家页 -->
+      <div class="page" id="page-seller">
+        <div class="card">
+          <div class="card-body" style="padding:16px">
+            <button class="btn btn-blue" onclick="openModal('modal-query')">🔍 输入担保码查询</button>
+          </div>
+        </div>
+        <div id="seller-result"></div>
+        <div class="card" id="seller-empty-hint">
+          <div class="card-body">
+            <div class="empty-state">
+              <div class="empty-icon">📦</div>
+              <div>输入买家给你的6位担保码<br>查看口令状态</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Tab 在 scroll-host 外，app-wrap 底部 -->
+  <div class="tab-bar">
+    <div class="tab active" id="tab-buyer" onclick="switchTab('buyer')">
+      <div class="tab-icon">🛒</div>
+      <div class="tab-label">我是买家</div>
+    </div>
+    <div class="tab" id="tab-seller" onclick="switchTab('seller')">
+      <div class="tab-icon">📦</div>
+      <div class="tab-label">我是卖家</div>
+    </div>
+  </div>
 </div>
 
 <script>
-/* ── 1. 数据配置：第5个(index=4)为视频，其余全图片 ── */
-const pagesData = [
-  { name:"宁宁",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/IMG_1908.AVIF"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/IMG_1886.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/IMG_1885.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/IMG_1901.WEBP"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/-1797359644996242404%202.MOV"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/1-1%E5%AE%81%E5%AE%81/IMG_1903.WEBP"}] },
-  { name:"酒儿",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/IMG_2060.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/IMG_2059.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/IMG_2058.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/IMG_2057.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/1778567919252631.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/10%E9%85%92%E5%84%BF/IMG_2065.webp"}] },
-  { name:"小梦",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1912.jpg"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1913.jpg"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1914.jpg"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1915.JPG"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1972.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/2%E5%B0%8F%E6%A2%A6/IMG_1956.webp"}] },
-  { name:"西米露",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/IMG_1977.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/IMG_1980.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/IMG_1981.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/IMG_1992.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/1778444227414725.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/3%E8%A5%BF%E7%B1%B3%E9%9C%B2/IMG_1990.webp"}] },
-  { name:"Cc",fee:"400p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/IMG_1923.jpg"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/IMG_1922.JPG"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/IMG_1920.jpg"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/IMG_1919.jpg"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/1778450346029478.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/4Cc/IMG_1997.webp"}] },
-  { name:"纯甜",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/IMG_1957.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/IMG_1958.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/IMG_1959.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/IMG_1961.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/1778458514116947.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/5%E7%BA%AF%E7%94%9C/IMG_2005.webp"}] },
-  { name:"小爱",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/IMG_1943.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/IMG_1944.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/IMG_1945.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/IMG_2012.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/1778460347395379.MOV"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/6%E5%B0%8F%E7%88%B1/IMG_2008.webp"}] },
-  { name:"安静",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/IMG_1948.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/IMG_1949.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/IMG_1951.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/1778464258198109.MP4"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/1778464377848215.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/7%E5%AE%89%E9%9D%99/IMG_2013.webp"}] },
-  { name:"朵朵",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/IMG_2038.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/IMG_2039.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/IMG_2040.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/IMG_2041.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/1778568129057746.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/8%E6%9C%B5%E6%9C%B5/IMG_2047.webp"}] },
-  { name:"小鱼",fee:"600p",area:"",media:[{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/IMG_2048.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/IMG_2049.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/IMG_2050.webp"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/IMG_2051.webp"},{type:"video",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/1778567957028512.MP4"},{type:"image",src:"https://pub-d3dc6ac30bca4ee7a023357c8640e431.r2.dev/9%E5%B0%8F%E9%B1%BC/IMG_2055.webp"}] },
-];
+// ══════════════════════════════════════════════════════════
+//  ⚠️  把下面这行改成你在 Render 上部署的服务器地址
+//  例如：const API = "https://your-app.onrender.com"
+// ══════════════════════════════════════════════════════════
+const API = "https://page-c4hm.onrender.com";
 
-/* ── 2. 页面生成 ── */
-const feed = document.getElementById('feed');
-for (let i = 0; i < pagesData.length; i++) {
-  const data = pagesData[i];
-  const page = document.createElement('div');
-  page.className = 'page-item';
-  page.dataset.pageIndex = i;
-
-  let g = '';
-  data.media.forEach((m, j) => {
-    const seed = i * 10 + j;
-    if (m.type === 'video') {
-      const vsrc = m.src || '';
-      g += `<div class="media-box" onclick="openPreview(${i},${j})">
-        <video class="grid-video" data-page="${i}" muted playsinline loop preload="none"${vsrc ? ' src="' + vsrc + '"' : ''}></video>
-        <div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>视频</div>
-      </div>`;
-    } else {
-      const src = m.src || `https://picsum.photos/300/400?random=${seed}`;
-      g += `<div class="media-box" onclick="openPreview(${i},${j})"><img src="${src}" loading="lazy" decoding="async"></div>`;
-    }
-  });
-
-  page.innerHTML = `
-    <div class="upper-half">${g}</div>
-    <div class="lower-half">
-      <div class="profile-card">
-        <div class="bg-glow"></div>
-        <div class="hero-info">
-          <div class="name-row">
-            <span class="artist-name">${data.name}</span>
-            <span class="region-tag">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
-              <span class="dynamic-city">定位中…</span>${data.area ? ' ' + data.area : ''}
-            </span>
-          </div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-pill"><span class="stat-label">地区范围</span><span class="stat-value">全城可约</span></div>
-          <div class="stat-pill"><span class="stat-label">水    费</span><span class="stat-value highlight">${data.fee}</span></div>
-        </div>
-        <button class="action-btn" onclick="location.href='kefu.html'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          立即联系在线客服预约
-        </button>
-      </div>
-    </div>`;
-  feed.appendChild(page);
+// ── 工具 ──────────────────────────────────────────────────
+function showLoading(v) {
+  document.getElementById("loading").classList[v?"add":"remove"]("show");
 }
 
-/* ── 3. 格子视频自动播放 ── */
-(function () {
-  var observer = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      var videos = entry.target.querySelectorAll('.grid-video');
-      if (entry.intersectionRatio >= 0.5) {
-        videos.forEach(function (v) {
-          if (v.src && v.src !== window.location.href) {
-            v.play().catch(function () {});
-          }
-        });
-      } else {
-        videos.forEach(function (v) { v.pause(); });
-      }
-    });
-  }, { threshold: 0.5 });
-
-  document.querySelectorAll('.page-item').forEach(function (page) {
-    observer.observe(page);
-  });
-})();
-
-/* ── 4. 核心定位逻辑 ── */
-function setCityText(city) {
-  document.querySelectorAll('.dynamic-city').forEach(el => { el.textContent = city; });
+function genToken() {
+  const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let t="";
+  for(let i=0;i<6;i++) t+=c[Math.floor(Math.random()*c.length)]; return t;
 }
-function startLocate() {
-  const key = "UXBBZ-RELWI-JJXG2-5YBRI-XPWW3-D3FIJ";
-  window.handleLbs = function (res) {
-    if (res.status === 0 && res.result) {
-      const ad = res.result.ad_info;
-      setCityText(ad.district || ad.city || '同城');
-    } else { setCityText('同城'); }
-    const s = document.getElementById('lbs-jsonp');
-    if (s) s.remove();
-    delete window.handleLbs;
+function hashPin(s) {
+  let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h)+s.charCodeAt(i)|0; return (h>>>0).toString(16);
+}
+function fmtTime(ts) {
+  if(!ts) return ""; const d=new Date(ts);
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+function fmtPrice(p) { return "¥"+Number(p).toFixed(2); }
+
+let toastT;
+function toast(msg) {
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2400);
+}
+
+function setSyncStatus(state, msg) {
+  const el=document.getElementById("sync-status"); if(!el) return;
+  const map={
+    ok:   ["ok",  "☁️ 已连接服务器，跨设备可用"],
+    warn: ["warn","⚠️ 服务器未连接，使用本地缓存"],
+    err:  ["err", "❌ 请求失败，请检查网络"],
   };
-  const script = document.createElement('script');
-  script.id = 'lbs-jsonp';
-  script.src = `https://apis.map.qq.com/ws/location/v1/ip?key=${key}&output=jsonp&callback=handleLbs`;
-  script.onerror = function () { setCityText('同城'); };
-  document.body.appendChild(script);
-  setTimeout(() => {
-    const el = document.querySelector('.dynamic-city');
-    if (el && el.textContent === '定位中…') setCityText('同城');
-  }, 4000);
+  const [cls, txt]=map[state]||map.warn;
+  el.innerHTML=`<div class="sync-bar ${cls}"><div class="sync-dot"></div>${msg||txt}</div>`;
 }
 
-/* ── 5. 滑动提示：最后一页上滑显示 ── */
-(function () {
-  let isToastLocked = false, startTouchY = 0;
-  feed.addEventListener('touchstart', function (e) {
-    startTouchY = e.touches[0].pageY;
-  }, { passive: true });
-  feed.addEventListener('touchmove', function (e) {
-    if (isToastLocked) return;
-    const isAtBottom = feed.scrollTop + feed.clientHeight >= feed.scrollHeight - 5;
-    if (isAtBottom && startTouchY - e.touches[0].pageY > 50) {
-      isToastLocked = true;
-      showToast('没有更多了');
-      setTimeout(() => { isToastLocked = false; }, 3000);
-    }
-  }, { passive: true });
-})();
-
-/* ── 6. 预览 overlay ── */
-let pPI = 0, pMI = 0;
-const overlay = document.getElementById('preview-overlay');
-const prevImg = document.getElementById('preview-img');
-const prevVid = document.getElementById('preview-video');
-const counter = document.getElementById('preview-counter');
-
-function openPreview(pi, mi) { pPI = pi; pMI = mi; renderPreview(); overlay.classList.add('active'); }
-function renderPreview() {
-  const m = pagesData[pPI].media[pMI];
-  prevImg.style.display = 'none'; prevVid.style.display = 'none'; prevVid.pause(); prevVid.src = '';
-  counter.textContent = `${pMI + 1} / ${pagesData[pPI].media.length}`;
-  if (m.type === 'video' && m.src) {
-    prevVid.src = m.src; prevVid.style.display = 'block'; prevVid.play().catch(() => {});
-  } else {
-    const seed = pPI * 10 + pMI;
-    prevImg.src = m.src || `https://picsum.photos/600/800?random=${seed}`;
-    prevImg.style.display = 'block';
-  }
+// ── API 请求封装 ──────────────────────────────────────────
+async function apiGet(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
 }
-function previewNav(d) { const l = pagesData[pPI].media.length; pMI = (pMI + d + l) % l; renderPreview(); }
-function closePreviewDirect() { overlay.classList.remove('active'); prevVid.pause(); prevVid.src = ''; }
-function closePreview(e) { if (e.target === overlay) closePreviewDirect(); }
-
-(function () {
-  var startX = 0, startY = 0, swiped = false;
-  overlay.addEventListener('touchstart', function (e) {
-    if (!overlay.classList.contains('active')) return;
-    startX = e.touches[0].clientX; startY = e.touches[0].clientY; swiped = false;
-  }, { passive: true });
-  overlay.addEventListener('touchmove', function (e) {
-    if (!overlay.classList.contains('active')) return;
-    var dx = e.touches[0].clientX - startX, dy = e.touches[0].clientY - startY;
-    if (!swiped && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) swiped = true;
-  }, { passive: true });
-  overlay.addEventListener('touchend', function (e) {
-    if (!overlay.classList.contains('active') || !swiped) return;
-    var dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) < 40) return;
-    previewNav(dx < 0 ? 1 : -1);
-    swiped = false;
-  }, { passive: true });
-})();
-
-/* ── 7. 顶部+底部间距适配 ── */
-function applyPadding() {
-  var nav = document.querySelector('.top-nav');
-  var tabBar = document.querySelector('.tab-bar');
-  var navBottom = nav ? nav.getBoundingClientRect().bottom : 88;
-  var tabBarH = tabBar ? tabBar.getBoundingClientRect().height : 55;
-  document.querySelectorAll('.page-item').forEach(el => {
-    el.style.paddingTop = navBottom + 'px';
-    el.style.paddingBottom = tabBarH + 'px';
+async function apiPost(path, body) {
+  const r = await fetch(API + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
   });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
 }
-window.addEventListener('resize', applyPadding);
-
-/* ── 8. Toast ── */
-function showToast(t) {
-  var el = document.getElementById('toast');
-  el.textContent = t; el.classList.add('show');
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => el.classList.remove('show'), 1600);
-}
-
-/* ── 9. iOS 黑屏修复 ── */
-(function () {
-  var restoreLock = false;
-  function restorePage() {
-    if (restoreLock) return;
-    restoreLock = true;
-    document.body.style.opacity = '0.99';
-    feed.style.overflowY = 'hidden';
-    requestAnimationFrame(function () {
-      feed.offsetHeight;
-      feed.style.overflowY = 'scroll';
-      requestAnimationFrame(function () {
-        document.body.style.opacity = '';
-        restoreLock = false;
-      });
-    });
-  }
-  window.addEventListener('pageshow', restorePage);
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible') setTimeout(restorePage, 60);
+async function apiPut(path, body) {
+  const r = await fetch(API + path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
   });
-})();
-
-/* ── 10. Service Worker 注册 ── */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
 }
 
-/* ── 11. 初始化 ── */
-requestAnimationFrame(function () {
-  applyPadding();
-  startLocate();
+// ── Tab ───────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll(".tab").forEach(e=>e.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
+  document.getElementById("tab-"+t).classList.add("active");
+  document.getElementById("page-"+t).classList.add("active");
+  document.getElementById("scroll-host").scrollTop=0;
+}
+
+// ── 弹窗 ──────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add("show"); }
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
+document.querySelectorAll(".modal-mask").forEach(el=>{
+  el.addEventListener("click",e=>{ if(e.target===el) el.classList.remove("show"); });
 });
-</script>
+function openConfirmModal() {
+  document.getElementById("cf-token").value="";
+  document.getElementById("cf-pin").value="";
+  openModal("modal-confirm");
+}
 
+// ── 买家：创建担保 ────────────────────────────────────────
+async function doCreate() {
+  const kw    = document.getElementById("c-kw").value.trim();
+  const price = parseFloat(document.getElementById("c-price").value);
+  const note  = document.getElementById("c-note").value.trim() || "无备注";
+  const pin   = document.getElementById("c-pin").value.trim();
+  if (!kw)              return toast("请输入支付宝口令");
+  if (!price||price<=0) return toast("请输入有效金额");
+  if (pin.length < 4)  return toast("请设置4位数字密码");
+
+  closeModal("modal-create");
+  showLoading(true);
+
+  // 生成唯一 token
+  const token = genToken();
+  const pinHash = hashPin(pin);
+
+  try {
+    await apiPost("/escrow", { token, kw, price, note, pin: pinHash });
+    ["c-kw","c-price","c-note","c-pin"].forEach(id=>document.getElementById(id).value="");
+    toast("担保码已生成 🎉");
+    setSyncStatus("ok");
+    // 展示令牌
+    const wrap = document.getElementById("my-orders");
+    wrap.innerHTML = `<div class="token-display pop" style="margin-bottom:4px">
+      <div class="token-hint">担保码 · 发给卖家</div>
+      <div class="token-num">${token}</div>
+      <div class="token-actions">
+        <button class="btn-sm" style="flex:1;background:rgba(255,255,255,.15);color:#fff;border-radius:8px" onclick="doCopy('${token}','担保码已复制')">复制</button>
+        <button class="btn-sm" style="flex:1;background:rgba(255,255,255,.15);color:#fff;border-radius:8px" onclick="doShare('${token}',${price})">分享</button>
+      </div>
+    </div>` + wrap.innerHTML;
+  } catch(e) {
+    toast("创建失败：" + e.message);
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+// ── 买家：查询我的订单 ────────────────────────────────────
+async function loadMyOrders() {
+  const pin = document.getElementById("list-pin").value.trim();
+  if (pin.length < 4) return toast("请输入4位密码");
+  const pinHash = hashPin(pin);
+  showLoading(true);
+  try {
+    const list = await apiGet(`/escrow/list/${pinHash}`);
+    const wrap = document.getElementById("my-orders");
+    if (!list.length) {
+      wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div>该密码下没有订单</div></div>`;
+    } else {
+      wrap.innerHTML = list.map(renderBuyerCard).join("");
+      toast(`找到 ${list.length} 条订单`);
+    }
+    setSyncStatus("ok");
+  } catch(e) {
+    toast("查询失败，请检查网络");
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+function renderBuyerCard(o) {
+  const isDone = o.status==="done";
+  const confirmBtn = isDone ? "" :
+    `<button class="btn-sm green" onclick="quickConfirm('${o.token}')" style="flex:1">✅ 确认收货</button>`;
+  return `<div class="order-card pop" style="margin-bottom:8px;border:1.5px solid ${isDone?'#bbf7d0':'#e8e8e8'}">
+    <div class="order-top" style="background:${isDone?'#f0fdf4':'#fafafa'}">
+      <div>
+        <div class="order-token-label">担保码</div>
+        <div class="order-token-val" style="color:${isDone?'#00875a':'#0a0a0a'}">${o.token}</div>
+      </div>
+      <span class="status-pill ${isDone?'done':'pending'}">${isDone?'已完成':'担保中'}</span>
+    </div>
+    <div class="order-meta">
+      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val" style="font-weight:700;color:${isDone?'#00875a':'inherit'}">${fmtPrice(o.price)}</span></div>
+      <div class="meta-row"><span class="meta-key">备注</span><span class="meta-val">${o.note}</span></div>
+      <div class="meta-row"><span class="meta-key">创建</span><span class="meta-val">${fmtTime(o.at)}</span></div>
+      ${isDone?`<div class="meta-row"><span class="meta-key">完成</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>`:''}
+    </div>
+    <div class="order-actions">
+      <button class="btn-sm ghost" onclick="doCopy('${o.token}','已复制')">复制码 ${o.token}</button>
+      ${confirmBtn}
+    </div>
+  </div>`;
+}
+
+async function quickConfirm(token) {
+  const pin = document.getElementById("list-pin").value.trim();
+  showLoading(true);
+  try {
+    await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
+    toast("✅ 已确认，口令已释放给卖家！");
+    setSyncStatus("ok");
+    loadMyOrders();
+  } catch(e) {
+    const msg = e.message.includes("密码") ? "密码错误" : "确认失败：" + e.message;
+    toast(msg);
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+// ── 买家：弹窗确认收货 ────────────────────────────────────
+async function doConfirm() {
+  const token = document.getElementById("cf-token").value.trim().toUpperCase();
+  const pin   = document.getElementById("cf-pin").value.trim();
+  if (!token)          return toast("请输入担保码");
+  if (pin.length < 4)  return toast("请输入4位密码");
+  closeModal("modal-confirm");
+  showLoading(true);
+  try {
+    await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
+    toast("✅ 已确认，口令已释放！");
+    setSyncStatus("ok");
+  } catch(e) {
+    const body = e.message;
+    if (body.includes("密码")) toast("密码错误");
+    else if (body.includes("完成")) toast("该订单已完成");
+    else if (body.includes("存在")) toast("担保码不存在");
+    else toast("请求失败：" + body);
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+// ── 卖家：查询订单 ────────────────────────────────────────
+let sellerToken = null;
+async function doQuery() {
+  const token = document.getElementById("q-token").value.trim().toUpperCase();
+  if (!token || token.length < 6) return toast("请输入完整的6位担保码");
+  closeModal("modal-query");
+  showLoading(true);
+  try {
+    const order = await apiGet(`/escrow/${token}`);
+    sellerToken = token;
+    document.getElementById("seller-empty-hint").style.display = "none";
+    document.getElementById("seller-result").innerHTML = renderSellerCard(order);
+    document.getElementById("q-token").value = "";
+    toast("查询成功");
+    setSyncStatus("ok");
+  } catch(e) {
+    toast("担保码无效或不存在");
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+async function refreshSeller() {
+  if (!sellerToken) return;
+  showLoading(true);
+  try {
+    const order = await apiGet(`/escrow/${sellerToken}`);
+    document.getElementById("seller-result").innerHTML = renderSellerCard(order);
+    if (order.status==="done") toast("🎉 口令已解锁！");
+    else toast("买家尚未确认收货");
+    setSyncStatus("ok");
+  } catch(e) {
+    toast("刷新失败");
+    setSyncStatus("err");
+  }
+  showLoading(false);
+}
+
+function renderSellerCard(o) {
+  const isDone = o.status==="done";
+  const kwHtml = isDone
+    ? `<div class="order-kw unlocked">
+        <div class="kw-val">${o.kw}</div>
+        <button class="btn-sm green" style="margin-top:10px;width:100%" onclick="doCopy(${JSON.stringify(o.kw)},'口令已复制')">复制口令</button>
+       </div>`
+    : `<div class="order-kw locked"><div class="kw-locked-txt">🔒 等待买家确认收货后解锁</div></div>`;
+  const actHtml = isDone
+    ? `<div style="padding:0 18px 14px"><div style="background:#e6f9f1;border-radius:10px;padding:11px;text-align:center;font-size:13px;font-weight:700;color:#00875a">🎉 交易完成，复制口令去收款</div></div>`
+    : `<div style="padding:0 18px 14px;display:flex;gap:8px">
+        <button class="btn-sm ghost" style="flex:1" onclick="refreshSeller()">🔄 刷新</button>
+        <div style="flex:2;background:#fff7e6;border-radius:8px;padding:8px 12px;font-size:12px;color:#d97706;display:flex;align-items:center">完成交付后提醒买家确认</div>
+       </div>`;
+  return `<div class="order-card pop" style="border:1.5px solid ${isDone?'#bbf7d0':'#e8e8e8'}">
+    <div class="order-top" style="background:${isDone?'#f0fdf4':'#fafafa'}">
+      <div>
+        <div class="order-token-label">担保码</div>
+        <div class="order-token-val" style="color:${isDone?'#00875a':'#0a0a0a'}">${o.token}</div>
+      </div>
+      <span class="status-pill ${isDone?'done':'pending'}">${isDone?'已完成':'等待确认'}</span>
+    </div>
+    <div class="order-meta">
+      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val" style="font-weight:700">${fmtPrice(o.price)}</span></div>
+      <div class="meta-row"><span class="meta-key">备注</span><span class="meta-val">${o.note}</span></div>
+      <div class="meta-row"><span class="meta-key">创建时间</span><span class="meta-val">${fmtTime(o.at)}</span></div>
+      ${isDone?`<div class="meta-row"><span class="meta-key">完成时间</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>`:''}
+    </div>
+    ${kwHtml}${actHtml}
+  </div>`;
+}
+
+// ── 复制/分享 ─────────────────────────────────────────────
+function doCopy(text,msg) {
+  if(navigator.clipboard) navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>fallback(text,msg));
+  else fallback(text,msg);
+}
+function fallback(text,msg) {
+  const t=document.createElement("textarea"); t.value=text; t.style.cssText="position:fixed;opacity:0";
+  document.body.appendChild(t); t.select(); document.execCommand("copy"); document.body.removeChild(t); toast(msg);
+}
+function doShare(token,price) {
+  const text=`【担保码】${token}\n金额：¥${Number(price).toFixed(2)}\n凭此码查询担保订单，我确认收货后口令自动解锁。`;
+  if(navigator.share) navigator.share({text}).catch(()=>doCopy(token,"担保码已复制"));
+  else doCopy(text,"分享内容已复制");
+}
+
+// ── 初始化 ────────────────────────────────────────────────
+setSyncStatus("warn", "正在连接服务器…");
+fetch(API + "/").then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("warn","⚠️ 服务器未连接，请检查 API 地址"));
+</script>
 </body>
 </html>
