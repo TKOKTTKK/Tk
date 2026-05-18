@@ -1,3 +1,4 @@
+担保3代
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -206,7 +207,6 @@ body {
 <div class="toast" id="toast"></div>
 <div class="loading-mask" id="loading"><div class="spinner"></div></div>
 
-<!-- 弹窗：创建担保 -->
 <div class="modal-mask" id="modal-create">
   <div class="modal">
     <div class="modal-title">买家创建担保</div>
@@ -232,7 +232,6 @@ body {
   </div>
 </div>
 
-<!-- 弹窗：确认收货 -->
 <div class="modal-mask" id="modal-confirm">
   <div class="modal">
     <div class="modal-title">确认收货</div>
@@ -250,7 +249,6 @@ body {
   </div>
 </div>
 
-<!-- 弹窗：卖家查询 -->
 <div class="modal-mask" id="modal-query">
   <div class="modal">
     <div class="modal-title">输入担保码</div>
@@ -264,7 +262,6 @@ body {
   </div>
 </div>
 
-<!-- ── 主体 ── -->
 <div class="app-wrap">
   <div class="scroll-host" id="scroll-host">
     <div class="app-header">
@@ -273,7 +270,6 @@ body {
     </div>
     <div class="inner">
 
-      <!-- 买家页 -->
       <div class="page active" id="page-buyer">
         <div id="sync-status"></div>
         <div class="card">
@@ -337,7 +333,6 @@ body {
         </div>
       </div>
 
-      <!-- 卖家页 -->
       <div class="page" id="page-seller">
         <div class="card">
           <div class="card-body" style="padding:16px">
@@ -358,7 +353,6 @@ body {
     </div>
   </div>
 
-  <!-- Tab 在 scroll-host 外，app-wrap 底部 -->
   <div class="tab-bar">
     <div class="tab active" id="tab-buyer" onclick="switchTab('buyer')">
       <div class="tab-icon">🛒</div>
@@ -406,9 +400,9 @@ function toast(msg) {
 function setSyncStatus(state, msg) {
   const el=document.getElementById("sync-status"); if(!el) return;
   const map={
-    ok:   ["ok",  "☁️ 已连接服务器，跨设备可用"],
-    warn: ["warn","⚠️ 服务器未连接，使用本地缓存"],
-    err:  ["err", "❌ 请求失败，请检查网络"],
+    ok:   ["ok",  ""],
+    warn: ["warn",""],
+    err:  ["err", ""],
   };
   const [cls, txt]=map[state]||map.warn;
   el.innerHTML=`<div class="sync-bar ${cls}"><div class="sync-dot"></div>${msg||txt}</div>`;
@@ -672,8 +666,12 @@ function doShare(token,price) {
 }
 
 // ── 初始化 ────────────────────────────────────────────────
-setSyncStatus("warn", "正在连接服务器…");
-fetch(API + "/").then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("warn","⚠️ 服务器未连接，请检查 API 地址"));
+// 【修复点】：强制斩断旧版本的本地数据！只要打开页面就会清空你浏览器的旧 localStorage
+try { localStorage.clear(); } catch(e) {}
+
+setSyncStatus("warn", "");
+fetch(API + "/").then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("warn",""));
 </script>
 </body>
 </html>
+
