@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>推荐</title>
+<style>
+/* ════════════════════════════════════════════════════════════
+   CSS 变量 & 全局重置
+════════════════════════════════════════════════════════════ */
+:root {
+  --accent: #fe2c55;
+  --red:    #fe2c55;
+  --cyan:   #25f4ee;
+  --gold:   #fac300;
+  --bg-dark:#050508;
+  --glass:  rgba(255,255,255,0.06);
+  --safe-top:    env(safe-area-inset-top, 44px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --topbar-h: calc(var(--safe-top) + 44px);
+  --botbar-h: calc(var(--safe-bottom) + 55px);
+  --vh: 1dvh;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { -webkit-text-size-adjust:100%; height:-webkit-fill-available; }
+body {
+  background:var(--bg-dark);
+  font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+  color:#fff;
+  overflow:hidden;
+  height:100svh;
+  height:calc(var(--vh,1dvh) * 100);
+  min-height:-webkit-fill-available;
+  -webkit-font-smoothing:antialiased;
+  transform:translate3d(0,0,0);
+}
+
+/* ════════════════════════════════════════════════════════════
+   多页面容器架构
+════════════════════════════════════════════════════════════ */
+.page-container {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100svh;
+  height: calc(var(--vh,1dvh) * 100);
+}
+.page-container.active { display: block; }
+
+/* ════════════════════════════════════════════════════════════
+   【首页】视频 Feed 容器
+════════════════════════════════════════════════════════════ */
+#feed-home {
+  position: absolute; top: 0; left: 0;
+  width: 100vw; height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  z-index: 1;
+}
+#feed-home::-webkit-scrollbar { display: none; }
+
+/* 首页视频单元 */
+.video-item {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  height: calc(var(--vh,1dvh) * 100);
+  scroll-snap-align: start;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.video-item.is-video { background: #111; }
+.feed-video { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* 骨架屏 */
+.skeleton {
+  position:absolute; inset:0; z-index:3; pointer-events:none;
+  background:linear-gradient(135deg,#1a1a1a 0%,#2a2a2a 50%,#1a1a1a 100%);
+  background-size:200% 200%;
+  animation:shimmer 1.5s ease-in-out infinite;
+  transition:opacity 0.3s;
+}
+.skeleton.gone { opacity:0; pointer-events:none; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* 暂停蒙层 */
+.pause-mask {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:68px; height:68px;
+  background:rgba(0,0,0,0.38); border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity 0.2s;
+  z-index:5; backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+}
+.pause-mask svg { width:34px; height:34px; margin-left:5px; fill:rgba(255,255,255,0.92); }
+.video-item.is-paused .pause-mask { opacity:1; }
+
+/* 缓冲圈 */
+.buf-ring {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:40px; height:40px;
+  border:3px solid rgba(255,255,255,0.18);
+  border-top-color:rgba(255,255,255,0.8);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  z-index:6; opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+.video-item.is-buffering .buf-ring { opacity:1; }
+@keyframes spin { to { transform:translate(-50%,-50%) rotate(360deg); } }
+
+/* 内容页公共 */
+.video-item.product-page,
+.video-item.service-page,
+.video-item.case-page,
+.video-item.detail-page {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background:#080812;
+}
+.page-glow { position:absolute; inset:0; pointer-events:none; z-index:0; }
+.page-glow::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%,   rgba(254,44,85,0.18) 0%,transparent 65%),
+    radial-gradient(ellipse 55% 40% at 90% 90%,   rgba(37,244,238,0.10) 0%,transparent 55%),
+    radial-gradient(ellipse 45% 35% at 5%  70%,   rgba(254,44,85,0.06) 0%,transparent 50%);
+}
+.page-scroll {
+  position:relative; z-index:5;
+  width:100%; flex:1;
+  overflow-y:hidden; scrollbar-width:none;
+  padding:calc(var(--topbar-h) + 10px) 0 calc(var(--botbar-h) + 10px);
+  touch-action:pan-y; overscroll-behavior-y:contain;
+}
+.page-body { display:flex; flex-direction:column; align-items:center; padding:0 26px 20px; min-height:100%; }
+.page-category { font-size:11px; font-weight:700; letter-spacing:3px; color:var(--red); text-transform:uppercase; margin-bottom:9px; }
+.page-title { font-size:23px; font-weight:800; color:#fff; text-align:center; line-height:1.28; margin-bottom:11px; letter-spacing:-0.3px; }
+.page-desc { font-size:13.5px; color:rgba(255,255,255,0.5); text-align:center; line-height:1.75; margin-bottom:14px; max-width:290px; }
+.page-divider { width:38px; height:1px; background:rgba(255,255,255,0.12); margin:0 auto 16px; }
+.feature-list { width:100%; max-width:316px; display:flex; flex-direction:column; gap:9px; margin-bottom:18px; }
+.feature-item { display:flex; align-items:center; gap:11px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 13px; }
+.feature-icon { width:32px; height:32px; border-radius:9px; background:rgba(254,44,85,0.14); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.feature-icon svg { width:16px; height:16px; fill:var(--red); }
+.feature-text { font-size:13px; color:rgba(255,255,255,0.7); line-height:1.45; }
+.feature-text b { color:#fff; display:block; font-size:13.5px; margin-bottom:1px; }
+.case-list { width:100%; max-width:316px; display:flex; flex-direction:column; gap:10px; margin-bottom:22px; }
+.case-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:13px 14px; }
+.case-header { display:flex; align-items:center; gap:9px; margin-bottom:7px; }
+.case-avatar { width:34px; height:34px; border-radius:50%; overflow:hidden; flex-shrink:0; background:#2a1540; }
+.case-avatar svg { width:100%; height:100%; }
+.case-name { font-size:13.5px; font-weight:600; color:#fff; }
+.case-tag  { font-size:11px; color:rgba(255,255,255,0.38); margin-top:1px; }
+.case-stars { color:var(--gold); font-size:13px; margin-bottom:5px; }
+.case-quote { font-size:13px; color:rgba(255,255,255,0.62); line-height:1.6; }
+.page-cta {
+  width:100%; max-width:316px; height:50px;
+  background:linear-gradient(130deg,#fe2c55 0%,#ff7070 100%);
+  border:none; border-radius:100px; color:#fff; font-size:16px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+  box-shadow:0 8px 26px rgba(254,44,85,0.4);
+  animation:breathe 2.4s ease-in-out infinite;
+  position:relative; overflow:hidden; -webkit-appearance:none; margin-bottom:10px;
+}
+@keyframes breathe {
+  0%,100%{ box-shadow:0 8px 26px rgba(254,44,85,0.4); transform:scale(1); }
+  50%    { box-shadow:0 14px 40px rgba(254,44,85,0.6); transform:scale(1.025); }
+}
+.page-cta::after {
+  content:''; position:absolute; top:0; left:-100%; width:55%; height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
+  animation:shine 3s ease-in-out infinite 0.5s;
+}
+@keyframes shine { 0%{left:-100%} 40%{left:140%} 100%{left:140%} }
+.page-sub-btn {
+  width:100%; max-width:316px; height:44px;
+  background:transparent; border:1px solid rgba(255,255,255,0.18); border-radius:100px;
+  color:rgba(255,255,255,0.5); font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  -webkit-appearance:none; transition:background 0.15s;
+}
+.page-sub-btn:active { background:rgba(255,255,255,0.07); }
+.page-note { margin-top:14px; font-size:11px; color:rgba(255,255,255,0.2); text-align:center; line-height:1.65; }
+
+/* 结束页 */
+.video-item.end-page { background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+.end-page .end-title { font-size:17px; font-weight:600; color:rgba(255,255,255,0.7); }
+.end-page .end-sub   { font-size:13px; color:rgba(255,255,255,0.35); }
+
+/* ════════════════════════════════════════════════════════════
+   【同城页】原推荐feed（第一份代码）
+════════════════════════════════════════════════════════════ */
+#feed-city {
+  position:absolute; top:0; left:0; width:100vw; height:100%;
+  overflow-y:scroll; scroll-snap-type:y mandatory; scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  backface-visibility:hidden; transform:translateZ(0);
+}
+#feed-city::-webkit-scrollbar { display:none; }
+
+.page-item {
+  position:relative; width:100vw; height:100svh;
+  height:calc(var(--vh,1dvh)*100);
+  scroll-snap-align:start; display:flex; flex-direction:column;
+  padding-bottom:var(--botbar-h);
+  backface-visibility:hidden;
+}
+.upper-half {
+  padding:10px; flex-shrink:0;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px;
+}
+.media-box {
+  aspect-ratio:3/4; background:#111; border-radius:6px; overflow:hidden;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; position:relative;
+  transition:transform 0.15s; transform:translateZ(0);
+}
+.media-box:active { transform:scale(0.96); }
+.media-box img   { width:100%; height:100%; object-fit:cover; display:block; }
+.media-box video { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+.media-box .video-badge {
+  position:absolute; bottom:5px; left:5px;
+  background:rgba(0,0,0,0.6); border-radius:4px; padding:2px 5px;
+  font-size:10px; color:#fff; display:flex; align-items:center; gap:3px;
+  backdrop-filter:blur(4px);
+}
+.media-box .video-badge svg { width:10px; height:10px; }
+.lower-half { flex:1; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; padding:10px 25px; }
+.profile-card { width:100%; max-width:340px; position:relative; }
+.hero-info { margin-bottom:15px; text-align:left; width:100%; }
+.name-row { display:flex; align-items:baseline; gap:10px; }
+.artist-name { font-size:32px; font-weight:800; letter-spacing:-1px; }
+.region-tag { font-size:13px; color:rgba(255,255,255,0.5); display:flex; align-items:center; gap:4px; }
+.stats-grid { display:flex; gap:12px; width:100%; margin-bottom:20px; }
+.stat-pill {
+  flex:1; background:var(--glass); padding:12px; border-radius:14px;
+  border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.stat-label { font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px; display:block; }
+.stat-value { font-size:17px; font-weight:600; color:#fff; }
+.stat-value.highlight { color:#fac300; }
+.action-btn {
+  width:100%; height:54px; border-radius:16px; border:none;
+  background:#fff; color:#000; font-size:16px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  box-shadow:0 10px 30px rgba(255,255,255,0.15); transition:transform 0.2s;
+  cursor:pointer; -webkit-appearance:none;
+}
+.action-btn:active { transform:scale(0.96); }
+.action-btn svg { width:20px; height:20px; }
+.bg-glow {
+  position:absolute; width:150px; height:150px;
+  background:radial-gradient(circle,rgba(254,44,85,0.2) 0%,transparent 70%);
+  z-index:-1; top:-20px; right:-20px; pointer-events:none;
+}
+
+/* 同城预览 overlay */
+#preview-overlay { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0); pointer-events:none; display:flex; align-items:center; justify-content:center; transition:background 0.3s; }
+#preview-overlay.active { background:rgba(0,0,0,0.92); pointer-events:auto; }
+#preview-inner { position:relative; max-width:90vw; max-height:80vh; opacity:0; transform:scale(0.88); transition:opacity 0.28s,transform 0.28s; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+#preview-overlay.active #preview-inner { opacity:1; transform:scale(1); }
+#preview-img { max-width:90vw; max-height:75vh; border-radius:12px; object-fit:contain; display:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); }
+#preview-video { max-width:90vw; max-height:75vh; border-radius:12px; display:none; outline:none; box-shadow:0 20px 60px rgba(0,0,0,0.8); background:#000; }
+#preview-close { position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; color:#fff; z-index:5001; opacity:0; pointer-events:none; transition:opacity 0.25s; }
+#preview-overlay.active #preview-close { opacity:1; pointer-events:auto; }
+#preview-close svg { width:16px; height:16px; }
+#preview-counter { font-size:13px; color:rgba(255,255,255,0.7); background:rgba(0,0,0,0.4); padding:5px 14px; border-radius:20px; backdrop-filter:blur(6px); opacity:0; pointer-events:none; transition:opacity 0.25s; margin-top:10px; }
+#preview-overlay.active #preview-counter { opacity:1; }
+.preview-arrow { position:fixed; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.12); border:none; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:5001; }
+#preview-overlay.active .preview-arrow { opacity:1; pointer-events:auto; }
+#arrow-prev { left:12px; } #arrow-next { right:12px; }
+
+/* ════════════════════════════════════════════════════════════
+   空白模板页
+════════════════════════════════════════════════════════════ */
+.blank-page {
+  width:100vw; height:100svh; height:calc(var(--vh,1dvh)*100);
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  padding:var(--topbar-h) 20px var(--botbar-h); text-align:center;
+}
+.blank-page-icon { width:80px; height:80px; margin-bottom:20px; opacity:0.3; }
+.blank-page-title { font-size:20px; font-weight:600; color:rgba(255,255,255,0.8); margin-bottom:8px; }
+.blank-page-desc  { font-size:14px; color:rgba(255,255,255,0.4); }
+
+/* ════════════════════════════════════════════════════════════
+   顶部导航 & 底部 Tab 栏
+════════════════════════════════════════════════════════════ */
+.mask-top { position:fixed; top:0; left:0; right:0; height:120px; background:linear-gradient(to bottom,rgba(0,0,0,0.5),transparent); z-index:10; pointer-events:none; }
+.top-nav  { position:fixed; top:var(--safe-top); left:0; right:0; z-index:100; display:flex; align-items:center; padding:0 12px; height:44px; }
+.nav-menu { width:36px; display:flex; flex-direction:column; gap:4px; flex-shrink:0; cursor:pointer; }
+.nav-menu span { display:block; height:2px; background:#fff; border-radius:1px; width:22px; }
+.nav-menu span:nth-child(2) { width:16px; }
+.nav-tabs { flex:1; display:flex; align-items:center; justify-content:center; overflow-x:auto; scrollbar-width:none; }
+.nav-tabs::-webkit-scrollbar { display:none; }
+.nav-tab { flex-shrink:0; font-size:16px; color:rgba(255,255,255,0.65); font-weight:500; padding:0 10px; cursor:pointer; white-space:nowrap; position:relative; line-height:44px; }
+.nav-tab.active { color:#fff; font-size:17px; font-weight:700; }
+.nav-tab.active::after { content:''; position:absolute; bottom:4px; left:50%; transform:translateX(-50%); width:16px; height:2.5px; background:#fff; border-radius:2px; }
+.nav-search { width:36px; display:flex; align-items:center; justify-content:flex-end; flex-shrink:0; cursor:pointer; }
+
+.tab-bar {
+  position:fixed; bottom:0; left:0; right:0;
+  height:calc(55px + var(--safe-bottom)); padding-bottom:var(--safe-bottom);
+  background:#000; border-top:0.5px solid rgba(255,255,255,0.1);
+  z-index:200; display:flex; align-items:center;
+  transform:translateZ(0);
+}
+.tab-item { flex:1; display:flex; align-items:center; justify-content:center; height:100%; cursor:pointer; }
+.tab-item .tab-label { font-size:16px; color:rgba(255,255,255,0.45); font-weight:600; }
+.tab-item.active .tab-label { color:#fff; }
+.tab-publish { flex:1; display:flex; align-items:center; justify-content:center; height:55px; cursor:pointer; }
+.pub-inner { width:36px; height:26px; border:2px solid rgba(255,255,255,0.9); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:300; line-height:1; }
+
+/* ════════════════════════════════════════════════════════════
+   首页专属：侧栏、视频信息、进度条、静音提示
+   仅在 page-home 激活时显示
+════════════════════════════════════════════════════════════ */
+/* 渐变遮罩仅首页需要 */
+#home-mask-bottom { position:fixed; bottom:0; left:0; right:0; height:280px; background:linear-gradient(to top,rgba(0,0,0,0.55),rgba(0,0,0,0.1) 60%,transparent); z-index:2; pointer-events:none; display:none; }
+#page-home.active ~ #home-mask-bottom,
+body.home-active #home-mask-bottom { display:block; }
+
+.side-bar {
+  position:fixed; right:10px; bottom:calc(var(--safe-bottom) + 100px);
+  z-index:100; display:none; flex-direction:column; align-items:center;
+  transition:opacity 0.25s,visibility 0.25s;
+}
+.side-bar.visible { display:flex; }
+.side-bar.hud-hidden { opacity:0; visibility:hidden; }
+
+.avatar-wrap { width:52px; height:52px; position:relative; margin-bottom:20px; cursor:pointer; }
+.avatar-img  { width:50px; height:50px; border-radius:50%; border:1.8px solid #fff; background:#333; overflow:hidden; }
+.avatar-img svg { width:100%; height:100%; }
+.avatar-plus { position:absolute; bottom:-12px; left:50%; transform:translateX(-50%); width:18px; height:18px; background:var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; transition:opacity 0.25s,transform 0.25s; cursor:pointer; box-shadow:0 1px 4px rgba(254,44,85,0.5); line-height:1; }
+.avatar-plus.gone { opacity:0; pointer-events:none; transform:translateX(-50%) scale(0.5); }
+
+.side-btn { display:flex; flex-direction:column; align-items:center; margin-bottom:10px; cursor:pointer; }
+.side-btn .icon-wrap { width:45px; height:45px; display:flex; align-items:center; justify-content:center; }
+.side-btn .icon-wrap svg { transition:transform 0.15s; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.4)); }
+.side-btn .label { font-size:12px; color:#fff; font-weight:500; text-shadow:0 1px 3px rgba(0,0,0,0.5); margin-top:2px; }
+
+.video-info {
+  position:fixed; left:14px; bottom:calc(var(--safe-bottom) + 65px); right:80px;
+  z-index:100; pointer-events:none;
+  display:none; transition:opacity 0.25s,visibility 0.25s;
+}
+.video-info.visible { display:block; }
+.video-info.hud-hidden { opacity:0; visibility:hidden; }
+.vi-username { font-size:17px; font-weight:700; margin-bottom:6px; text-shadow:0 1px 4px rgba(0,0,0,0.5); }
+.vi-desc     { font-size:14px; color:rgba(255,255,255,0.92); line-height:1.4; text-shadow:0 1px 3px rgba(0,0,0,0.4); }
+
+.prog-bar {
+  position:fixed; bottom:calc(var(--safe-bottom) + 55px); left:0; right:0;
+  height:2px; background:rgba(255,255,255,0.18);
+  z-index:100; display:none; transition:opacity 0.25s;
+}
+.prog-bar.visible { display:block; }
+.prog-bar.hud-hidden { opacity:0; }
+.prog-fill { height:100%; width:0%; border-radius:1px; background:rgba(255,255,255,0.75); transition:width 0.3s linear; }
+
+#muteBar {
+  position:fixed; top:calc(var(--safe-top) + 50px); left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.65); color:#fff; font-size:13px; padding:8px 18px;
+  border-radius:20px; z-index:9998; display:flex; align-items:center; gap:6px;
+  opacity:0; pointer-events:none; transition:opacity 0.3s; white-space:nowrap;
+}
+#muteBar.show { opacity:1; }
+#muteBar svg { width:16px; height:16px; fill:#fff; flex-shrink:0; }
+
+/* 飘心 */
+.tap-heart { position:fixed; width:80px; height:80px; pointer-events:none; z-index:999; transform:translate(-50%,-50%) scale(0); animation:heartPop .85s ease-out forwards; }
+@keyframes heartPop {
+  0%  { transform:translate(-50%,-50%) scale(.3); opacity:0; }
+  20% { transform:translate(-50%,-50%) scale(1.3); opacity:1; }
+  65% { transform:translate(-50%,-110%) scale(1.1); opacity:.8; }
+  100%{ transform:translate(-50%,-200%) scale(.8); opacity:0; }
+}
+
+/* Toast */
+#toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.76); color:#fff; font-size:15px; padding:12px 24px; border-radius:8px; z-index:9999; opacity:0; pointer-events:none; transition:opacity 0.25s; white-space:nowrap; }
+#toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- 静音提示（仅首页视频用） -->
+<div id="muteBar">
+  <svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+  点击屏幕开启声音
+</div>
+
+<!-- 底部渐变遮罩（首页专用） -->
+<div id="home-mask-bottom"></div>
+
+<!-- 顶部渐变遮罩（共用） -->
+<div class="mask-top"></div>
+
+<!-- 顶部导航（共用） -->
+<nav class="top-nav">
+  <div class="nav-menu" onclick="showToast('开通会员使用')"><span></span><span></span><span></span></div>
+  <div class="nav-tabs" id="navTabs">
+    <div class="nav-tab" onclick="showToast('开通会员使用')">精选</div>
+    <div class="nav-tab" onclick="showToast('开通会员使用')">热点</div>
+    <div class="nav-tab" onclick="showToast('开通会员使用')">直播</div>
+    <div class="nav-tab active" id="navTabRecommend">推荐</div>
+  </div>
+  <div class="nav-search" onclick="showToast('开通会员使用')">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  </div>
+</nav>
+
+<!-- 首页专属：右侧操作栏 -->
+<div class="side-bar" id="sideBar">
+  <div class="avatar-wrap">
+    <div class="avatar-img" onclick="showToast('开通会员使用')">
+      <svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#1a1a2e"/><ellipse cx="50" cy="62" rx="28" ry="22" fill="#f5c5a3"/><ellipse cx="50" cy="48" rx="22" ry="24" fill="#f5c5a3"/><ellipse cx="50" cy="36" rx="24" ry="20" fill="#1a1a1a"/><rect x="26" y="30" width="10" height="36" rx="4" fill="#1a1a1a"/><rect x="64" y="30" width="10" height="36" rx="4" fill="#1a1a1a"/><ellipse cx="50" cy="26" rx="22" ry="14" fill="#1a1a1a"/><ellipse cx="40" cy="50" rx="5" ry="6" fill="#1a1a1a"/><ellipse cx="60" cy="50" rx="5" ry="6" fill="#1a1a1a"/><circle cx="41.5" cy="48.5" r="1.5" fill="#fff"/><circle cx="61.5" cy="48.5" r="1.5" fill="#fff"/><path d="M44 60 Q50 65 56 60" stroke="#d4896a" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </div>
+    <div class="avatar-plus" id="followBtn" onclick="handleFollow(event)">+</div>
+  </div>
+  <div class="side-btn" onclick="toggleLike()">
+    <div class="icon-wrap"><svg id="heartIcon" width="38" height="38" viewBox="0 0 24 24" fill="#fff"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+    <span class="label" id="likeCount">37.1万</span>
+  </div>
+  <div class="side-btn" onclick="showToast('开通会员使用')">
+    <div class="icon-wrap"><svg width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+    <span class="label">4982</span>
+  </div>
+  <div class="side-btn" onclick="toggleFavorite()">
+    <div class="icon-wrap"><svg id="starIcon" width="34" height="34" viewBox="0 0 24 24" fill="#fff"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+    <span class="label">1.7万</span>
+  </div>
+  <div class="side-btn" onclick="showToast('开通会员使用')">
+    <div class="icon-wrap"><svg width="32" height="32" viewBox="0 0 24 24" fill="#fff"><path d="M14 4.5V1l7 7-7 7v-4.1c-5 0-8.5 1.6-11 5.1 1-5 4-10 11-11z"/></svg></div>
+    <span class="label" style="margin-top:-5px">3.2万</span>
+  </div>
+</div>
+
+<!-- 首页专属：视频信息 -->
+<div class="video-info" id="videoInfo">
+  <div class="vi-username">@我的视频</div>
+  <div class="vi-desc">开通会员后进主页观看完整版 永久会员20元</div>
+</div>
+
+<!-- 首页专属：进度条 -->
+<div class="prog-bar" id="progBar"><div class="prog-fill" id="progFill"></div></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     页面容器区域
+════════════════════════════════════════════════════════════ -->
+
+<!-- ===== 首页：视频 Feed（第二份代码内容） ===== -->
+<div class="page-container active" id="page-home">
+
+  <div id="feed-home">
+    <!-- 内容页静态 DOM（视频页由 JS 动态插入）-->
+
+    <!-- 内容页 #1：产品介绍 -->
+    <div class="video-item product-page" data-page-type="content" id="productPage1">
+      <div class="page-glow"></div>
+      <div class="page-scroll"><div class="page-body">
+        <div class="page-category">健身会员</div>
+        <div class="page-title">20元开通会员<br>专业健身训练</div>
+        <div class="page-desc">解锁海量健身课程与本地训练资源</div>
+        <div class="page-divider"></div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></div>
+            <div class="feature-text"><b>海量课程</b>专业动作教学 + 跟练视频</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></div>
+            <div class="feature-text"><b>直播训练</b>实时跟练 + 本地健身推荐</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></div>
+            <div class="feature-text"><b>永久会员</b>一次开通 终身使用</div>
+          </div>
+        </div>
+        <button class="page-cta" onclick="location.href='kefu.html'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+          联系客服开通会员
+        </button>
+        <button class="page-sub-btn" onclick="continueFeed()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          上滑继续浏览
+        </button>
+        <div class="page-note"></div>
+      </div></div>
+    </div>
+
+    <!-- 内容页 #2：服务说明 -->
+    <div class="video-item service-page" data-page-type="content" id="servicePage1">
+      <div class="page-glow"></div>
+      <div class="page-scroll"><div class="page-body">
+        <div class="page-category">健身会员</div>
+        <div class="page-title">20元开通会员<br>专业健身训练</div>
+        <div class="page-desc">解锁海量健身课程与本地训练资源</div>
+        <div class="page-divider"></div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg></div>
+            <div class="feature-text"><b>完整课程</b>解锁全部健身教学视频</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg></div>
+            <div class="feature-text"><b>训练功能</b>直播课程 + 本地健身推荐</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/></svg></div>
+            <div class="feature-text"><b>永久有效</b>一次开通 终身使用</div>
+          </div>
+        </div>
+        <button class="page-cta" onclick="location.href='kefu.html'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+          联系客服开通会员
+        </button>
+        <button class="page-sub-btn" onclick="continueFeed()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          上滑继续浏览
+        </button>
+        <div class="page-note"></div>
+      </div></div>
+    </div>
+
+    <!-- 内容页 #3：用户案例 -->
+    <div class="video-item case-page" data-page-type="content" id="casePage1">
+      <div class="page-glow"></div>
+      <div class="page-scroll"><div class="page-body">
+        <div class="page-desc">来自健身用户的真实反馈</div>
+        <div class="page-divider"></div>
+        <div class="case-list">
+          <div class="case-card">
+            <div class="case-header">
+              <div class="case-avatar"><svg viewBox="0 0 34 34"><rect width="34" height="34" fill="#2a1a3e"/><ellipse cx="17" cy="22" rx="10" ry="8" fill="#f5c5a3"/><ellipse cx="17" cy="15" rx="8" ry="9" fill="#f5c5a3"/><ellipse cx="17" cy="10" rx="9" ry="6" fill="#1a1a1a"/></svg></div>
+              <div><div class="case-name">小李· 上海</div><div class="case-tag">坚持3个月</div></div>
+            </div>
+            <div class="case-stars">★★★★★</div>
+            <div class="case-quote">动作讲解清晰，坚持打卡后体型明显改善</div>
+          </div>
+          <div class="case-card">
+            <div class="case-header">
+              <div class="case-avatar"><svg viewBox="0 0 34 34"><rect width="34" height="34" fill="#1a2e1a"/><ellipse cx="17" cy="22" rx="10" ry="8" fill="#f0c8a0"/><ellipse cx="17" cy="15" rx="8" ry="9" fill="#f0c8a0"/><ellipse cx="17" cy="10" rx="9" ry="6" fill="#1a3a1a"/></svg></div>
+              <div><div class="case-name">阿伟· 深圳</div><div class="case-tag">坚持2个月</div></div>
+            </div>
+            <div class="case-stars">★★★★★</div>
+            <div class="case-quote">本地健身推荐很实用，很快就找到合适教练</div>
+          </div>
+        </div>
+        <button class="page-cta" onclick="location.href='kefu.html'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+          联系客服开通会员
+        </button>
+        <button class="page-sub-btn" onclick="continueFeed()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          上滑继续浏览
+        </button>
+        <div class="page-note"></div>
+      </div></div>
+    </div>
+
+    <!-- 内容页 #4：官方详情 -->
+    <div class="video-item detail-page" data-page-type="content" id="detailPage1">
+      <div class="page-glow"></div>
+      <div class="page-scroll"><div class="page-body">
+        <div class="page-category">健身会员</div>
+        <div class="page-title">20元开通会员<br>专业健身训练</div>
+        <div class="page-desc">解锁海量健身课程与本地训练资源</div>
+        <div class="page-divider"></div>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+            <div class="feature-text"><b>完整课程</b>解锁全部健身教学视频</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg></div>
+            <div class="feature-text"><b>训练功能</b>直播课程 + 本地健身推荐</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+            <div class="feature-text"><b>永久有效</b>一次开通 终身使用</div>
+          </div>
+        </div>
+        <button class="page-cta" onclick="location.href='kefu.html'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          联系客服开通会员
+        </button>
+        <button class="page-sub-btn" onclick="continueFeed()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+          上滑继续浏览
+        </button>
+        <div class="page-note"></div>
+      </div></div>
+    </div>
+  </div><!-- /#feed-home -->
+
+</div><!-- /#page-home -->
+
+<!-- ===== 同城页：原推荐 Feed ===== -->
+<div class="page-container" id="page-city">
+  <div id="feed-city"></div>
+</div>
+
+<!-- ===== 消息页 ===== -->
+<div class="page-container" id="page-message">
+  <div class="blank-page">
+    <svg class="blank-page-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <div class="blank-page-title">消息</div>
+    <div class="blank-page-desc">暂无新消息</div>
+  </div>
+</div>
+
+<!-- ===== 我的页 ===== -->
+<div class="page-container" id="page-me">
+  <div class="blank-page">
+    <svg class="blank-page-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <div class="blank-page-title">我的</div>
+    <div class="blank-page-desc">登录后查看个人资料</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     底部 Tab 栏（共用）
+════════════════════════════════════════════════════════════ -->
+<div class="tab-bar">
+  <div class="tab-item active" data-page="home"    onclick="switchPage('home')"><span class="tab-label">首页</span></div>
+  <div class="tab-item"        data-page="city"    onclick="switchPage('city')"><span class="tab-label">本地健身</span></div>
+  <div class="tab-publish" onclick="showToast('开通会员使用')"><div class="pub-inner">+</div></div>
+  <div class="tab-item"        data-page="message" onclick="switchPage('message')"><span class="tab-label">消息</span></div>
+  <div class="tab-item"        data-page="me"      onclick="switchPage('me')"><span class="tab-label">我</span></div>
+</div>
+
+<!-- 同城页预览 overlay -->
+<div id="preview-overlay" onclick="closePreview(event)">
+  <div id="preview-inner">
+    <img id="preview-img" alt="预览">
+    <video id="preview-video" controls playsinline></video>
+    <button id="preview-close" onclick="closePreviewDirect()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div id="preview-counter"></div>
+  </div>
+  <button class="preview-arrow" id="arrow-prev" onclick="previewNav(-1)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="preview-arrow" id="arrow-next" onclick="previewNav(1)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   Safari/搜狗输入法 --vh 修复
+════════════════════════════════════════════════════════════ */
+function fixVh() {
+  var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+}
+fixVh();
+(window.visualViewport || window).addEventListener('resize', fixVh);
+
+/* ════════════════════════════════════════════════════════════
+   Toast
+════════════════════════════════════════════════════════════ */
+var toastTimer;
+function showToast(t) {
+  var el = document.getElementById('toast');
+  el.textContent = t; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 1600);
+}
+
+/* ════════════════════════════════════════════════════════════
+   多页面切换（丝滑：仅切换 class，无动画延迟）
+════════════════════════════════════════════════════════════ */
+var currentPage = 'home';
+
+function switchPage(pageId) {
+  if (currentPage === pageId) return;
+
+  // 离开首页：暂停所有视频、隐藏首页专属 HUD
+  if (currentPage === 'home') {
+    homeVideoEls.forEach(function(v){ v.pause(); });
+    setHomeHUD(false);
+  }
+
+  // 离开同城页：暂停同城视频
+  if (currentPage === 'city') {
+    document.querySelectorAll('#feed-city .grid-video').forEach(function(v){ v.pause(); });
+  }
+
+  // 切换页面容器
+  document.querySelectorAll('.page-container').forEach(function(el){ el.classList.remove('active'); });
+  var target = document.getElementById('page-' + pageId);
+  if (target) target.classList.add('active');
+
+  // 切换底部 tab 高亮
+  document.querySelectorAll('.tab-bar .tab-item').forEach(function(el){ el.classList.remove('active'); });
+  var activeTab = document.querySelector('.tab-bar .tab-item[data-page="' + pageId + '"]');
+  if (activeTab) activeTab.classList.add('active');
+
+  // 顶部导航 tab 文案随页面切换
+  var navTabRecommend = document.getElementById('navTabRecommend');
+  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  navTabRecommend.classList.add('active');
+
+  currentPage = pageId;
+
+  // 进入首页：恢复 HUD，恢复当前视频播放
+  if (pageId === 'home') {
+    setHomeHUD(true);
+    // 恢复当前可见视频
+    var feed = document.getElementById('feed-home');
+    homeAllSections.forEach(function(sec, i) {
+      var rect = sec.getBoundingClientRect();
+      if (rect.top >= -10 && rect.top <= 10 && homeSecTypes[i] === 'video') {
+        var v = homeVideoEls[homeVideoIdxMap[i]];
+        if (v) { v.muted = isMuted; v.play().catch(function(){}); }
+      }
+    });
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   首页 HUD 显隐（侧栏 / 视频信息 / 进度条 / 底部遮罩）
+════════════════════════════════════════════════════════════ */
+var sideBar   = document.getElementById('sideBar');
+var videoInfo = document.getElementById('videoInfo');
+var progBar   = document.getElementById('progBar');
+var progFill  = document.getElementById('progFill');
+var homeMaskBottom = document.getElementById('home-mask-bottom');
+
+function setHomeHUD(show) {
+  if (show) {
+    sideBar.classList.add('visible');
+    videoInfo.classList.add('visible');
+    progBar.classList.add('visible');
+    homeMaskBottom.style.display = 'block';
+  } else {
+    sideBar.classList.remove('visible');
+    videoInfo.classList.remove('visible');
+    progBar.classList.remove('visible');
+    homeMaskBottom.style.display = 'none';
+  }
+}
+
+function showHomeHUD() {
+  sideBar.classList.remove('hud-hidden');
+  videoInfo.classList.remove('hud-hidden');
+  progBar.classList.remove('hud-hidden');
+}
+function hideHomeHUD() {
+  sideBar.classList.add('hud-hidden');
+  videoInfo.classList.add('hud-hidden');
+  progBar.classList.add('hud-hidden');
+}
+
+/* ════════════════════════════════════════════════════════════
+   【首页】视频 Feed 逻辑
+════════════════════════════════════════════════════════════ */
+var videoUrls = [
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/-4019395333164526404.MOV",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/-3781959715086345855.MOV",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/-6379702098700230058%202.mov",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/-6779541056753888434.MOV",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/1269460333534029679.mov",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/2359351461684170274%202.mov",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/3416633459902580349.MOV",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/4823082387013161205%202.MP4",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/copy_54D0A817-8486-49DA-ACFD-876FEED639A5%202.mov",
+  "https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/TK/copy_ACF8CEE6-8CA6-4756-968A-63B55DD99FB8.mov"
+];
+
+var feedPlan = [
+  { type:'video',   idx:0 },
+  { type:'video',   idx:1 },
+  { type:'video',   idx:2 },
+  { type:'content', id:'productPage1' },
+  { type:'video',   idx:3 },
+  { type:'video',   idx:4 },
+  { type:'video',   idx:5 },
+  { type:'content', id:'servicePage1' },
+  { type:'video',   idx:6 },
+  { type:'video',   idx:7 },
+  { type:'content', id:'casePage1' },
+  { type:'video',   idx:8 },
+  { type:'video',   idx:9 },
+  { type:'content', id:'detailPage1' }
+];
+
+var feedHome       = document.getElementById('feed-home');
+var homeAllSections = [];
+var homeVideoEls    = [];
+var homeSecTypes    = [];
+var homeVideoIdxMap = [];
+var homeCurrentVidIdx = 0;
+
+// 构建视频页并重排 DOM
+feedPlan.forEach(function(plan) {
+  if (plan.type === 'video') {
+    var sec = buildHomeVideoSection(plan.idx);
+    homeAllSections.push(sec.section);
+    homeVideoEls.push(sec.video);
+    homeSecTypes.push('video');
+    homeVideoIdxMap.push(plan.idx);
+  } else {
+    var el = document.getElementById(plan.id);
+    homeAllSections.push(el);
+    homeSecTypes.push('content');
+    homeVideoIdxMap.push(-1);
+  }
+});
+homeAllSections.forEach(function(sec){ feedHome.appendChild(sec); });
+
+// 结束页
+var homeEndEl = document.createElement('div');
+homeEndEl.className = 'video-item end-page';
+homeEndEl.innerHTML =
+  '<svg style="width:56px;height:56px;opacity:.4" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5">' +
+    '<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859M12 3v8.25m0 0l-3-3m3 3l3-3"/>' +
+  '</svg>' +
+  '<div class="end-title">你还不是会员 无法继续观看</div>' +
+  '<div class="end-sub">请联系客服开通会员解锁全部健身课程</div>';
+feedHome.appendChild(homeEndEl);
+
+function buildHomeVideoSection(vidIdx) {
+  var sec = document.createElement('div');
+  sec.className = 'video-item is-video';
+
+  var skel = document.createElement('div');
+  skel.className = 'skeleton';
+
+  var vid = document.createElement('video');
+  vid.className = 'feed-video';
+  vid.loop = true; vid.playsInline = true; vid.muted = true;
+  vid.setAttribute('playsinline', '');
+  vid.setAttribute('webkit-playsinline', '');
+  vid.setAttribute('x5-video-player-type', 'h5');
+  vid.setAttribute('x5-video-player-fullscreen', 'false');
+  vid.setAttribute('x5-playsinline', '');
+  vid.setAttribute('preload', 'metadata');
+
+  var pauseMask = document.createElement('div');
+  pauseMask.className = 'pause-mask';
+  pauseMask.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+
+  var bufRing = document.createElement('div');
+  bufRing.className = 'buf-ring';
+
+  vid.addEventListener('canplay', function(){ skel.classList.add('gone'); setTimeout(function(){ if(skel.parentNode) skel.remove(); }, 400); });
+  vid.addEventListener('playing', function(){ sec.classList.remove('is-buffering'); if(!isMuted) vid.muted=false; });
+  vid.addEventListener('waiting', function(){ sec.classList.add('is-buffering'); });
+  vid.addEventListener('canplaythrough', function(){ sec.classList.remove('is-buffering'); });
+
+  sec.appendChild(vid); sec.appendChild(skel); sec.appendChild(pauseMask); sec.appendChild(bufRing);
+  return { section:sec, video:vid };
+}
+
+/* 静音管理 */
+var isMuted = true;
+var muteBar = document.getElementById('muteBar');
+var muteTimer;
+function showMuteBar() {
+  if (!isMuted) return;
+  muteBar.classList.add('show');
+  clearTimeout(muteTimer);
+  muteTimer = setTimeout(function(){ muteBar.classList.remove('show'); }, 2500);
+}
+function unmuteAll() {
+  if (!isMuted) return;
+  isMuted = false;
+  muteBar.classList.remove('show');
+  homeVideoEls.forEach(function(v){ v.muted = false; });
+}
+
+/* 预加载 */
+function homePreload(vidIdx) {
+  homeVideoEls.forEach(function(v, i) {
+    var d = Math.abs(i - vidIdx);
+    if (d <= 3) { if (!v.src) { v.src = videoUrls[i]; v.load(); } }
+    else if (d >= 15) { if (v.src) { v.pause(); v.removeAttribute('src'); v.load(); } }
+  });
+}
+
+/* 进度条 */
+var homeProgTimer;
+function startHomeProgress(v) {
+  clearInterval(homeProgTimer);
+  progFill.style.transition = 'none'; progFill.style.width = '0%';
+  requestAnimationFrame(function(){
+    progFill.style.transition = 'width 0.3s linear';
+    homeProgTimer = setInterval(function(){
+      if (v.duration) progFill.style.width = (v.currentTime / v.duration * 100) + '%';
+    }, 300);
+  });
+}
+
+/* IntersectionObserver */
+var homeObserver = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    var sIdx = homeAllSections.indexOf(entry.target);
+    if (sIdx === -1) return;
+    var type = homeSecTypes[sIdx];
+    var vIdx = homeVideoIdxMap[sIdx];
+
+    if (entry.isIntersecting) {
+      if (type === 'content') {
+        homeVideoEls.forEach(function(v){ v.pause(); });
+        if (currentPage === 'home') hideHomeHUD();
+        clearInterval(homeProgTimer); progFill.style.width = '0%';
+      } else {
+        homeCurrentVidIdx = vIdx;
+        var v = homeVideoEls[vIdx];
+        if (!v.src) v.src = videoUrls[vIdx];
+        v.currentTime = 0; v.muted = isMuted;
+        if (currentPage === 'home') { v.play().catch(function(){}); showHomeHUD(); startHomeProgress(v); }
+        entry.target.classList.remove('is-paused');
+        homePreload(vIdx);
+        if (vIdx === 0) setTimeout(showMuteBar, 800);
+      }
+    } else {
+      if (type === 'video') {
+        var v2 = homeVideoEls[vIdx];
+        v2.pause();
+        if (Math.abs(vIdx - homeCurrentVidIdx) > 1) v2.currentTime = 0;
+        entry.target.classList.remove('is-paused', 'is-buffering');
+      }
+    }
+  });
+}, { threshold: 0.55 });
+
+homeAllSections.forEach(function(s){ homeObserver.observe(s); });
+homeObserver.observe(homeEndEl);
+homePreload(0);
+
+/* 点击：解除静音 / 暂停 */
+feedHome.addEventListener('click', function(e) {
+  if (e.target.closest('.side-bar,.top-nav,.tab-bar,.video-info,.product-page,.service-page,.case-page,.detail-page')) return;
+  var sec = e.target.closest('.is-video');
+  if (!sec) return;
+  var sIdx = homeAllSections.indexOf(sec);
+  if (sIdx === -1) return;
+  var v = homeVideoEls[homeVideoIdxMap[sIdx]];
+  if (!v) return;
+  if (isMuted) { unmuteAll(); if (v.paused) v.play().catch(function(){}); return; }
+  if (v.paused) { v.play(); sec.classList.remove('is-paused'); }
+  else          { v.pause(); sec.classList.add('is-paused'); }
+});
+feedHome.addEventListener('touchstart', function(){ if(isMuted) unmuteAll(); }, { passive:true });
+
+/* 双击飘心 */
+var lastTap = 0;
+feedHome.addEventListener('touchend', function(e) {
+  if (e.target.closest('.side-bar,.top-nav,.tab-bar,.video-info,.product-page,.service-page,.case-page,.detail-page')) return;
+  if (!e.target.closest('.is-video')) return;
+  var now = Date.now();
+  if (now - lastTap < 280) {
+    var t = e.changedTouches[0];
+    spawnHeart(t.pageX, t.pageY);
+    if (!liked) toggleLike();
+  }
+  lastTap = now;
+});
+function spawnHeart(x, y) {
+  var el = document.createElement('div');
+  el.className = 'tap-heart';
+  el.style.cssText = 'left:' + x + 'px;top:' + y + 'px';
+  el.innerHTML = '<svg viewBox="0 0 24 24" fill="#fe2c55"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 870);
+}
+
+/* 互动 */
+var liked = false;
+function toggleLike() {
+  liked = !liked;
+  var icon = document.getElementById('heartIcon');
+  icon.setAttribute('fill', liked ? '#fe2c55' : '#fff');
+  icon.style.transform = 'scale(1.3)';
+  setTimeout(function(){ icon.style.transform = ''; }, 200);
+}
+var favorited = false;
+function toggleFavorite() {
+  favorited = !favorited;
+  var icon = document.getElementById('starIcon');
+  icon.setAttribute('fill', favorited ? '#fac300' : '#fff');
+  icon.style.transform = 'scale(1.3)';
+  setTimeout(function(){ icon.style.transform = ''; }, 200);
+}
+function handleFollow(e) {
+  e.stopPropagation();
+  document.getElementById('followBtn').classList.add('gone');
+  showToast('已关注');
+}
+
+/* 内容页"继续浏览" */
+function continueFeed() {
+  feedHome.scrollTo({ top: feedHome.scrollTop + window.innerHeight, behavior:'smooth' });
+}
+
+/* 初始化首页 HUD */
+setHomeHUD(true);
+setTimeout(showMuteBar, 1000);
+
+/* ════════════════════════════════════════════════════════════
+   【同城页】原推荐 Feed 逻辑
+════════════════════════════════════════════════════════════ */
+var pagesData = [
+  { name:"李教练",  fee:"199", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"阿凯",    fee:"159", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"晓雨",    fee:"229", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"肌肉老王",fee:"179", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"小薇",    fee:"189", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"健身阿杰",fee:"149", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"娜娜",    fee:"199", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"铁柱",    fee:"249", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"瑜伽小鹿",fee:"169", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+  { name:"大壮",    fee:"219", area:"", media:[{type:"image"},{type:"image"},{type:"image"},{type:"image"},{type:"video",src:""},{type:"image"}] },
+];
+
+var feedCity = document.getElementById('feed-city');
+for (var i = 0; i < pagesData.length; i++) {
+  (function(data, idx) {
+    var page = document.createElement('div');
+    page.className = 'page-item';
+    page.dataset.pageIndex = idx;
+
+    var g = '';
+    data.media.forEach(function(m, j) {
+      var seed = idx * 10 + j;
+      if (m.type === 'video') {
+        var vsrc = m.src || '';
+        g += '<div class="media-box" onclick="openPreview(' + idx + ',' + j + ')">' +
+          '<video class="grid-video" data-page="' + idx + '" muted playsinline loop preload="none"' + (vsrc ? ' src="'+vsrc+'"':'') + '></video>' +
+          '<div class="video-badge"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>视频</div>' +
+          '</div>';
+      } else {
+        var src = m.src || ('https://picsum.photos/300/400?random=' + seed);
+        g += '<div class="media-box" onclick="openPreview(' + idx + ',' + j + ')"><img src="' + src + '" loading="lazy" decoding="async"></div>';
+      }
+    });
+
+    page.innerHTML =
+      '<div class="upper-half">' + g + '</div>' +
+      '<div class="lower-half">' +
+        '<div class="profile-card">' +
+          '<div class="bg-glow"></div>' +
+          '<div class="hero-info">' +
+            '<div class="name-row">' +
+              '<span class="artist-name">' + data.name + '</span>' +
+              '<span class="region-tag">' +
+                '<svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>' +
+                '<span class="dynamic-city">定位中…</span>' + (data.area ? ' ' + data.area : '') +
+              '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="stats-grid">' +
+            '<div class="stat-pill"><span class="stat-label">训练经验</span><span class="stat-value">5-8年</span></div>' +
+            '<div class="stat-pill"><span class="stat-label">课程价格</span><span class="stat-value highlight">' + data.fee + '元</span></div>' +
+          '</div>' +
+          '<button class="action-btn" onclick="location.href=\'kefu.html\'">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' +
+            '立即联系教练' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    feedCity.appendChild(page);
+  })(pagesData[i], i);
+}
+
+/* 同城：格子视频自动播放 */
+(function() {
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      var videos = entry.target.querySelectorAll('.grid-video');
+      if (entry.intersectionRatio >= 0.5) {
+        videos.forEach(function(v){ if(v.src && v.src !== window.location.href) v.play().catch(function(){}); });
+      } else {
+        videos.forEach(function(v){ v.pause(); });
+      }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.page-item').forEach(function(page){ obs.observe(page); });
+})();
+
+/* 同城：顶部间距适配 */
+function applyTopPaddingCity() {
+  var nav = document.querySelector('.top-nav');
+  var navBottom = nav ? nav.getBoundingClientRect().bottom : 88;
+  document.querySelectorAll('.page-item').forEach(function(el){ el.style.paddingTop = navBottom + 'px'; });
+}
+window.addEventListener('resize', applyTopPaddingCity);
+
+/* 同城：滑到底提示 */
+(function() {
+  var isToastLocked = false, startTouchY = 0;
+  feedCity.addEventListener('touchstart', function(e){ startTouchY = e.touches[0].pageY; }, { passive:true });
+  feedCity.addEventListener('touchmove', function(e) {
+    if (isToastLocked) return;
+    var isAtBottom = feedCity.scrollTop + feedCity.clientHeight >= feedCity.scrollHeight - 5;
+    if (isAtBottom && startTouchY - e.touches[0].pageY > 50) {
+      isToastLocked = true; showToast('没有更多了');
+      setTimeout(function(){ isToastLocked = false; }, 3000);
+    }
+  }, { passive:true });
+})();
+
+/* 同城：定位 */
+function setCityText(city) {
+  document.querySelectorAll('.dynamic-city').forEach(function(el){ el.textContent = city; });
+}
+function startLocate() {
+  var key = "UXBBZ-RELWI-JJXG2-5YBRI-XPWW3-D3FIJ";
+  window.handleLbs = function(res) {
+    if (res.status === 0 && res.result) {
+      var ad = res.result.ad_info;
+      setCityText(ad.district || ad.city || '本地');
+    } else { setCityText('本地'); }
+    var s = document.getElementById('lbs-jsonp');
+    if (s) s.remove();
+    delete window.handleLbs;
+  };
+  var script = document.createElement('script');
+  script.id = 'lbs-jsonp';
+  script.src = 'https://apis.map.qq.com/ws/location/v1/ip?key=' + key + '&output=jsonp&callback=handleLbs';
+  script.onerror = function(){ setCityText('本地'); };
+  document.body.appendChild(script);
+  setTimeout(function(){
+    var el = document.querySelector('.dynamic-city');
+    if (el && el.textContent === '定位中…') setCityText('本地');
+  }, 4000);
+}
+
+/* 同城：预览 overlay */
+var pPI = 0, pMI = 0;
+var overlay    = document.getElementById('preview-overlay');
+var prevImg    = document.getElementById('preview-img');
+var prevVid    = document.getElementById('preview-video');
+var counter    = document.getElementById('preview-counter');
+
+function openPreview(pi, mi) { pPI = pi; pMI = mi; renderPreview(); overlay.classList.add('active'); }
+function renderPreview() {
+  var m = pagesData[pPI].media[pMI];
+  prevImg.style.display = 'none'; prevVid.style.display = 'none'; prevVid.pause(); prevVid.src = '';
+  counter.textContent = (pMI + 1) + ' / ' + pagesData[pPI].media.length;
+  if (m.type === 'video' && m.src) { prevVid.src = m.src; prevVid.style.display = 'block'; prevVid.play().catch(function(){}); }
+  else { var seed = pPI*10+pMI; prevImg.src = m.src || ('https://picsum.photos/600/800?random='+seed); prevImg.style.display = 'block'; }
+}
+function previewNav(d) { var l = pagesData[pPI].media.length; pMI = (pMI + d + l) % l; renderPreview(); }
+function closePreviewDirect() { overlay.classList.remove('active'); prevVid.pause(); prevVid.src = ''; }
+function closePreview(e) { if (e.target === overlay) closePreviewDirect(); }
+
+(function() {
+  var startX = 0, startY = 0, swiped = false;
+  overlay.addEventListener('touchstart', function(e){ if(!overlay.classList.contains('active')) return; startX=e.touches[0].clientX; startY=e.touches[0].clientY; swiped=false; }, { passive:true });
+  overlay.addEventListener('touchmove',  function(e){ if(!overlay.classList.contains('active')) return; var dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY; if(!swiped&&Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>10) swiped=true; }, { passive:true });
+  overlay.addEventListener('touchend',   function(e){ if(!overlay.classList.contains('active')||!swiped) return; var dx=e.changedTouches[0].clientX-startX; if(Math.abs(dx)<40) return; previewNav(dx<0?1:-1); swiped=false; }, { passive:true });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   iOS 黑屏修复
+════════════════════════════════════════════════════════════ */
+(function() {
+  var restoreLock = false;
+  function restorePage() {
+    if (restoreLock) return; restoreLock = true;
+    document.body.style.opacity = '0.99';
+    feedHome.style.overflowY = 'hidden';
+    requestAnimationFrame(function(){
+      feedHome.offsetHeight; feedHome.style.overflowY = 'scroll';
+      requestAnimationFrame(function(){ document.body.style.opacity = ''; restoreLock = false; });
+    });
+  }
+  window.addEventListener('pageshow', restorePage);
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') setTimeout(restorePage,60); });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   Service Worker & 初始化
+════════════════════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+
+requestAnimationFrame(function() {
+  applyTopPaddingCity();
+  startLocate();
+});
+</script>
+</body>
+</html>
