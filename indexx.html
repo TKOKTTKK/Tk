@@ -865,11 +865,15 @@ button, input, textarea {
     </div>
     <div class="form-group">
       <label class="form-label">备注姓氏(选填)</label>
-      <input type="text" id="c-note" class="form-input" placeholder="例如:李" autocomplete="on" inputmode="text">
+      <input type="text" id="c-note" class="form-input" placeholder="备注,例如:李" autocomplete="on" inputmode="text">
     </div>
     <div class="form-group">
       <label class="form-label">设置 4 位数字密码</label>
-      <input type="password" id="c-pin" class="form-input mono" placeholder="••••" maxlength="4" inputmode="numeric" autocomplete="off">
+      <!-- 创建模态框的密码字段 -->
+<input type="text" id="c-pin" class="form-input mono" 
+  placeholder="••••" maxlength="4" inputmode="numeric" 
+  autocomplete="new-password"
+  style="-webkit-text-security:disc;text-security:disc">
       <div class="form-tip">用于确认收货,请牢记,不要告诉任何人</div>
     </div>
     <button class="btn-primary" onclick="doCreate()">生成担保码</button>
