@@ -995,7 +995,7 @@ async function doCreate() {
   const pin = document.getElementById("c-pin").value.trim();
 
   if (!kw) return toast("请输入支付宝口令");
-  if (!price || price <= 0) return toast("请输入有效金额");
+  if (!price || price <= 0) return toast("与红包口令金额必须一致，否则无效");
   if (pin.length < 4) return toast("请设置4位数字密码");
 
   closeModal("modal-create");
