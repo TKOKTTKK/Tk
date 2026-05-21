@@ -682,7 +682,7 @@ button, input, textarea {
               </svg>
             </div>
             <div class="trust-badge-text">
-              <span class="trust-badge-main">口令担保</span>
+              <span class="trust-badge-main">支付宝</span>
               <span class="trust-badge-sub"></span>
             </div>
           </div>
@@ -1172,3 +1172,63 @@ function renderSellerCard(o) {
         <button class="btn-action primary" onclick="refreshSeller()">刷新状态</button>
         <div class="order-pending-tip">完成交付后提醒买家确认</div>
       </div>`;
+
+  return `<div class="order ${isDone ? 'done' : ''}">
+    <div class="order-head">
+      <div class="order-token-wrap">
+        <div class="order-token-label">担保码</div>
+        <div class="order-token">${o.token}</div>
+      </div>
+      <span class="pill ${isDone ? 'done' : 'pending'}">
+        <span class="pill-dot"></span>
+        ${isDone ? '已完成' : '等待确认'}
+      </span>
+    </div>
+    <div class="order-meta">
+      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val amount">${fmtPrice(o.price)}</span></div>
+      <div class="meta-row"><span class="meta-key">备注</span><span class="meta-val">${escapeHtml(o.note)}</span></div>
+      <div class="meta-row"><span class="meta-key">创建时间</span><span class="meta-val">${fmtTime(o.at)}</span></div>
+      ${isDone ? `<div class="meta-row"><span class="meta-key">完成时间</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>` : ''}
+    </div>
+    ${kwHtml}
+    ${actHtml}
+  </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function doCopy(text, msg) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast(msg)).catch(() => fallback(text, msg));
+  } else {
+    fallback(text, msg);
+  }
+}
+function fallback(text, msg) {
+  const t = document.createElement("textarea");
+  t.value = text;
+  t.style.cssText = "position:fixed;opacity:0";
+  document.body.appendChild(t);
+  t.select();
+  document.execCommand("copy");
+  document.body.removeChild(t);
+  toast(msg);
+}
+function doShare(token, price) {
+  const text = `【担保码】${token}\n金额:¥${Number(price).toFixed(2)}\n凭此码查询担保订单,我确认收货后口令自动解锁。`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => doCopy(token, "担保码已复制"));
+  } else {
+    doCopy(text, "分享内容已复制");
+  }
+}
+
+document.querySelectorAll('.token-style, #q-token-inline').forEach(el => {
+  el.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+});
+
+try { localStorage.clear(); } catch (e) {}
+</script>
+</body>
