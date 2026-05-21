@@ -1215,7 +1215,6 @@ function doShare(token, price) {
     const text = `【担保码】${token}\n金额:¥${Number(price).toFixed(2)}\n凭此码查询担保订单,我确认收货后口令自动解锁。`;
     doCopy(text, "担保码已复制");   // 直接复制，不再拉起系统分享
 }
-}
 
 document.querySelectorAll('.token-style, #q-token-inline').forEach(el => {
   el.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
