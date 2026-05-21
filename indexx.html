@@ -2,203 +2,654 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>支付宝口令担保交易</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0066FF">
+<title>担保交易 · 安心收付</title>
 <style>
 :root {
-  --ink: #0a0a0a; --sub: #6b7280; --line: #e8e8e8;
-  --bg: #f7f6f3; --card: #ffffff;
-  --blue: #1677FF; --green: #00b96b; --amber: #f59e0b;
-  --radius: 16px; --tab-h: 56px;
+  --primary: #0066FF;
+  --primary-soft: #E8F0FF;
+  --primary-dark: #0052CC;
+  --success: #00C48C;
+  --success-soft: #E6F9F3;
+  --warning: #FF9500;
+  --warning-soft: #FFF4E5;
+  --danger: #FF3B30;
+  --danger-soft: #FFEBEA;
+  --ink-1: #0F1419;
+  --ink-2: #475569;
+  --ink-3: #94A3B8;
+  --line: #E5E7EB;
+  --line-light: #F1F5F9;
+  --bg: #F8F9FB;
+  --card: #FFFFFF;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --tab-h: 64px;
+  --shadow-sm: 0 1px 2px rgba(15, 20, 25, 0.04), 0 1px 3px rgba(15, 20, 25, 0.06);
+  --shadow: 0 4px 12px rgba(15, 20, 25, 0.06), 0 2px 4px rgba(15, 20, 25, 0.04);
+  --shadow-lg: 0 20px 40px rgba(15, 20, 25, 0.12);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* ── 关键滚动修复：不用 overflow:hidden on body ── */
-html { height: 100%; }
-body {
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
   height: 100%;
-  background: var(--bg);
-  font-family: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
-  color: var(--ink);
-  /* 不设 overflow:hidden，让 .app-wrap 自己管理布局 */
+  overscroll-behavior: none;
 }
 
-/* 整个 app 用绝对定位撑满屏幕 */
-.app-wrap {
+body {
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  color: var(--ink-1);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.app {
   position: fixed;
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
   background: var(--bg);
 }
 
-/* 滚动容器：明确给 height，不依赖 flex:1 */
 .scroll-host {
-  width: 100%;
-  /* height = 100% 减去底部 tab 高度 */
-  height: calc(100% - var(--tab-h) - env(safe-area-inset-bottom, 0px));
-  overflow-y: scroll;
+  flex: 1;
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
+  padding-bottom: 20px;
 }
 
 .inner {
-  width: 100%; max-width: 480px; margin: 0 auto;
-  padding: 0 16px 24px;
-  display: flex; flex-direction: column; gap: 12px;
-}
-
-.app-header {
-  width: 100%; max-width: 480px; margin: 0 auto;
-  padding: 14px 20px 10px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.app-title { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
-.app-title span { color: var(--blue); }
-.header-tag { font-size: 11px; font-weight: 600; color: var(--sub); background: var(--line); border-radius: 20px; padding: 4px 10px; }
-
-.card { background: var(--card); border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
-.card-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; }
-.card-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
-.card-icon.blue  { background: #e8f1ff; }
-.card-icon.green { background: #e6f9f1; }
-.card-icon.amber { background: #fff7e6; }
-.card-title { font-size: 15px; font-weight: 700; }
-.card-sub   { font-size: 12px; color: var(--sub); margin-top: 1px; }
-.card-body  { padding: 14px 18px; display: flex; flex-direction: column; gap: 11px; }
-
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field-label { font-size: 12px; font-weight: 600; color: var(--sub); }
-.field input,.field textarea {
-  border: 1.5px solid var(--line); border-radius: 10px;
-  padding: 11px 13px; font-size: 15px; font-family: inherit;
-  color: var(--ink); outline: none; background: #fafafa;
-  width: 100%; resize: none; transition: border-color .18s;
-}
-.field input:focus,.field textarea:focus { border-color: var(--blue); background: #fff; }
-.field input.mono { font-family: 'SF Mono',monospace; letter-spacing: 2px; font-size: 20px; text-align: center; }
-
-.btn { border: none; border-radius: 12px; padding: 13px 18px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; width: 100%; transition: opacity .15s,transform .12s; }
-.btn:active { opacity: .8; transform: scale(.97); }
-.btn-blue  { background: var(--blue); color: #fff; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-ghost { background: #f0f0f0; color: #444; font-weight: 600; }
-.btn-sm { border: none; border-radius: 8px; padding: 8px 13px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity .15s; }
-.btn-sm:active { opacity: .75; }
-.btn-sm.blue  { background: var(--blue); color: #fff; }
-.btn-sm.green { background: var(--green); color: #fff; }
-.btn-sm.ghost { background: #f0f0f0; color: #555; }
-
-.token-display {
-  background: linear-gradient(135deg,#0a0a0a,#1a1a2e);
-  border-radius: 14px; padding: 22px 18px; text-align: center; position: relative; overflow: hidden;
-}
-.token-display::before {
-  content:''; position:absolute; inset:0;
-  background: radial-gradient(ellipse at 30% 50%,rgba(22,119,255,.28),transparent 60%),
-              radial-gradient(ellipse at 80% 20%,rgba(0,185,107,.18),transparent 50%);
-}
-.token-hint { font-size:11px; color:rgba(255,255,255,.5); letter-spacing:1px; margin-bottom:8px; position:relative; }
-.token-num  { font-size:40px; font-weight:900; color:#fff; letter-spacing:10px; font-family:'SF Mono',monospace; position:relative; margin-bottom:14px; text-shadow:0 0 30px rgba(22,119,255,.7); }
-.token-actions { display:flex; gap:8px; position:relative; }
-
-.order-card { border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
-.order-top  { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
-.order-token-label { font-size: 12px; color: var(--sub); margin-bottom: 2px; }
-.order-token-val   { font-size: 22px; font-weight: 900; font-family: 'SF Mono',monospace; letter-spacing: 4px; }
-.status-pill { font-size: 12px; font-weight: 700; padding: 4px 11px; border-radius: 20px; flex-shrink: 0; }
-.status-pill.pending { background: #fff7e6; color: #d97706; }
-.status-pill.done    { background: #e6f9f1; color: #00875a; }
-.order-meta { padding: 0 18px 12px; display: flex; flex-direction: column; gap: 5px; }
-.meta-row { display: flex; justify-content: space-between; font-size: 13px; }
-.meta-key { color: var(--sub); }
-.meta-val { color: var(--ink); font-weight: 500; }
-.order-kw { margin: 0 18px 14px; border-radius: 10px; padding: 13px 15px; text-align: center; }
-.order-kw.locked   { background: #f5f5f5; }
-.order-kw.unlocked { background: #e6f9f1; }
-.kw-locked-txt { font-size: 13px; color: var(--sub); display: flex; align-items: center; justify-content: center; gap: 6px; }
-.kw-val { font-size: 15px; font-weight: 700; color: #00875a; line-height: 1.6; word-break: break-all; }
-.order-actions { padding: 0 18px 14px; display: flex; gap: 8px; }
-
-.steps { display: flex; flex-direction: column; }
-.step-item { display: flex; gap: 13px; align-items: flex-start; padding: 13px 18px; }
-.step-item + .step-item { border-top: 1px solid var(--line); }
-.step-circle { width: 26px; height: 26px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-.step-circle.green { background: var(--green); }
-.step-who  { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-.step-desc { font-size: 12px; color: var(--sub); line-height: 1.5; }
-
-.empty-state { text-align: center; padding: 28px 0; color: var(--sub); font-size: 14px; }
-.empty-icon  { font-size: 34px; margin-bottom: 8px; }
-
-/* Tab：固定在 app-wrap 底部 */
-.tab-bar {
   width: 100%;
-  height: calc(var(--tab-h) + env(safe-area-inset-bottom,0px));
-  background: rgba(255,255,255,.96);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  border-top: 1px solid var(--line);
-  display: flex; flex-shrink: 0;
-  padding-bottom: env(safe-area-inset-bottom,0px);
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
-.tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; }
-.tab:active { opacity: .6; }
-.tab-icon  { font-size: 21px; }
-.tab-label { font-size: 10px; font-weight: 600; color: var(--sub); }
-.tab.active .tab-label { color: var(--blue); }
 
-.toast {
-  position: fixed;
-  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 12px);
-  left: 50%; transform: translateX(-50%);
-  background: rgba(10,10,10,.88); backdrop-filter: blur(8px);
-  color: #fff; padding: 10px 20px; border-radius: 24px;
-  font-size: 13px; font-weight: 600; z-index: 999;
-  opacity: 0; transition: opacity .2s; pointer-events: none; white-space: nowrap;
+/* ============ Hero ============ */
+.hero {
+  position: relative;
+  padding: env(safe-area-inset-top, 12px) 16px 32px;
+  background: linear-gradient(160deg, #0066FF 0%, #0052CC 70%, #003D99 100%);
+  color: white;
+  overflow: hidden;
 }
-.toast.show { opacity: 1; }
-
-.loading-mask {
-  position: fixed; inset: 0; background: rgba(247,246,243,.8);
-  backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center;
-  z-index: 500; opacity: 0; pointer-events: none; transition: opacity .2s;
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -20%;
+  width: 70%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 60%);
+  pointer-events: none;
 }
-.loading-mask.show { opacity: 1; pointer-events: auto; }
-.spinner { width: 36px; height: 36px; border: 3px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 50%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(0,196,140,0.18), transparent 65%);
+  pointer-events: none;
+}
+.hero-inner {
+  position: relative;
+  max-width: 520px;
+  margin: 0 auto;
+  padding-top: 16px;
+}
+.hero-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.hero-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 17px;
+}
+.hero-logo-mark {
+  width: 28px;
+  height: 28px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
 
+/* 隐藏旧的状态胶囊 */
+.hero-status {
+  display: none;
+}
+
+/* ============ 新的信任徽章 ============ */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 5px 11px 5px 5px;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.trust-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+.trust-badge-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.trust-badge-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.trust-badge-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.trust-badge-main {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.4px;
+}
+.trust-badge-sub {
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+/* 盾牌脉冲动画 */
+@keyframes shield-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,170,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(0,255,170,0); }
+}
+.trust-badge-icon {
+  animation: shield-pulse 2.8s ease infinite;
+}
+
+.hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+.hero-sub {
+  font-size: 13px;
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+/* ============ Hero Card ============ */
+.hero-card {
+  position: relative;
+  margin: -20px 16px 0;
+  max-width: 488px;
+  margin-left: auto;
+  margin-right: auto;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 8px 24px rgba(0, 50, 150, 0.12);
+  display: flex;
+  gap: 10px;
+}
+.action-btn {
+  flex: 1;
+  border: none;
+  border-radius: var(--radius);
+  padding: 16px 12px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.action-btn:active { transform: scale(0.96); }
+.action-btn.primary {
+  background: linear-gradient(135deg, #0066FF, #0052CC);
+  color: white;
+  box-shadow: 0 6px 14px rgba(0, 102, 255, 0.3);
+}
+.action-btn.secondary {
+  background: var(--success-soft);
+  color: var(--success);
+}
+.action-btn-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============ Section ============ */
+.section { margin-top: 24px; }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.section-action {
+  font-size: 13px;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ============ Card ============ */
+.card {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card + .card { margin-top: 12px; }
+.card-pad { padding: 20px; }
+
+/* ============ Lookup ============ */
+.lookup { display: flex; gap: 8px; align-items: stretch; }
+.lookup-input {
+  flex: 1;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  font-size: 18px;
+  letter-spacing: 4px;
+  text-align: center;
+  background: var(--bg);
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  width: 100%;
+}
+.lookup-input:focus { border-color: var(--primary); background: white; }
+.lookup-input::placeholder { color: var(--ink-3); font-weight: 400; letter-spacing: 2px; }
+.lookup-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 22px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+  flex-shrink: 0;
+}
+.lookup-btn:active { transform: scale(0.95); opacity: 0.9; }
+
+/* ============ Flow ============ */
+.flow {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 22px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.flow-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.steps { display: flex; flex-direction: column; position: relative; }
+.step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  position: relative;
+  padding-bottom: 16px;
+}
+.step:last-child { padding-bottom: 0; }
+.step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--line) 30%, transparent);
+}
+.step-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.step:last-child .step-dot { background: var(--success-soft); color: var(--success); }
+.step-content { padding-top: 4px; }
+.step-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.step-desc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+
+/* ============ Order Card ============ */
+.order {
+  background: white;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-bottom: 12px;
+  animation: cardIn 0.3s ease;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.order.done { border-color: rgba(0, 196, 140, 0.3); }
+.order-head {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line-light);
+}
+.order.done .order-head {
+  background: linear-gradient(135deg, var(--success-soft) 0%, rgba(0,196,140,0.04) 100%);
+  border-bottom-color: rgba(0, 196, 140, 0.15);
+}
+.order-token-wrap { display: flex; flex-direction: column; }
+.order-token-label { font-size: 11px; color: var(--ink-3); font-weight: 500; margin-bottom: 2px; letter-spacing: 0.5px; }
+.order-token { font-size: 22px; font-weight: 800; letter-spacing: 3px; font-family: "SF Mono", "Menlo", monospace; }
+.order.done .order-token { color: var(--success); }
+.pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pill.pending { background: var(--warning-soft); color: var(--warning); }
+.pill.done { background: var(--success); color: white; }
+.pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pill.pending .pill-dot { animation: pulse 1.5s ease infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.order-meta { padding: 14px 18px 0; display: flex; flex-direction: column; gap: 7px; }
+.meta-row { display: flex; justify-content: space-between; font-size: 13px; align-items: baseline; }
+.meta-key { color: var(--ink-3); font-weight: 500; }
+.meta-val { color: var(--ink-1); font-weight: 600; }
+.meta-val.amount { font-size: 17px; font-weight: 800; }
+.order.done .meta-val.amount { color: var(--success); }
+.order-kw-box { margin: 14px 18px 0; border-radius: var(--radius); padding: 14px; }
+.order-kw-box.locked { background: var(--bg); border: 1.5px dashed var(--line); text-align: center; }
+.order-kw-box.unlocked {
+  background: linear-gradient(135deg, #0F1419 0%, #1F2937 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.order-kw-box.unlocked::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(0,196,140,0.2), transparent 60%);
+}
+.kw-locked-text { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.kw-unlocked-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 8px; position: relative; letter-spacing: 0.5px; }
+.kw-value {
+  font-size: 14px; font-weight: 600; line-height: 1.6; word-break: break-all;
+  position: relative; background: rgba(255,255,255,0.08); padding: 10px 12px;
+  border-radius: 8px; margin-bottom: 10px;
+}
+.kw-copy-btn {
+  background: var(--success); color: white; border: none; border-radius: 8px;
+  padding: 10px; font-weight: 700; font-size: 13px; width: 100%;
+  cursor: pointer; position: relative; transition: opacity 0.15s;
+}
+.kw-copy-btn:active { opacity: 0.85; }
+.order-actions { padding: 14px 18px 18px; display: flex; gap: 8px; }
+.btn-action {
+  flex: 1; border: none; padding: 11px 14px; border-radius: 10px;
+  font-weight: 600; font-size: 13px; cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s;
+}
+.btn-action:active { transform: scale(0.96); opacity: 0.85; }
+.btn-action.ghost { background: var(--line-light); color: var(--ink-2); }
+.btn-action.success { background: var(--success); color: white; }
+.btn-action.primary { background: var(--primary); color: white; }
+.order-done-banner {
+  margin: 0 18px 18px; background: var(--success-soft); padding: 12px;
+  border-radius: 10px; font-size: 13px; color: var(--success);
+  text-align: center; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.order-pending-tip {
+  margin: 0 18px 18px; background: var(--warning-soft); padding: 10px 12px;
+  border-radius: 10px; font-size: 12px; color: var(--warning);
+  display: flex; align-items: center; gap: 6px; flex: 1;
+}
+
+/* ============ Empty ============ */
+.empty { text-align: center; padding: 40px 20px; color: var(--ink-3); }
+.empty-icon {
+  width: 56px; height: 56px; background: var(--bg); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px; color: var(--ink-3);
+}
+.empty-text { font-size: 13px; line-height: 1.5; }
+
+/* ============ Token Show ============ */
+.token-show {
+  background: linear-gradient(135deg, #0F1419 0%, #1F2937 50%, #0066FF 200%);
+  border-radius: var(--radius-lg); padding: 24px 20px;
+  position: relative; overflow: hidden; margin-bottom: 12px;
+  animation: cardIn 0.3s ease;
+}
+.token-show::before {
+  content: ''; position: absolute; top: -30%; right: -20%; width: 80%; height: 100%;
+  background: radial-gradient(circle, rgba(0, 102, 255, 0.4), transparent 60%);
+}
+.token-show::after {
+  content: ''; position: absolute; bottom: -40%; left: -10%; width: 60%; height: 100%;
+  background: radial-gradient(circle, rgba(0, 196, 140, 0.25), transparent 60%);
+}
+.token-show-label { position: relative; font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; margin-bottom: 4px; text-align: center; }
+.token-show-num {
+  position: relative; text-align: center; font-size: 38px; font-weight: 900;
+  color: white; letter-spacing: 10px; font-family: "SF Mono", "Menlo", monospace;
+  text-shadow: 0 0 24px rgba(0, 102, 255, 0.6); margin-bottom: 16px;
+}
+.token-show-actions { position: relative; display: flex; gap: 8px; }
+.token-show-btn {
+  flex: 1; background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 10px;
+  padding: 11px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s;
+}
+.token-show-btn:active { background: rgba(255,255,255,0.2); }
+
+/* ============ Tab Bar ============ */
+.tabs {
+  height: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid var(--line-light);
+  display: flex;
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; cursor: pointer; color: var(--ink-3);
+  transition: color 0.15s; position: relative;
+}
+.tab.active { color: var(--primary); }
+.tab:active { opacity: 0.6; }
+.tab-icon { width: 24px; height: 24px; }
+.tab-label { font-size: 11px; font-weight: 600; }
+.tab.active::before {
+  content: ''; position: absolute; top: 0; left: 30%; right: 30%;
+  height: 2px; background: var(--primary); border-radius: 0 0 2px 2px;
+}
+
+/* ============ Page ============ */
+.page { display: none; animation: fadeIn 0.25s ease; }
+.page.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ Modal ============ */
 .modal-mask {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
-  backdrop-filter: blur(4px); z-index: 200;
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity .22s;
+  position: fixed; inset: 0; background: rgba(15, 20, 25, 0.5);
+  backdrop-filter: blur(6px); z-index: 200; display: flex;
+  align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
 }
 .modal-mask.show { opacity: 1; pointer-events: auto; }
 .modal {
-  background: #fff; border-radius: 20px 20px 0 0;
-  width: 100%; max-width: 480px;
-  padding: 26px 20px calc(28px + env(safe-area-inset-bottom,0px));
-  display: flex; flex-direction: column; gap: 13px;
-  transform: translateY(40px); transition: transform .28s cubic-bezier(.32,1,.42,1);
+  background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 520px;
+  padding: 8px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.32, 1);
   max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .modal-mask.show .modal { transform: translateY(0); }
-.modal-title { font-size: 18px; font-weight: 800; }
-.modal-sub   { font-size: 13px; color: var(--sub); margin-top: -5px; line-height: 1.5; }
+.modal-handle { width: 36px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 16px; }
+.modal-header { margin-bottom: 18px; }
+.modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
 
-@keyframes pop { 0%{transform:scale(.93);opacity:0} 100%{transform:scale(1);opacity:1} }
-.pop { animation: pop .2s ease forwards; }
+/* ============ Form ============ */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; display: block; }
+.form-input, .form-textarea {
+  width: 100%; border: 1.5px solid var(--line); border-radius: var(--radius);
+  padding: 13px 14px; font-size: 15px; background: var(--bg); outline: none;
+  transition: border-color 0.15s, background 0.15s; resize: none;
+}
+.form-input:focus, .form-textarea:focus { border-color: var(--primary); background: white; }
+.form-input.mono { font-family: "SF Mono", "Menlo", monospace; letter-spacing: 6px; text-align: center; font-size: 22px; font-weight: 700; }
+.form-input.token-style { text-transform: uppercase; letter-spacing: 8px; }
+.form-tip { font-size: 11.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.4; }
+.btn-primary {
+  width: 100%; background: var(--primary); color: white; border: none;
+  border-radius: var(--radius); padding: 15px; font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: opacity 0.15s, transform 0.12s; margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
+}
+.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+.btn-primary.success { background: var(--success); box-shadow: 0 4px 12px rgba(0, 196, 140, 0.25); }
+.btn-cancel {
+  width: 100%; background: var(--line-light); color: var(--ink-2); border: none;
+  border-radius: var(--radius); padding: 14px; font-weight: 600; font-size: 14px;
+  cursor: pointer; margin-top: 8px;
+}
 
-.page { display: none; flex-direction: column; gap: 12px; }
-.page.active { display: flex; }
+/* ============ Toast ============ */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px);
+  left: 50%; transform: translate(-50%, 8px);
+  background: rgba(15, 20, 25, 0.92); backdrop-filter: blur(12px);
+  color: white; padding: 12px 22px; border-radius: 28px;
+  font-size: 13.5px; font-weight: 600; z-index: 999;
+  opacity: 0; transition: all 0.25s ease; pointer-events: none;
+  white-space: nowrap; max-width: 88%; text-align: center;
+  box-shadow: 0 8px 24px rgba(15, 20, 25, 0.2);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-.sync-bar { border-radius: 10px; padding: 9px 14px; font-size: 12px; display: flex; align-items: center; gap: 7px; }
-.sync-bar.ok   { background: #eff6ff; color: #1677FF; }
-.sync-bar.err  { background: #fef2f2; color: #dc2626; }
-.sync-bar.warn { background: #fff7e6; color: #d97706; }
-.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+/* ============ Loading ============ */
+.loading-mask {
+  position: fixed; inset: 0; background: rgba(248, 249, 251, 0.6);
+  backdrop-filter: blur(4px); display: flex; align-items: center;
+  justify-content: center; z-index: 500; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.loading-mask.show { opacity: 1; pointer-events: auto; }
+.spinner {
+  width: 40px; height: 40px; border: 3px solid var(--line);
+  border-top-color: var(--primary); border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 540px) {
+  .hero-title { font-size: 30px; }
+  .hero { padding-bottom: 40px; }
+}
+@supports (padding: max(0px)) {
+  .hero { padding-top: max(env(safe-area-inset-top), 12px); }
+}
 </style>
 </head>
 <body>
@@ -206,126 +657,128 @@ body {
 <div class="toast" id="toast"></div>
 <div class="loading-mask" id="loading"><div class="spinner"></div></div>
 
-<div class="modal-mask" id="modal-create">
-  <div class="modal">
-    <div class="modal-title">买家创建担保</div>
-    <div class="modal-sub">输入你的支付宝口令，获得6位担保码发给卖家</div>
-    <div class="field">
-      <div class="field-label">支付宝口令</div>
-      <textarea id="c-kw" placeholder="粘贴你的支付宝口令" rows="3"></textarea>
-    </div>
-    <div class="field">
-      <div class="field-label">交易金额（元）</div>
-      <input type="number" id="c-price" placeholder="0.00" step="0.01" inputmode="decimal">
-    </div>
-    <div class="field">
-      <div class="field-label">备注（选填）</div>
-      <input type="text" id="c-note" placeholder="商品描述">
-    </div>
-    <div class="field">
-      <div class="field-label">设一个4位数字密码（用于确认收货）</div>
-      <input type="password" id="c-pin" placeholder="····" maxlength="4" inputmode="numeric" class="mono">
-    </div>
-    <button class="btn btn-blue" onclick="doCreate()">生成担保码 →</button>
-    <button class="btn btn-ghost" onclick="closeModal('modal-create')">取消</button>
-  </div>
-</div>
-
-<div class="modal-mask" id="modal-confirm">
-  <div class="modal">
-    <div class="modal-title">确认收货</div>
-    <div class="modal-sub">确认后口令立即对卖家可见，请确认已收到商品/服务</div>
-    <div class="field">
-      <div class="field-label">担保码</div>
-      <input type="text" id="cf-token" placeholder="6位担保码" maxlength="6" class="mono" style="text-transform:uppercase">
-    </div>
-    <div class="field">
-      <div class="field-label">你设置的4位密码</div>
-      <input type="password" id="cf-pin" placeholder="····" maxlength="4" inputmode="numeric" class="mono">
-    </div>
-    <button class="btn btn-green" onclick="doConfirm()">✅ 确认收货，释放口令</button>
-    <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">取消</button>
-  </div>
-</div>
-
-<div class="modal-mask" id="modal-query">
-  <div class="modal">
-    <div class="modal-title">输入担保码</div>
-    <div class="modal-sub">买家确认收货后自动显示口令</div>
-    <div class="field">
-      <input type="text" id="q-token" placeholder="输入6位担保码" maxlength="6" class="mono"
-        style="text-transform:uppercase;font-size:28px;letter-spacing:8px;text-align:center">
-    </div>
-    <button class="btn btn-blue" onclick="doQuery()">查询 →</button>
-    <button class="btn btn-ghost" onclick="closeModal('modal-query')">取消</button>
-  </div>
-</div>
-
-<div class="app-wrap">
+<div class="app">
   <div class="scroll-host" id="scroll-host">
-    <div class="app-header">
-      <div class="app-title">担保<span>交易</span></div>
-      <div class="header-tag">支付宝口令担保</div>
+
+    <div class="hero">
+      <div class="hero-inner">
+        <div class="hero-brand">
+          <div class="hero-logo">
+            <div class="hero-logo-mark">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            担保交易
+          </div>
+
+          <!-- 新的信任徽章，替换原来的已连接状态 -->
+          <div class="trust-badge">
+            <div class="trust-badge-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" fill="rgba(255,255,255,0.95)" stroke="none"/>
+                <path d="M9 12l2 2 4-4" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="trust-badge-text">
+              <span class="trust-badge-main">口令担保</span>
+              <span class="trust-badge-sub"></span>
+            </div>
+          </div>
+
+          <!-- 保留但隐藏原元素，避免 JS 报错 -->
+          <div class="hero-status" id="hero-status" style="display:none">
+            <span class="hero-status-dot"></span>
+            <span id="hero-status-text">已连接</span>
+          </div>
+        </div>
+        <div class="hero-title">安心收付<br>有保障的口令交易</div>
+        <div class="hero-sub">买家确认收货后,口令才会释放给卖家</div>
+      </div>
     </div>
+
+    <div class="hero-card" id="hero-card-buyer">
+      <button class="action-btn primary" onclick="openModal('modal-create')">
+        <div class="action-btn-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect x="4" y="6" width="16" height="14" rx="2" stroke="white" stroke-width="2"/>
+            <path d="M8 6V4a4 4 0 018 0v2" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="13" r="1.5" fill="white"/>
+          </svg>
+        </div>
+        创建担保
+      </button>
+      <button class="action-btn secondary" onclick="openConfirmModal()">
+        <div class="action-btn-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12l5 5L20 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        确认收货
+      </button>
+    </div>
+
+    <div class="hero-card" id="hero-card-seller" style="display:none">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;color:var(--ink-3);font-weight:600">输入买家发来的担保码</div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="q-token-inline" class="lookup-input" placeholder="6位担保码" maxlength="6" autocomplete="off">
+          <button class="lookup-btn" onclick="doQueryInline()">查询</button>
+        </div>
+      </div>
+    </div>
+
     <div class="inner">
 
       <div class="page active" id="page-buyer">
-        <div id="sync-status"></div>
-        <div class="card">
-          <div class="card-body" style="flex-direction:row;gap:10px;padding:14px">
-            <button class="btn btn-blue" style="flex:1.4" onclick="openModal('modal-create')">🔒 创建担保</button>
-            <button class="btn btn-ghost" style="flex:1" onclick="openConfirmModal()">✅ 确认收货</button>
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title">我的订单</div>
           </div>
+          <div class="card card-pad">
+            <div class="form-label">输入4位密码查看订单</div>
+            <div style="display:flex;gap:8px;margin-top:6px">
+              <input type="password" id="list-pin" class="form-input mono" placeholder="••••" maxlength="4" inputmode="numeric" autocomplete="off" style="flex:1;letter-spacing:8px">
+              <button class="lookup-btn" onclick="loadMyOrders()">查询</button>
+            </div>
+          </div>
+          <div id="my-orders" style="margin-top:12px"></div>
         </div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon blue">📋</div>
-            <div>
-              <div class="card-title">我的担保订单</div>
-              <div class="card-sub">输入密码查看历史订单</div>
-            </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title">使用流程</div>
           </div>
-          <div class="card-body">
-            <div style="display:flex;gap:8px">
-              <input type="password" id="list-pin" placeholder="4 位密码" maxlength="4" inputmode="numeric"
-                class="mono" style="flex:1;text-align:center;font-size:20px;letter-spacing:4px">
-              <button class="btn-sm blue" onclick="loadMyOrders()">查询</button>
-            </div>
-            <div id="my-orders"></div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon amber">💡</div>
-            <div><div class="card-title">怎么用</div></div>
-          </div>
-          <div class="steps">
-            <div class="step-item">
-              <div class="step-circle">1</div>
-              <div class="step-body">
-                <div class="step-who">买家创建担保</div>
-                <div class="step-desc">输入支付宝口令和金额，设4位密码，获得6位担保码</div>
+          <div class="flow">
+            <div class="steps">
+              <div class="step">
+                <div class="step-dot">1</div>
+                <div class="step-content">
+                  <div class="step-name">买家创建担保</div>
+                  <div class="step-desc">输入支付宝口令红包码-设置4位密码-系统生成6位担保码</div>
+                </div>
               </div>
-            </div>
-            <div class="step-item">
-              <div class="step-circle">2</div>
-              <div class="step-body">
-                <div class="step-who">把担保码发给卖家</div>
-                <div class="step-desc">卖家凭码查询订单，此时口令是隐藏的</div>
+              <div class="step">
+                <div class="step-dot">2</div>
+                <div class="step-content">
+                  <div class="step-name">担保码发给卖家</div>
+                  <div class="step-desc">卖家凭码查询订单,此时口令处于隐藏状态</div>
+                </div>
               </div>
-            </div>
-            <div class="step-item">
-              <div class="step-circle">3</div>
-              <div class="step-body">
-                <div class="step-who">卖家完成交付</div>
-                <div class="step-desc">发货/完成服务后通知买家确认</div>
+              <div class="step">
+                <div class="step-dot">3</div>
+                <div class="step-content">
+                  <div class="step-name">卖家完成交付</div>
+                  <div class="step-desc">发货或完成服务后,通知买家进行确认</div>
+                </div>
               </div>
-            </div>
-            <div class="step-item">
-              <div class="step-circle green">4</div>
-              <div class="step-body">
-                <div class="step-who">买家确认收货</div>
-                <div class="step-desc">输入担保码+密码确认，口令立即对卖家解锁</div>
+              <div class="step">
+                <div class="step-dot">✓</div>
+                <div class="step-content">
+                  <div class="step-name">买家确认收货</div>
+                  <div class="step-desc">输入担保码与密码,口令立即对卖家解锁</div>
+                </div>
               </div>
             </div>
           </div>
@@ -333,81 +786,163 @@ body {
       </div>
 
       <div class="page" id="page-seller">
-        <div class="card">
-          <div class="card-body" style="padding:16px">
-            <button class="btn btn-blue" onclick="openModal('modal-query')">🔍 输入担保码查询</button>
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title">订单详情</div>
+          </div>
+          <div id="seller-result"></div>
+          <div class="card card-pad" id="seller-empty-hint">
+            <div class="empty">
+              <div class="empty-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </div>
+              <div class="empty-text">输入买家给你的6位担保码<br>查看口令状态</div>
+            </div>
           </div>
         </div>
-        <div id="seller-result"></div>
-        <div class="card" id="seller-empty-hint">
-          <div class="card-body">
-            <div class="empty-state">
-              <div class="empty-icon">📦</div>
-              <div>输入买家给你的6位担保码<br>查看口令状态</div>
+
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title">注意事项</div>
+          </div>
+          <div class="flow">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:24px;height:24px;background:var(--warning-soft);color:var(--warning);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:13px">!</div>
+                <div style="font-size:13px;color:var(--ink-2);line-height:1.55">查询时口令处于<strong style="color:var(--ink-1)">隐藏状态</strong>,只有买家确认收货后才会解锁</div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:24px;height:24px;background:var(--primary-soft);color:var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:13px">i</div>
+                <div style="font-size:13px;color:var(--ink-2);line-height:1.55">完成商品交付或服务后,主动通知买家进行<strong style="color:var(--ink-1)">确认收货</strong></div>
+              </div>
+              <div style="display:flex;gap:12px;align-items:flex-start">
+                <div style="width:24px;height:24px;background:var(--success-soft);color:var(--success);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;font-size:13px">✓</div>
+                <div style="font-size:13px;color:var(--ink-2);line-height:1.55">买家确认后,点击<strong style="color:var(--ink-1)">刷新</strong>即可查看完整口令并去支付宝收款</div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
     </div>
+
+    <div style="height:24px"></div>
   </div>
 
-  <div class="tab-bar">
+  <div class="tabs">
     <div class="tab active" id="tab-buyer" onclick="switchTab('buyer')">
-      <div class="tab-icon">🛒</div>
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M3 6h2l2.5 11h12L22 9H6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="20" r="1.5" fill="currentColor"/>
+        <circle cx="18" cy="20" r="1.5" fill="currentColor"/>
+      </svg>
       <div class="tab-label">我是买家</div>
     </div>
     <div class="tab" id="tab-seller" onclick="switchTab('seller')">
-      <div class="tab-icon">📦</div>
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <div class="tab-label">我是卖家</div>
     </div>
   </div>
 </div>
 
+<!-- Modal: 创建担保 -->
+<div class="modal-mask" id="modal-create">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">创建担保订单</div>
+      <div class="modal-sub">填写后将生成 6 位担保码,把它发给卖家</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">支付宝口令</label>
+      <textarea id="c-kw" class="form-textarea" placeholder="粘贴你复制的支付宝口令" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">交易金额(元)</label>
+      <input type="number" id="c-price" class="form-input" placeholder="0.00" step="0.01" inputmode="decimal">
+    </div>
+    <div class="form-group">
+      <label class="form-label">备注(选填)</label>
+      <input type="text" id="c-note" class="form-input" placeholder="商品描述,例如:游戏账号">
+    </div>
+    <div class="form-group">
+      <label class="form-label">设置 4 位数字密码</label>
+      <input type="password" id="c-pin" class="form-input mono" placeholder="••••" maxlength="4" inputmode="numeric" autocomplete="off">
+      <div class="form-tip">用于确认收货,请牢记,不要告诉任何人</div>
+    </div>
+    <button class="btn-primary" onclick="doCreate()">生成担保码</button>
+    <button class="btn-cancel" onclick="closeModal('modal-create')">取消</button>
+  </div>
+</div>
+
+<!-- Modal: 确认收货 -->
+<div class="modal-mask" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">确认收货</div>
+      <div class="modal-sub">确认后口令将立即释放给卖家,请确认已收到商品或服务</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">担保码</label>
+      <input type="text" id="cf-token" class="form-input mono token-style" placeholder="6位担保码" maxlength="6" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">4位密码</label>
+      <input type="password" id="cf-pin" class="form-input mono" placeholder="••••" maxlength="4" inputmode="numeric" autocomplete="off">
+    </div>
+    <button class="btn-primary success" onclick="doConfirm()">确认收货,释放口令</button>
+    <button class="btn-cancel" onclick="closeModal('modal-confirm')">取消</button>
+  </div>
+</div>
+
 <script>
-// ══════════════════════════════════════════════════════════
-//  ⚠️  把下面这行改成你在 Render 上部署的服务器地址
-//  例如：const API = "https://your-app.onrender.com"
-// ══════════════════════════════════════════════════════════
 const API = "https://page-c4hm.onrender.com";
 
-// ── 工具 ──────────────────────────────────────────────────
 function showLoading(v) {
-  document.getElementById("loading").classList[v?"add":"remove"]("show");
+  document.getElementById("loading").classList[v ? "add" : "remove"]("show");
 }
 
 function genToken() {
-  const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let t="";
-  for(let i=0;i<6;i++) t+=c[Math.floor(Math.random()*c.length)]; return t;
+  const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let t = "";
+  for (let i = 0; i < 6; i++) t += c[Math.floor(Math.random() * c.length)];
+  return t;
 }
+
 function hashPin(s) {
-  let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h)+s.charCodeAt(i)|0; return (h>>>0).toString(16);
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) + s.charCodeAt(i) | 0;
+  return (h >>> 0).toString(16);
 }
+
 function fmtTime(ts) {
-  if(!ts) return ""; const d=new Date(ts);
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  if (!ts) return "";
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
-function fmtPrice(p) { return "¥"+Number(p).toFixed(2); }
+
+function fmtPrice(p) { return "¥" + Number(p).toFixed(2); }
 
 let toastT;
 function toast(msg) {
-  const el=document.getElementById("toast");
-  el.textContent=msg; el.classList.add("show");
-  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("show"),2400);
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove("show"), 2400);
 }
 
-function setSyncStatus(state, msg) {
-  const el=document.getElementById("sync-status"); if(!el) return;
-  const map={
-    ok:   ["ok",  ""],
-    warn: ["warn",""],
-    err:  ["err", ""],
-  };
-  const [cls, txt]=map[state]||map.warn;
-  el.innerHTML=`<div class="sync-bar ${cls}"><div class="sync-dot"></div>${msg||txt}</div>`;
+function setHeroStatus(state, msg) {
+  // 静默，原元素已隐藏
 }
 
-// ── API 请求封装 ──────────────────────────────────────────
 async function apiGet(path) {
   const r = await fetch(API + path);
   if (!r.ok) throw new Error(await r.text());
@@ -432,67 +967,63 @@ async function apiPut(path, body) {
   return r.json();
 }
 
-// ── Tab ───────────────────────────────────────────────────
 function switchTab(t) {
-  document.querySelectorAll(".tab").forEach(e=>e.classList.remove("active"));
-  document.querySelectorAll(".page").forEach(e=>e.classList.remove("active"));
-  document.getElementById("tab-"+t).classList.add("active");
-  document.getElementById("page-"+t).classList.add("active");
-  document.getElementById("scroll-host").scrollTop=0;
+  document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
+  document.querySelectorAll(".page").forEach(e => e.classList.remove("active"));
+  document.getElementById("tab-" + t).classList.add("active");
+  document.getElementById("page-" + t).classList.add("active");
+  document.getElementById("hero-card-buyer").style.display = t === "buyer" ? "flex" : "none";
+  document.getElementById("hero-card-seller").style.display = t === "seller" ? "flex" : "none";
+  document.getElementById("scroll-host").scrollTop = 0;
 }
 
-// ── 弹窗 ──────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add("show"); }
 function closeModal(id) { document.getElementById(id).classList.remove("show"); }
-document.querySelectorAll(".modal-mask").forEach(el=>{
-  el.addEventListener("click",e=>{ if(e.target===el) el.classList.remove("show"); });
+document.querySelectorAll(".modal-mask").forEach(el => {
+  el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); });
 });
 function openConfirmModal() {
-  document.getElementById("cf-token").value="";
-  document.getElementById("cf-pin").value="";
+  document.getElementById("cf-token").value = "";
+  document.getElementById("cf-pin").value = "";
   openModal("modal-confirm");
 }
 
-// ── 买家：创建担保 ────────────────────────────────────────
 async function doCreate() {
-  const kw    = document.getElementById("c-kw").value.trim();
+  const kw = document.getElementById("c-kw").value.trim();
   const price = parseFloat(document.getElementById("c-price").value);
-  const note  = document.getElementById("c-note").value.trim() || "无备注";
-  const pin   = document.getElementById("c-pin").value.trim();
-  if (!kw)              return toast("请输入支付宝口令");
-  if (!price||price<=0) return toast("请输入有效金额");
-  if (pin.length < 4)  return toast("请设置4位数字密码");
+  const note = document.getElementById("c-note").value.trim() || "无备注";
+  const pin = document.getElementById("c-pin").value.trim();
+
+  if (!kw) return toast("请输入支付宝口令");
+  if (!price || price <= 0) return toast("请输入有效金额");
+  if (pin.length < 4) return toast("请设置4位数字密码");
 
   closeModal("modal-create");
   showLoading(true);
 
-  // 生成唯一 token
   const token = genToken();
   const pinHash = hashPin(pin);
 
   try {
     await apiPost("/escrow", { token, kw, price, note, pin: pinHash });
-    ["c-kw","c-price","c-note","c-pin"].forEach(id=>document.getElementById(id).value="");
+    ["c-kw", "c-price", "c-note", "c-pin"].forEach(id => document.getElementById(id).value = "");
     toast("担保码已生成 🎉");
-    setSyncStatus("ok");
-    // 展示令牌
+    document.getElementById("list-pin").value = pin;
     const wrap = document.getElementById("my-orders");
-    wrap.innerHTML = `<div class="token-display pop" style="margin-bottom:4px">
-      <div class="token-hint">担保码 · 发给卖家</div>
-      <div class="token-num">${token}</div>
-      <div class="token-actions">
-        <button class="btn-sm" style="flex:1;background:rgba(255,255,255,.15);color:#fff;border-radius:8px" onclick="doCopy('${token}','担保码已复制')">复制</button>
-        <button class="btn-sm" style="flex:1;background:rgba(255,255,255,.15);color:#fff;border-radius:8px" onclick="doShare('${token}',${price})">分享</button>
+    wrap.innerHTML = `<div class="token-show">
+      <div class="token-show-label">担保码 · 发给卖家</div>
+      <div class="token-show-num">${token}</div>
+      <div class="token-show-actions">
+        <button class="token-show-btn" onclick="doCopy('${token}','担保码已复制')">复制</button>
+        <button class="token-show-btn" onclick="doShare('${token}',${price})">分享</button>
       </div>
     </div>` + wrap.innerHTML;
-  } catch(e) {
-    toast("创建失败：" + e.message);
-    setSyncStatus("err");
+  } catch (e) {
+    toast("创建失败:" + e.message);
   }
   showLoading(false);
 }
 
-// ── 买家：查询我的订单 ────────────────────────────────────
 async function loadMyOrders() {
   const pin = document.getElementById("list-pin").value.trim();
   if (pin.length < 4) return toast("请输入4位密码");
@@ -502,39 +1033,48 @@ async function loadMyOrders() {
     const list = await apiGet(`/escrow/list/${pinHash}`);
     const wrap = document.getElementById("my-orders");
     if (!list.length) {
-      wrap.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div>该密码下没有订单</div></div>`;
+      wrap.innerHTML = `<div class="card card-pad"><div class="empty">
+        <div class="empty-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="empty-text">该密码下没有订单</div>
+      </div></div>`;
     } else {
       wrap.innerHTML = list.map(renderBuyerCard).join("");
       toast(`找到 ${list.length} 条订单`);
     }
-    setSyncStatus("ok");
-  } catch(e) {
-    toast("查询失败，请检查网络");
-    setSyncStatus("err");
+  } catch (e) {
+    toast("查询失败,请检查网络");
   }
   showLoading(false);
 }
 
 function renderBuyerCard(o) {
-  const isDone = o.status==="done";
+  const isDone = o.status === "done";
   const confirmBtn = isDone ? "" :
-    `<button class="btn-sm green" onclick="quickConfirm('${o.token}')" style="flex:1">✅ 确认收货</button>`;
-  return `<div class="order-card pop" style="margin-bottom:8px;border:1.5px solid ${isDone?'#bbf7d0':'#e8e8e8'}">
-    <div class="order-top" style="background:${isDone?'#f0fdf4':'#fafafa'}">
-      <div>
+    `<button class="btn-action success" onclick="quickConfirm('${o.token}')">确认收货</button>`;
+  return `<div class="order ${isDone ? 'done' : ''}">
+    <div class="order-head">
+      <div class="order-token-wrap">
         <div class="order-token-label">担保码</div>
-        <div class="order-token-val" style="color:${isDone?'#00875a':'#0a0a0a'}">${o.token}</div>
+        <div class="order-token">${o.token}</div>
       </div>
-      <span class="status-pill ${isDone?'done':'pending'}">${isDone?'已完成':'担保中'}</span>
+      <span class="pill ${isDone ? 'done' : 'pending'}">
+        <span class="pill-dot"></span>
+        ${isDone ? '已完成' : '担保中'}
+      </span>
     </div>
     <div class="order-meta">
-      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val" style="font-weight:700;color:${isDone?'#00875a':'inherit'}">${fmtPrice(o.price)}</span></div>
+      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val amount">${fmtPrice(o.price)}</span></div>
       <div class="meta-row"><span class="meta-key">备注</span><span class="meta-val">${o.note}</span></div>
-      <div class="meta-row"><span class="meta-key">创建</span><span class="meta-val">${fmtTime(o.at)}</span></div>
-      ${isDone?`<div class="meta-row"><span class="meta-key">完成</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>`:''}
+      <div class="meta-row"><span class="meta-key">创建时间</span><span class="meta-val">${fmtTime(o.at)}</span></div>
+      ${isDone ? `<div class="meta-row"><span class="meta-key">完成时间</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>` : ''}
     </div>
     <div class="order-actions">
-      <button class="btn-sm ghost" onclick="doCopy('${o.token}','已复制')">复制码 ${o.token}</button>
+      <button class="btn-action ghost" onclick="doCopy('${o.token}','已复制 ${o.token}')">复制担保码</button>
       ${confirmBtn}
     </div>
   </div>`;
@@ -545,58 +1085,51 @@ async function quickConfirm(token) {
   showLoading(true);
   try {
     await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
-    toast("✅ 已确认，口令已释放给卖家！");
-    setSyncStatus("ok");
+    toast("✅ 已确认,口令已释放给卖家!");
     loadMyOrders();
-  } catch(e) {
-    const msg = e.message.includes("密码") ? "密码错误" : "确认失败：" + e.message;
+  } catch (e) {
+    const msg = e.message.includes("密码") ? "密码错误" : "确认失败:" + e.message;
     toast(msg);
-    setSyncStatus("err");
   }
   showLoading(false);
 }
 
-// ── 买家：弹窗确认收货 ────────────────────────────────────
 async function doConfirm() {
   const token = document.getElementById("cf-token").value.trim().toUpperCase();
-  const pin   = document.getElementById("cf-pin").value.trim();
-  if (!token)          return toast("请输入担保码");
-  if (pin.length < 4)  return toast("请输入4位密码");
+  const pin = document.getElementById("cf-pin").value.trim();
+  if (!token) return toast("请输入担保码");
+  if (pin.length < 4) return toast("请输入4位密码");
   closeModal("modal-confirm");
   showLoading(true);
   try {
     await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
-    toast("✅ 已确认，口令已释放！");
-    setSyncStatus("ok");
-  } catch(e) {
+    toast("✅ 已确认,口令已释放!");
+    if (document.getElementById("list-pin").value.trim().length === 4) loadMyOrders();
+  } catch (e) {
     const body = e.message;
     if (body.includes("密码")) toast("密码错误");
     else if (body.includes("完成")) toast("该订单已完成");
     else if (body.includes("存在")) toast("担保码不存在");
-    else toast("请求失败：" + body);
-    setSyncStatus("err");
+    else toast("请求失败:" + body);
   }
   showLoading(false);
 }
 
-// ── 卖家：查询订单 ────────────────────────────────────────
 let sellerToken = null;
-async function doQuery() {
-  const token = document.getElementById("q-token").value.trim().toUpperCase();
+
+async function doQueryInline() {
+  const token = document.getElementById("q-token-inline").value.trim().toUpperCase();
   if (!token || token.length < 6) return toast("请输入完整的6位担保码");
-  closeModal("modal-query");
   showLoading(true);
   try {
     const order = await apiGet(`/escrow/${token}`);
     sellerToken = token;
     document.getElementById("seller-empty-hint").style.display = "none";
     document.getElementById("seller-result").innerHTML = renderSellerCard(order);
-    document.getElementById("q-token").value = "";
+    document.getElementById("q-token-inline").value = "";
     toast("查询成功");
-    setSyncStatus("ok");
-  } catch(e) {
+  } catch (e) {
     toast("担保码无效或不存在");
-    setSyncStatus("err");
   }
   showLoading(false);
 }
@@ -607,70 +1140,35 @@ async function refreshSeller() {
   try {
     const order = await apiGet(`/escrow/${sellerToken}`);
     document.getElementById("seller-result").innerHTML = renderSellerCard(order);
-    if (order.status==="done") toast("🎉 口令已解锁！");
+    if (order.status === "done") toast("🎉 口令已解锁!");
     else toast("买家尚未确认收货");
-    setSyncStatus("ok");
-  } catch(e) {
+  } catch (e) {
     toast("刷新失败");
-    setSyncStatus("err");
   }
   showLoading(false);
 }
 
 function renderSellerCard(o) {
-  const isDone = o.status==="done";
+  const isDone = o.status === "done";
   const kwHtml = isDone
-    ? `<div class="order-kw unlocked">
-        <div class="kw-val">${o.kw}</div>
-        <button class="btn-sm green" style="margin-top:10px;width:100%" onclick="doCopy(${JSON.stringify(o.kw)},'口令已复制')">复制口令</button>
-       </div>`
-    : `<div class="order-kw locked"><div class="kw-locked-txt">🔒 等待买家确认收货后解锁</div></div>`;
+    ? `<div class="order-kw-box unlocked">
+        <div class="kw-unlocked-label">🔓 口令已解锁</div>
+        <div class="kw-value">${escapeHtml(o.kw)}</div>
+        <button class="kw-copy-btn" onclick='doCopy(${JSON.stringify(o.kw)},"口令已复制")'>复制口令</button>
+      </div>`
+    : `<div class="order-kw-box locked">
+        <div class="kw-locked-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <rect x="5" y="11" width="14" height="11" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          等待买家确认收货后解锁
+        </div>
+      </div>`;
+
   const actHtml = isDone
-    ? `<div style="padding:0 18px 14px"><div style="background:#e6f9f1;border-radius:10px;padding:11px;text-align:center;font-size:13px;font-weight:700;color:#00875a">🎉 交易完成，复制口令去收款</div></div>`
-    : `<div style="padding:0 18px 14px;display:flex;gap:8px">
-        <button class="btn-sm ghost" style="flex:1" onclick="refreshSeller()">🔄 刷新</button>
-        <div style="flex:2;background:#fff7e6;border-radius:8px;padding:8px 12px;font-size:12px;color:#d97706;display:flex;align-items:center">完成交付后提醒买家确认</div>
-       </div>`;
-  return `<div class="order-card pop" style="border:1.5px solid ${isDone?'#bbf7d0':'#e8e8e8'}">
-    <div class="order-top" style="background:${isDone?'#f0fdf4':'#fafafa'}">
-      <div>
-        <div class="order-token-label">担保码</div>
-        <div class="order-token-val" style="color:${isDone?'#00875a':'#0a0a0a'}">${o.token}</div>
-      </div>
-      <span class="status-pill ${isDone?'done':'pending'}">${isDone?'已完成':'等待确认'}</span>
-    </div>
-    <div class="order-meta">
-      <div class="meta-row"><span class="meta-key">金额</span><span class="meta-val" style="font-weight:700">${fmtPrice(o.price)}</span></div>
-      <div class="meta-row"><span class="meta-key">备注</span><span class="meta-val">${o.note}</span></div>
-      <div class="meta-row"><span class="meta-key">创建时间</span><span class="meta-val">${fmtTime(o.at)}</span></div>
-      ${isDone?`<div class="meta-row"><span class="meta-key">完成时间</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>`:''}
-    </div>
-    ${kwHtml}${actHtml}
-  </div>`;
-}
-
-// ── 复制/分享 ─────────────────────────────────────────────
-function doCopy(text,msg) {
-  if(navigator.clipboard) navigator.clipboard.writeText(text).then(()=>toast(msg)).catch(()=>fallback(text,msg));
-  else fallback(text,msg);
-}
-function fallback(text,msg) {
-  const t=document.createElement("textarea"); t.value=text; t.style.cssText="position:fixed;opacity:0";
-  document.body.appendChild(t); t.select(); document.execCommand("copy"); document.body.removeChild(t); toast(msg);
-}
-function doShare(token,price) {
-  const text=`【担保码】${token}\n金额：¥${Number(price).toFixed(2)}\n凭此码查询担保订单，我确认收货后口令自动解锁。`;
-  if(navigator.share) navigator.share({text}).catch(()=>doCopy(token,"担保码已复制"));
-  else doCopy(text,"分享内容已复制");
-}
-
-// ── 初始化 ────────────────────────────────────────────────
-// 【修复点】：强制斩断旧版本的本地数据！只要打开页面就会清空你浏览器的旧 localStorage
-try { localStorage.clear(); } catch(e) {}
-
-setSyncStatus("warn", "");
-fetch(API + "/").then(()=>setSyncStatus("ok")).catch(()=>setSyncStatus("warn",""));
-</script>
-</body>
-</html>
-
+    ? `<div class="order-done-banner">🎉 交易完成,口令已可用</div>`
+    : `<div class="order-actions">
+        <button class="btn-action primary" onclick="refreshSeller()">刷新状态</button>
+        <div class="order-pending-tip">完成交付后提醒买家确认</div>
+      </div>`;
