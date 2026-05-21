@@ -7,7 +7,6 @@
 <title>担保交易 · 安心收付</title>
 <style>
 :root {
-  /* 色彩系统 */
   --primary: #0066FF;
   --primary-soft: #E8F0FF;
   --primary-dark: #0052CC;
@@ -17,8 +16,6 @@
   --warning-soft: #FFF4E5;
   --danger: #FF3B30;
   --danger-soft: #FFEBEA;
-
-  /* 中性色 */
   --ink-1: #0F1419;
   --ink-2: #475569;
   --ink-3: #94A3B8;
@@ -26,14 +23,10 @@
   --line-light: #F1F5F9;
   --bg: #F8F9FB;
   --card: #FFFFFF;
-
-  /* 尺寸 */
   --radius-sm: 10px;
   --radius: 14px;
   --radius-lg: 20px;
   --tab-h: 64px;
-
-  /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(15, 20, 25, 0.04), 0 1px 3px rgba(15, 20, 25, 0.06);
   --shadow: 0 4px 12px rgba(15, 20, 25, 0.06), 0 2px 4px rgba(15, 20, 25, 0.04);
   --shadow-lg: 0 20px 40px rgba(15, 20, 25, 0.12);
@@ -67,7 +60,6 @@ button, input, textarea {
   color: inherit;
 }
 
-/* ============ 布局 ============ */
 .app {
   position: fixed;
   inset: 0;
@@ -92,7 +84,7 @@ button, input, textarea {
   padding: 0 16px;
 }
 
-/* ============ 顶部 Header ============ */
+/* ============ Hero ============ */
 .hero {
   position: relative;
   padding: env(safe-area-inset-top, 12px) 16px 32px;
@@ -149,18 +141,77 @@ button, input, textarea {
   justify-content: center;
   backdrop-filter: blur(10px);
 }
+
+/* 隐藏旧的状态胶囊 */
 .hero-status {
   display: none;
 }
-.hero-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #00FFAA;
-  box-shadow: 0 0 8px #00FFAA;
+
+/* ============ 新的信任徽章 ============ */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 5px 11px 5px 5px;
+  border-radius: 22px;
+  position: relative;
+  overflow: hidden;
 }
-.hero-status.offline .hero-status-dot { background: #FFB84D; box-shadow: 0 0 8px #FFB84D; }
-.hero-status.error .hero-status-dot { background: #FF6B6B; box-shadow: 0 0 8px #FF6B6B; }
+.trust-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255,255,255,0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+.trust-badge-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.trust-badge-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.trust-badge-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.trust-badge-main {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.4px;
+}
+.trust-badge-sub {
+  font-size: 9.5px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+/* 盾牌脉冲动画 */
+@keyframes shield-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,170,0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(0,255,170,0); }
+}
+.trust-badge-icon {
+  animation: shield-pulse 2.8s ease infinite;
+}
 
 .hero-title {
   font-size: 26px;
@@ -175,7 +226,7 @@ button, input, textarea {
   font-weight: 400;
 }
 
-/* 卡片浮在 hero 底部 */
+/* ============ Hero Card ============ */
 .hero-card {
   position: relative;
   margin: -20px 16px 0;
@@ -203,9 +254,7 @@ button, input, textarea {
   gap: 6px;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-.action-btn:active {
-  transform: scale(0.96);
-}
+.action-btn:active { transform: scale(0.96); }
 .action-btn.primary {
   background: linear-gradient(135deg, #0066FF, #0052CC);
   color: white;
@@ -223,10 +272,8 @@ button, input, textarea {
   justify-content: center;
 }
 
-/* ============ Section 标题 ============ */
-.section {
-  margin-top: 24px;
-}
+/* ============ Section ============ */
+.section { margin-top: 24px; }
 .section-header {
   display: flex;
   align-items: center;
@@ -250,7 +297,7 @@ button, input, textarea {
   font-weight: 600;
 }
 
-/* ============ 卡片 ============ */
+/* ============ Card ============ */
 .card {
   background: var(--card);
   border-radius: var(--radius-lg);
@@ -258,15 +305,10 @@ button, input, textarea {
   overflow: hidden;
 }
 .card + .card { margin-top: 12px; }
-
 .card-pad { padding: 20px; }
 
-/* ============ 查询输入区 ============ */
-.lookup {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
-}
+/* ============ Lookup ============ */
+.lookup { display: flex; gap: 8px; align-items: stretch; }
 .lookup-input {
   flex: 1;
   border: 1.5px solid var(--line);
@@ -283,15 +325,8 @@ button, input, textarea {
   text-transform: uppercase;
   width: 100%;
 }
-.lookup-input:focus {
-  border-color: var(--primary);
-  background: white;
-}
-.lookup-input::placeholder {
-  color: var(--ink-3);
-  font-weight: 400;
-  letter-spacing: 2px;
-}
+.lookup-input:focus { border-color: var(--primary); background: white; }
+.lookup-input::placeholder { color: var(--ink-3); font-weight: 400; letter-spacing: 2px; }
 .lookup-btn {
   background: var(--primary);
   color: white;
@@ -304,12 +339,9 @@ button, input, textarea {
   transition: opacity 0.15s, transform 0.12s;
   flex-shrink: 0;
 }
-.lookup-btn:active {
-  transform: scale(0.95);
-  opacity: 0.9;
-}
+.lookup-btn:active { transform: scale(0.95); opacity: 0.9; }
 
-/* ============ 流程图 ============ */
+/* ============ Flow ============ */
 .flow {
   background: white;
   border-radius: var(--radius-lg);
@@ -324,21 +356,7 @@ button, input, textarea {
   align-items: center;
   gap: 8px;
 }
-.flow-title-icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--primary-soft);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.steps {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
+.steps { display: flex; flex-direction: column; position: relative; }
 .step {
   display: flex;
   gap: 14px;
@@ -373,25 +391,12 @@ button, input, textarea {
   border: 2px solid white;
   box-shadow: 0 0 0 1px var(--line);
 }
-.step:last-child .step-dot {
-  background: var(--success-soft);
-  color: var(--success);
-}
-.step-content {
-  padding-top: 4px;
-}
-.step-name {
-  font-size: 14px;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-.step-desc {
-  font-size: 12.5px;
-  color: var(--ink-2);
-  line-height: 1.5;
-}
+.step:last-child .step-dot { background: var(--success-soft); color: var(--success); }
+.step-content { padding-top: 4px; }
+.step-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.step-desc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
 
-/* ============ 订单卡片 ============ */
+/* ============ Order Card ============ */
 .order {
   background: white;
   border-radius: var(--radius-lg);
@@ -404,9 +409,7 @@ button, input, textarea {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.order.done {
-  border-color: rgba(0, 196, 140, 0.3);
-}
+.order.done { border-color: rgba(0, 196, 140, 0.3); }
 .order-head {
   padding: 16px 18px;
   display: flex;
@@ -418,23 +421,9 @@ button, input, textarea {
   background: linear-gradient(135deg, var(--success-soft) 0%, rgba(0,196,140,0.04) 100%);
   border-bottom-color: rgba(0, 196, 140, 0.15);
 }
-.order-token-wrap {
-  display: flex;
-  flex-direction: column;
-}
-.order-token-label {
-  font-size: 11px;
-  color: var(--ink-3);
-  font-weight: 500;
-  margin-bottom: 2px;
-  letter-spacing: 0.5px;
-}
-.order-token {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  font-family: "SF Mono", "Menlo", monospace;
-}
+.order-token-wrap { display: flex; flex-direction: column; }
+.order-token-label { font-size: 11px; color: var(--ink-3); font-weight: 500; margin-bottom: 2px; letter-spacing: 0.5px; }
+.order-token { font-size: 22px; font-weight: 800; letter-spacing: 3px; font-family: "SF Mono", "Menlo", monospace; }
 .order.done .order-token { color: var(--success); }
 .pill {
   font-size: 11px;
@@ -446,64 +435,22 @@ button, input, textarea {
   align-items: center;
   gap: 5px;
 }
-.pill.pending {
-  background: var(--warning-soft);
-  color: var(--warning);
-}
-.pill.done {
-  background: var(--success);
-  color: white;
-}
-.pill-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-.pill.pending .pill-dot {
-  animation: pulse 1.5s ease infinite;
-}
+.pill.pending { background: var(--warning-soft); color: var(--warning); }
+.pill.done { background: var(--success); color: white; }
+.pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pill.pending .pill-dot { animation: pulse 1.5s ease infinite; }
 @keyframes pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
 }
-
-.order-meta {
-  padding: 14px 18px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  align-items: baseline;
-}
-.meta-key {
-  color: var(--ink-3);
-  font-weight: 500;
-}
-.meta-val {
-  color: var(--ink-1);
-  font-weight: 600;
-}
-.meta-val.amount {
-  font-size: 17px;
-  font-weight: 800;
-}
+.order-meta { padding: 14px 18px 0; display: flex; flex-direction: column; gap: 7px; }
+.meta-row { display: flex; justify-content: space-between; font-size: 13px; align-items: baseline; }
+.meta-key { color: var(--ink-3); font-weight: 500; }
+.meta-val { color: var(--ink-1); font-weight: 600; }
+.meta-val.amount { font-size: 17px; font-weight: 800; }
 .order.done .meta-val.amount { color: var(--success); }
-
-.order-kw-box {
-  margin: 14px 18px 0;
-  border-radius: var(--radius);
-  padding: 14px;
-}
-.order-kw-box.locked {
-  background: var(--bg);
-  border: 1.5px dashed var(--line);
-  text-align: center;
-}
+.order-kw-box { margin: 14px 18px 0; border-radius: var(--radius); padding: 14px; }
+.order-kw-box.locked { background: var(--bg); border: 1.5px dashed var(--line); text-align: center; }
 .order-kw-box.unlocked {
   background: linear-gradient(135deg, #0F1419 0%, #1F2937 100%);
   color: white;
@@ -516,196 +463,78 @@ button, input, textarea {
   inset: 0;
   background: radial-gradient(circle at 20% 50%, rgba(0,196,140,0.2), transparent 60%);
 }
-.kw-locked-text {
-  font-size: 13px;
-  color: var(--ink-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.kw-unlocked-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 8px;
-  position: relative;
-  letter-spacing: 0.5px;
-}
+.kw-locked-text { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.kw-unlocked-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 8px; position: relative; letter-spacing: 0.5px; }
 .kw-value {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.6;
-  word-break: break-all;
-  position: relative;
-  background: rgba(255,255,255,0.08);
-  padding: 10px 12px;
-  border-radius: 8px;
-  margin-bottom: 10px;
+  font-size: 14px; font-weight: 600; line-height: 1.6; word-break: break-all;
+  position: relative; background: rgba(255,255,255,0.08); padding: 10px 12px;
+  border-radius: 8px; margin-bottom: 10px;
 }
 .kw-copy-btn {
-  background: var(--success);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px;
-  font-weight: 700;
-  font-size: 13px;
-  width: 100%;
-  cursor: pointer;
-  position: relative;
-  transition: opacity 0.15s;
+  background: var(--success); color: white; border: none; border-radius: 8px;
+  padding: 10px; font-weight: 700; font-size: 13px; width: 100%;
+  cursor: pointer; position: relative; transition: opacity 0.15s;
 }
 .kw-copy-btn:active { opacity: 0.85; }
-
-.order-actions {
-  padding: 14px 18px 18px;
-  display: flex;
-  gap: 8px;
-}
+.order-actions { padding: 14px 18px 18px; display: flex; gap: 8px; }
 .btn-action {
-  flex: 1;
-  border: none;
-  padding: 11px 14px;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
+  flex: 1; border: none; padding: 11px 14px; border-radius: 10px;
+  font-weight: 600; font-size: 13px; cursor: pointer;
   transition: opacity 0.15s, transform 0.12s;
 }
-.btn-action:active {
-  transform: scale(0.96);
-  opacity: 0.85;
-}
-.btn-action.ghost {
-  background: var(--line-light);
-  color: var(--ink-2);
-}
-.btn-action.success {
-  background: var(--success);
-  color: white;
-}
-.btn-action.primary {
-  background: var(--primary);
-  color: white;
-}
-
+.btn-action:active { transform: scale(0.96); opacity: 0.85; }
+.btn-action.ghost { background: var(--line-light); color: var(--ink-2); }
+.btn-action.success { background: var(--success); color: white; }
+.btn-action.primary { background: var(--primary); color: white; }
 .order-done-banner {
-  margin: 0 18px 18px;
-  background: var(--success-soft);
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  color: var(--success);
-  text-align: center;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  margin: 0 18px 18px; background: var(--success-soft); padding: 12px;
+  border-radius: 10px; font-size: 13px; color: var(--success);
+  text-align: center; font-weight: 700; display: flex;
+  align-items: center; justify-content: center; gap: 6px;
 }
 .order-pending-tip {
-  margin: 0 18px 18px;
-  background: var(--warning-soft);
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: var(--warning);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
+  margin: 0 18px 18px; background: var(--warning-soft); padding: 10px 12px;
+  border-radius: 10px; font-size: 12px; color: var(--warning);
+  display: flex; align-items: center; gap: 6px; flex: 1;
 }
 
-/* ============ 空状态 ============ */
-.empty {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--ink-3);
-}
+/* ============ Empty ============ */
+.empty { text-align: center; padding: 40px 20px; color: var(--ink-3); }
 .empty-icon {
-  width: 56px;
-  height: 56px;
-  background: var(--bg);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 12px;
-  color: var(--ink-3);
+  width: 56px; height: 56px; background: var(--bg); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px; color: var(--ink-3);
 }
-.empty-text {
-  font-size: 13px;
-  line-height: 1.5;
-}
+.empty-text { font-size: 13px; line-height: 1.5; }
 
-/* ============ Token 大显示卡 ============ */
+/* ============ Token Show ============ */
 .token-show {
   background: linear-gradient(135deg, #0F1419 0%, #1F2937 50%, #0066FF 200%);
-  border-radius: var(--radius-lg);
-  padding: 24px 20px;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 12px;
+  border-radius: var(--radius-lg); padding: 24px 20px;
+  position: relative; overflow: hidden; margin-bottom: 12px;
   animation: cardIn 0.3s ease;
 }
 .token-show::before {
-  content: '';
-  position: absolute;
-  top: -30%;
-  right: -20%;
-  width: 80%;
-  height: 100%;
+  content: ''; position: absolute; top: -30%; right: -20%; width: 80%; height: 100%;
   background: radial-gradient(circle, rgba(0, 102, 255, 0.4), transparent 60%);
 }
 .token-show::after {
-  content: '';
-  position: absolute;
-  bottom: -40%;
-  left: -10%;
-  width: 60%;
-  height: 100%;
+  content: ''; position: absolute; bottom: -40%; left: -10%; width: 60%; height: 100%;
   background: radial-gradient(circle, rgba(0, 196, 140, 0.25), transparent 60%);
 }
-.token-show-label {
-  position: relative;
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-  text-align: center;
-}
+.token-show-label { position: relative; font-size: 12px; color: rgba(255,255,255,0.6); letter-spacing: 1px; margin-bottom: 4px; text-align: center; }
 .token-show-num {
-  position: relative;
-  text-align: center;
-  font-size: 38px;
-  font-weight: 900;
-  color: white;
-  letter-spacing: 10px;
-  font-family: "SF Mono", "Menlo", monospace;
-  text-shadow: 0 0 24px rgba(0, 102, 255, 0.6);
-  margin-bottom: 16px;
+  position: relative; text-align: center; font-size: 38px; font-weight: 900;
+  color: white; letter-spacing: 10px; font-family: "SF Mono", "Menlo", monospace;
+  text-shadow: 0 0 24px rgba(0, 102, 255, 0.6); margin-bottom: 16px;
 }
-.token-show-actions {
-  position: relative;
-  display: flex;
-  gap: 8px;
-}
+.token-show-actions { position: relative; display: flex; gap: 8px; }
 .token-show-btn {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: white;
-  border-radius: 10px;
-  padding: 11px;
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s;
+  flex: 1; background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 10px;
+  padding: 11px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s;
 }
-.token-show-btn:active {
-  background: rgba(255,255,255,0.2);
-}
+.token-show-btn:active { background: rgba(255,255,255,0.2); }
 
 /* ============ Tab Bar ============ */
 .tabs {
@@ -719,45 +548,21 @@ button, input, textarea {
   flex-shrink: 0;
 }
 .tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-  color: var(--ink-3);
-  transition: color 0.15s;
-  position: relative;
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px; cursor: pointer; color: var(--ink-3);
+  transition: color 0.15s; position: relative;
 }
-.tab.active {
-  color: var(--primary);
-}
+.tab.active { color: var(--primary); }
 .tab:active { opacity: 0.6; }
-.tab-icon {
-  width: 24px;
-  height: 24px;
-}
-.tab-label {
-  font-size: 11px;
-  font-weight: 600;
-}
+.tab-icon { width: 24px; height: 24px; }
+.tab-label { font-size: 11px; font-weight: 600; }
 .tab.active::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 30%;
-  right: 30%;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 0 0 2px 2px;
+  content: ''; position: absolute; top: 0; left: 30%; right: 30%;
+  height: 2px; background: var(--primary); border-radius: 0 0 2px 2px;
 }
 
-/* ============ Page 切换 ============ */
-.page {
-  display: none;
-  animation: fadeIn 0.25s ease;
-}
+/* ============ Page ============ */
+.page { display: none; animation: fadeIn 0.25s ease; }
 .page.active { display: block; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
@@ -766,208 +571,84 @@ button, input, textarea {
 
 /* ============ Modal ============ */
 .modal-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 20, 25, 0.5);
-  backdrop-filter: blur(6px);
-  z-index: 200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
+  position: fixed; inset: 0; background: rgba(15, 20, 25, 0.5);
+  backdrop-filter: blur(6px); z-index: 200; display: flex;
+  align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
 }
-.modal-mask.show {
-  opacity: 1;
-  pointer-events: auto;
-}
+.modal-mask.show { opacity: 1; pointer-events: auto; }
 .modal {
-  background: white;
-  border-radius: 24px 24px 0 0;
-  width: 100%;
-  max-width: 520px;
+  background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 520px;
   padding: 8px 20px calc(24px + env(safe-area-inset-bottom, 0px));
-  transform: translateY(100%);
-  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.32, 1);
-  max-height: 90vh;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0.32, 1);
+  max-height: 90vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
-.modal-mask.show .modal {
-  transform: translateY(0);
-}
-.modal-handle {
-  width: 36px;
-  height: 4px;
-  background: var(--line);
-  border-radius: 2px;
-  margin: 0 auto 16px;
-}
-.modal-header {
-  margin-bottom: 18px;
-}
-.modal-title {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  margin-bottom: 4px;
-}
-.modal-sub {
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.5;
-}
+.modal-mask.show .modal { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; background: var(--line); border-radius: 2px; margin: 0 auto 16px; }
+.modal-header { margin-bottom: 18px; }
+.modal-title { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--ink-2); line-height: 1.5; }
 
 /* ============ Form ============ */
-.form-group {
-  margin-bottom: 14px;
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; display: block; }
+.form-input, .form-textarea {
+  width: 100%; border: 1.5px solid var(--line); border-radius: var(--radius);
+  padding: 13px 14px; font-size: 15px; background: var(--bg); outline: none;
+  transition: border-color 0.15s, background 0.15s; resize: none;
 }
-.form-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-2);
-  margin-bottom: 6px;
-  display: block;
-}
-.form-input,
-.form-textarea {
-  width: 100%;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius);
-  padding: 13px 14px;
-  font-size: 15px;
-  background: var(--bg);
-  outline: none;
-  transition: border-color 0.15s, background 0.15s;
-  resize: none;
-}
-.form-input:focus,
-.form-textarea:focus {
-  border-color: var(--primary);
-  background: white;
-}
-.form-input.mono {
-  font-family: "SF Mono", "Menlo", monospace;
-  letter-spacing: 6px;
-  text-align: center;
-  font-size: 22px;
-  font-weight: 700;
-}
-.form-input.token-style {
-  text-transform: uppercase;
-  letter-spacing: 8px;
-}
-.form-tip {
-  font-size: 11.5px;
-  color: var(--ink-3);
-  margin-top: 5px;
-  line-height: 1.4;
-}
-
+.form-input:focus, .form-textarea:focus { border-color: var(--primary); background: white; }
+.form-input.mono { font-family: "SF Mono", "Menlo", monospace; letter-spacing: 6px; text-align: center; font-size: 22px; font-weight: 700; }
+.form-input.token-style { text-transform: uppercase; letter-spacing: 8px; }
+.form-tip { font-size: 11.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.4; }
 .btn-primary {
-  width: 100%;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius);
-  padding: 15px;
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.12s;
-  margin-top: 4px;
+  width: 100%; background: var(--primary); color: white; border: none;
+  border-radius: var(--radius); padding: 15px; font-weight: 700; font-size: 15px;
+  cursor: pointer; transition: opacity 0.15s, transform 0.12s; margin-top: 4px;
   box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
 }
-.btn-primary:active {
-  transform: scale(0.98);
-  opacity: 0.9;
-}
-.btn-primary.success {
-  background: var(--success);
-  box-shadow: 0 4px 12px rgba(0, 196, 140, 0.25);
-}
+.btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+.btn-primary.success { background: var(--success); box-shadow: 0 4px 12px rgba(0, 196, 140, 0.25); }
 .btn-cancel {
-  width: 100%;
-  background: var(--line-light);
-  color: var(--ink-2);
-  border: none;
-  border-radius: var(--radius);
-  padding: 14px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 8px;
+  width: 100%; background: var(--line-light); color: var(--ink-2); border: none;
+  border-radius: var(--radius); padding: 14px; font-weight: 600; font-size: 14px;
+  cursor: pointer; margin-top: 8px;
 }
 
 /* ============ Toast ============ */
 .toast {
   position: fixed;
   bottom: calc(var(--tab-h) + env(safe-area-inset-bottom, 0px) + 16px);
-  left: 50%;
-  transform: translate(-50%, 8px);
-  background: rgba(15, 20, 25, 0.92);
-  backdrop-filter: blur(12px);
-  color: white;
-  padding: 12px 22px;
-  border-radius: 28px;
-  font-size: 13.5px;
-  font-weight: 600;
-  z-index: 999;
-  opacity: 0;
-  transition: all 0.25s ease;
-  pointer-events: none;
-  white-space: nowrap;
-  max-width: 88%;
-  text-align: center;
+  left: 50%; transform: translate(-50%, 8px);
+  background: rgba(15, 20, 25, 0.92); backdrop-filter: blur(12px);
+  color: white; padding: 12px 22px; border-radius: 28px;
+  font-size: 13.5px; font-weight: 600; z-index: 999;
+  opacity: 0; transition: all 0.25s ease; pointer-events: none;
+  white-space: nowrap; max-width: 88%; text-align: center;
   box-shadow: 0 8px 24px rgba(15, 20, 25, 0.2);
 }
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* ============ Loading ============ */
 .loading-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(248, 249, 251, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 500;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
+  position: fixed; inset: 0; background: rgba(248, 249, 251, 0.6);
+  backdrop-filter: blur(4px); display: flex; align-items: center;
+  justify-content: center; z-index: 500; opacity: 0; pointer-events: none; transition: opacity 0.2s;
 }
-.loading-mask.show {
-  opacity: 1;
-  pointer-events: auto;
-}
+.loading-mask.show { opacity: 1; pointer-events: auto; }
 .spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--line);
-  border-top-color: var(--primary);
-  border-radius: 50%;
+  width: 40px; height: 40px; border: 3px solid var(--line);
+  border-top-color: var(--primary); border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* ============ 响应式 ============ */
 @media (min-width: 540px) {
   .hero-title { font-size: 30px; }
   .hero { padding-bottom: 40px; }
 }
-
-/* iOS Safari 安全区域 */
 @supports (padding: max(0px)) {
-  .hero {
-    padding-top: max(env(safe-area-inset-top), 12px);
-  }
+  .hero { padding-top: max(env(safe-area-inset-top), 12px); }
 }
 </style>
 </head>
@@ -979,7 +660,6 @@ button, input, textarea {
 <div class="app">
   <div class="scroll-host" id="scroll-host">
 
-    <!-- ============ HERO ============ -->
     <div class="hero">
       <div class="hero-inner">
         <div class="hero-brand">
@@ -992,7 +672,23 @@ button, input, textarea {
             </div>
             担保交易
           </div>
-          <div class="hero-status" id="hero-status">
+
+          <!-- 新的信任徽章，替换原来的已连接状态 -->
+          <div class="trust-badge">
+            <div class="trust-badge-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L3 7v6c0 5 3.5 9 9 11 5.5-2 9-6 9-11V7l-9-5z" fill="rgba(255,255,255,0.95)" stroke="none"/>
+                <path d="M9 12l2 2 4-4" stroke="#0066FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="trust-badge-text">
+              <span class="trust-badge-main">支付宝</span>
+              <span class="trust-badge-sub"></span>
+            </div>
+          </div>
+
+          <!-- 保留但隐藏原元素，避免 JS 报错 -->
+          <div class="hero-status" id="hero-status" style="display:none">
             <span class="hero-status-dot"></span>
             <span id="hero-status-text">已连接</span>
           </div>
@@ -1002,7 +698,6 @@ button, input, textarea {
       </div>
     </div>
 
-    <!-- ============ 顶部卡片(浮在 hero 上)============ -->
     <div class="hero-card" id="hero-card-buyer">
       <button class="action-btn primary" onclick="openModal('modal-create')">
         <div class="action-btn-icon">
@@ -1036,10 +731,7 @@ button, input, textarea {
 
     <div class="inner">
 
-      <!-- ============ 买家页面 ============ -->
       <div class="page active" id="page-buyer">
-
-        <!-- 我的订单 -->
         <div class="section">
           <div class="section-header">
             <div class="section-title">我的订单</div>
@@ -1054,7 +746,6 @@ button, input, textarea {
           <div id="my-orders" style="margin-top:12px"></div>
         </div>
 
-        <!-- 使用说明 -->
         <div class="section">
           <div class="section-header">
             <div class="section-title">使用流程</div>
@@ -1094,7 +785,6 @@ button, input, textarea {
         </div>
       </div>
 
-      <!-- ============ 卖家页面 ============ -->
       <div class="page" id="page-seller">
         <div class="section">
           <div class="section-header">
@@ -1142,7 +832,6 @@ button, input, textarea {
     <div style="height:24px"></div>
   </div>
 
-  <!-- ============ Tab Bar ============ -->
   <div class="tabs">
     <div class="tab active" id="tab-buyer" onclick="switchTab('buyer')">
       <svg class="tab-icon" viewBox="0 0 24 24" fill="none">
@@ -1162,7 +851,7 @@ button, input, textarea {
   </div>
 </div>
 
-<!-- ============ Modal: 创建担保 ============ -->
+<!-- Modal: 创建担保 -->
 <div class="modal-mask" id="modal-create">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1172,7 +861,7 @@ button, input, textarea {
     </div>
     <div class="form-group">
       <label class="form-label">支付宝口令</label>
-      <textarea id="c-kw" class="form-textarea" placeholder="粘贴你复制的支付宝口令" rows="3"></textarea>
+      <textarea id="c-kw" class="form-textarea" placeholder="粘贴你复制的支付宝口令红包码" rows="3"></textarea>
     </div>
     <div class="form-group">
       <label class="form-label">交易金额(元)</label>
@@ -1180,7 +869,7 @@ button, input, textarea {
     </div>
     <div class="form-group">
       <label class="form-label">备注(选填)</label>
-      <input type="text" id="c-note" class="form-input" placeholder="商品描述,例如:游戏账号">
+      <input type="text" id="c-note" class="form-input" placeholder="你的姓氏,例如:李">
     </div>
     <div class="form-group">
       <label class="form-label">设置 4 位数字密码</label>
@@ -1192,7 +881,7 @@ button, input, textarea {
   </div>
 </div>
 
-<!-- ============ Modal: 确认收货 ============ -->
+<!-- Modal: 确认收货 -->
 <div class="modal-mask" id="modal-confirm">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -1214,12 +903,8 @@ button, input, textarea {
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════
-//  服务器地址
-// ══════════════════════════════════════════════════════════
 const API = "https://page-c4hm.onrender.com";
 
-// ── 工具函数 ──────────────────────────────────────────────
 function showLoading(v) {
   document.getElementById("loading").classList[v ? "add" : "remove"]("show");
 }
@@ -1255,15 +940,9 @@ function toast(msg) {
 }
 
 function setHeroStatus(state, msg) {
-  const wrap = document.getElementById("hero-status");
-  const txt = document.getElementById("hero-status-text");
-  wrap.classList.remove("offline", "error");
-  if (state === "warn") wrap.classList.add("offline");
-  if (state === "err") wrap.classList.add("error");
-  txt.textContent = msg || { ok: "已连接", warn: "连接中", err: "未连接" }[state] || "已连接";
+  // 静默，原元素已隐藏
 }
 
-// ── API 请求 ──────────────────────────────────────────────
 async function apiGet(path) {
   const r = await fetch(API + path);
   if (!r.ok) throw new Error(await r.text());
@@ -1288,31 +967,20 @@ async function apiPut(path, body) {
   return r.json();
 }
 
-// ── Tab 切换 ──────────────────────────────────────────────
 function switchTab(t) {
   document.querySelectorAll(".tab").forEach(e => e.classList.remove("active"));
   document.querySelectorAll(".page").forEach(e => e.classList.remove("active"));
   document.getElementById("tab-" + t).classList.add("active");
   document.getElementById("page-" + t).classList.add("active");
-
-  // 切换顶部卡片
   document.getElementById("hero-card-buyer").style.display = t === "buyer" ? "flex" : "none";
   document.getElementById("hero-card-seller").style.display = t === "seller" ? "flex" : "none";
-
   document.getElementById("scroll-host").scrollTop = 0;
 }
 
-// ── Modal 控制 ────────────────────────────────────────────
-function openModal(id) {
-  document.getElementById(id).classList.add("show");
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove("show");
-}
+function openModal(id) { document.getElementById(id).classList.add("show"); }
+function closeModal(id) { document.getElementById(id).classList.remove("show"); }
 document.querySelectorAll(".modal-mask").forEach(el => {
-  el.addEventListener("click", e => {
-    if (e.target === el) el.classList.remove("show");
-  });
+  el.addEventListener("click", e => { if (e.target === el) el.classList.remove("show"); });
 });
 function openConfirmModal() {
   document.getElementById("cf-token").value = "";
@@ -1320,7 +988,6 @@ function openConfirmModal() {
   openModal("modal-confirm");
 }
 
-// ── 买家:创建担保 ────────────────────────────────────────
 async function doCreate() {
   const kw = document.getElementById("c-kw").value.trim();
   const price = parseFloat(document.getElementById("c-price").value);
@@ -1340,32 +1007,23 @@ async function doCreate() {
   try {
     await apiPost("/escrow", { token, kw, price, note, pin: pinHash });
     ["c-kw", "c-price", "c-note", "c-pin"].forEach(id => document.getElementById(id).value = "");
-
-    // ★ 改动1：自动复制格式化文本（替换原来的 toast）
-    const shareText = `【担保交易】\n担保码：${token}\n金额：¥${price.toFixed(2)}\n备注：${note}\n\n凭此担保码查询订单，买家确认收货后口令自动解锁。`;
-    doCopy(shareText, "担保码已生成并自动复制 🎉");
-
-    setHeroStatus("ok");
-
-    // 自动填入密码框并展示令牌
+    toast("担保码已生成 🎉");
     document.getElementById("list-pin").value = pin;
     const wrap = document.getElementById("my-orders");
     wrap.innerHTML = `<div class="token-show">
       <div class="token-show-label">担保码 · 发给卖家</div>
       <div class="token-show-num">${token}</div>
       <div class="token-show-actions">
-        <button class="token-show-btn" data-copy-token="${token}" data-copy-price="${price}" data-copy-mode="code">复制担保码</button>
-        <button class="token-show-btn" data-copy-token="${token}" data-copy-price="${price}" data-copy-mode="share">复制分享文本</button>
+        <button class="token-show-btn" onclick="doCopy('${token}','担保码已复制')">复制</button>
+        <button class="token-show-btn" onclick="doShare('${token}',${price})">分享</button>
       </div>
     </div>` + wrap.innerHTML;
   } catch (e) {
     toast("创建失败:" + e.message);
-    setHeroStatus("err");
   }
   showLoading(false);
 }
 
-// ── 买家:查询订单 ────────────────────────────────────────
 async function loadMyOrders() {
   const pin = document.getElementById("list-pin").value.trim();
   if (pin.length < 4) return toast("请输入4位密码");
@@ -1388,10 +1046,8 @@ async function loadMyOrders() {
       wrap.innerHTML = list.map(renderBuyerCard).join("");
       toast(`找到 ${list.length} 条订单`);
     }
-    setHeroStatus("ok");
   } catch (e) {
     toast("查询失败,请检查网络");
-    setHeroStatus("err");
   }
   showLoading(false);
 }
@@ -1418,7 +1074,7 @@ function renderBuyerCard(o) {
       ${isDone ? `<div class="meta-row"><span class="meta-key">完成时间</span><span class="meta-val">${fmtTime(o.doneAt)}</span></div>` : ''}
     </div>
     <div class="order-actions">
-      <button class="btn-action ghost" data-copy-token="${o.token}" data-copy-price="${o.price}" data-copy-mode="code">复制担保码</button>
+      <button class="btn-action ghost" onclick="doCopy('${o.token}','已复制 ${o.token}')">复制担保码</button>
       ${confirmBtn}
     </div>
   </div>`;
@@ -1430,17 +1086,14 @@ async function quickConfirm(token) {
   try {
     await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
     toast("✅ 已确认,口令已释放给卖家!");
-    setHeroStatus("ok");
     loadMyOrders();
   } catch (e) {
     const msg = e.message.includes("密码") ? "密码错误" : "确认失败:" + e.message;
     toast(msg);
-    setHeroStatus("err");
   }
   showLoading(false);
 }
 
-// ── 买家:Modal 确认收货 ──────────────────────────────────
 async function doConfirm() {
   const token = document.getElementById("cf-token").value.trim().toUpperCase();
   const pin = document.getElementById("cf-pin").value.trim();
@@ -1451,23 +1104,17 @@ async function doConfirm() {
   try {
     await apiPut(`/escrow/${token}/confirm`, { pin: hashPin(pin) });
     toast("✅ 已确认,口令已释放!");
-    setHeroStatus("ok");
-    // 自动刷新订单
-    if (document.getElementById("list-pin").value.trim().length === 4) {
-      loadMyOrders();
-    }
+    if (document.getElementById("list-pin").value.trim().length === 4) loadMyOrders();
   } catch (e) {
     const body = e.message;
     if (body.includes("密码")) toast("密码错误");
     else if (body.includes("完成")) toast("该订单已完成");
     else if (body.includes("存在")) toast("担保码不存在");
     else toast("请求失败:" + body);
-    setHeroStatus("err");
   }
   showLoading(false);
 }
 
-// ── 卖家:查询订单 ────────────────────────────────────────
 let sellerToken = null;
 
 async function doQueryInline() {
@@ -1481,10 +1128,8 @@ async function doQueryInline() {
     document.getElementById("seller-result").innerHTML = renderSellerCard(order);
     document.getElementById("q-token-inline").value = "";
     toast("查询成功");
-    setHeroStatus("ok");
   } catch (e) {
     toast("担保码无效或不存在");
-    setHeroStatus("err");
   }
   showLoading(false);
 }
@@ -1497,10 +1142,8 @@ async function refreshSeller() {
     document.getElementById("seller-result").innerHTML = renderSellerCard(order);
     if (order.status === "done") toast("🎉 口令已解锁!");
     else toast("买家尚未确认收货");
-    setHeroStatus("ok");
   } catch (e) {
     toast("刷新失败");
-    setHeroStatus("err");
   }
   showLoading(false);
 }
@@ -1556,81 +1199,37 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ── 复制 ─────────────────────────────────────────────────
 function doCopy(text, msg) {
-  // 优先走同步 fallback，保证在用户手势调用链内完成
-  // clipboard API 是异步的，在事件委托场景下 iOS 容易拦截
-  if (navigator.clipboard && navigator.clipboard.writeText && !navigator.userAgent.match(/iphone|ipad|ipod/i)) {
-    navigator.clipboard.writeText(text)
-      .then(() => toast(msg))
-      .catch(() => fallbackCopy(text, msg));
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => toast(msg)).catch(() => fallback(text, msg));
   } else {
-    fallbackCopy(text, msg);
+    fallback(text, msg);
   }
 }
-function fallbackCopy(text, msg) {
+function fallback(text, msg) {
   const t = document.createElement("textarea");
   t.value = text;
-  // iOS Safari 要求元素在可视区内才能 select()，不能放屏幕外
-  t.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;";
-  t.setAttribute("readonly", "");
+  t.style.cssText = "position:fixed;opacity:0";
   document.body.appendChild(t);
-  t.focus();
-  // iOS 需要用 setSelectionRange 而不是 select()
-  if (navigator.userAgent.match(/iphone|ipad|ipod/i)) {
-    const range = document.createRange();
-    range.selectNodeContents(t);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-    t.setSelectionRange(0, 999999);
-  } else {
-    t.select();
-  }
-  try {
-    document.execCommand("copy");
-    toast(msg);
-  } catch (e) {
-    toast("复制失败，请手动复制");
-  }
+  t.select();
+  document.execCommand("copy");
   document.body.removeChild(t);
+  toast(msg);
 }
-
-// ★ 改动2：doShare 直接复制格式化文本，不拉起系统分享
 function doShare(token, price) {
-  const text = `【担保交易】\n担保码：${token}\n金额：¥${Number(price).toFixed(2)}\n\n凭此担保码查询订单，买家确认收货后口令自动解锁。`;
-  doCopy(text, "分享文本已复制");
+  const text = `【担保码】${token}\n金额:¥${Number(price).toFixed(2)}\n凭此码查询担保订单,我确认收货后口令自动解锁。`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => doCopy(token, "担保码已复制"));
+  } else {
+    doCopy(text, "分享内容已复制");
+  }
 }
 
-// ── token-show 按钮事件委托（避免 inline onclick 引号转义问题）────
-document.getElementById("my-orders").addEventListener("click", function(e) {
-  const btn = e.target.closest("[data-copy-token]");
-  if (!btn) return;
-  const token = btn.dataset.copyToken;
-  const price = btn.dataset.copyPrice;
-  const mode  = btn.dataset.copyMode;
-  const text = mode === "code"
-    ? token
-    : `【担保交易】\n担保码：${token}\n金额：¥${Number(price).toFixed(2)}\n\n凭此担保码查询订单，买家确认收货后口令自动解锁。`;
-  const msg = mode === "code" ? "担保码已复制" : "分享文本已复制";
-  // 统一走 fallbackCopy，兼容所有移动端
-  fallbackCopy(text, msg);
-});
-
-// ── 担保码自动大写 ────────────────────────────────────────
 document.querySelectorAll('.token-style, #q-token-inline').forEach(el => {
-  el.addEventListener('input', e => {
-    e.target.value = e.target.value.toUpperCase();
-  });
+  el.addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
 });
 
-// ── 初始化 ────────────────────────────────────────────────
 try { localStorage.clear(); } catch (e) {}
-
-setHeroStatus("warn");
-fetch(API + "/")
-  .then(() => setHeroStatus("ok"))
-  .catch(() => setHeroStatus("err"));
 </script>
 </body>
 </html>
