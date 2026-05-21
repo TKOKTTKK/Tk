@@ -142,7 +142,6 @@ button, input, textarea {
   backdrop-filter: blur(10px);
 }
 
-/* 隐藏旧的状态胶囊 */
 .hero-status {
   display: none;
 }
@@ -204,7 +203,6 @@ button, input, textarea {
   letter-spacing: 0.2px;
 }
 
-/* 盾牌脉冲动画 */
 @keyframes shield-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,170,0.35); }
   50% { box-shadow: 0 0 0 4px rgba(0,255,170,0); }
@@ -528,11 +526,11 @@ button, input, textarea {
   color: white; letter-spacing: 10px; font-family: "SF Mono", "Menlo", monospace;
   text-shadow: 0 0 24px rgba(0, 102, 255, 0.6); margin-bottom: 16px;
 }
-.token-show-actions { position: relative; display: flex; gap: 8px; }
+.token-show-actions { position: relative; display: flex; gap: 8px; justify-content: center; }
 .token-show-btn {
-  flex: 1; background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
   border: 1px solid rgba(255,255,255,0.18); color: white; border-radius: 10px;
-  padding: 11px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s;
+  padding: 11px 32px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s;
 }
 .token-show-btn:active { background: rgba(255,255,255,0.2); }
 
@@ -673,7 +671,6 @@ button, input, textarea {
             担保交易
           </div>
 
-          <!-- 新的信任徽章，替换原来的已连接状态 -->
           <div class="trust-badge">
             <div class="trust-badge-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -687,7 +684,6 @@ button, input, textarea {
             </div>
           </div>
 
-          <!-- 保留但隐藏原元素，避免 JS 报错 -->
           <div class="hero-status" id="hero-status" style="display:none">
             <span class="hero-status-dot"></span>
             <span id="hero-status-text">已连接</span>
@@ -1014,8 +1010,7 @@ async function doCreate() {
       <div class="token-show-label">担保码 · 发给卖家</div>
       <div class="token-show-num">${token}</div>
       <div class="token-show-actions">
-        <button class="token-show-btn" onclick="doCopy('${token}','担保码已复制')">复制</button>
-        <button class="token-show-btn" onclick="doShare('${token}',${price})">分享</button>
+        <button class="token-show-btn" onclick="doShare('${token}',${price})">复制担保码</button>
       </div>
     </div>` + wrap.innerHTML;
   } catch (e) {
