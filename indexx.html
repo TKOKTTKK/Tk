@@ -6,47 +6,68 @@
   <title>JSMpeg 播放测试</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
+    html, body {
+      width: 100%; height: 100%;
       background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
+    }
+    #wrapper {
+      width: 100vw;
+      /* 高度按视频比例自动撑开 */
+    }
+    /* JSMpeg 自动生成的 canvas */
+    #wrapper canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
     }
     #status {
       position: fixed;
-      top: 20px;
-      left: 0; right: 0;
+      top: 20px; left: 0; right: 0;
+      color: #fff; font-size: 14px;
+      font-family: -apple-system, sans-serif;
       text-align: center;
-      font-size: 14px;
-      color: #aaa;
-      z-index: 10;
-    }
-    canvas {
-      width: 100vw !important;
-      height: auto !important;
-      display: block;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
   <div id="status">⏳ 加载中...</div>
-  <canvas id="canvas"></canvas>
+  <div id="wrapper"></div>
 
-  <!-- 旧版 jsmpeg，支持 .mpg 格式 -->
-  <script src="https://jsmpeg.com/bjork-all-is-full-of-love.ts"></script>
+  <!-- 使用 @cycjimmy/jsmpeg-player，内含最新版 JSMpeg + iOS 音频自动解锁 -->
+  <script src="https://cdn.jsdelivr.net/npm/@cycjimmy/jsmpeg-player@6/dist/jsmpeg-player.umd.min.js"></script>
   <script>
-    var canvas = document.getElementById('canvas');
-    var videoUrl = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.mpg';
+    var videoUrl = 'https://jsmpeg.com/bjork-all-is-full-of-love.ts';
 
-    var player = new jsmpeg(videoUrl, {
-      canvas: canvas,
+    var videoElement = new JSMpeg.VideoElement('#wrapper', videoUrl, {
       autoplay: true,
       loop: true,
-      onload: function() {
-        document.getElementById('status').style.display = 'none';
-      }
+      autoSetWrapperSize: true,
     });
+
+    // 监听第一帧解码完成，隐藏加载提示
+    var originalDecode = videoElement.player.renderer && videoElement.player.renderer.renderFrame;
+    var statusEl = document.getElementById('status');
+    var hidden = false;
+
+    // 简单定时检测：有画面就隐藏 status
+    var checkTimer = setInterval(function() {
+      if (!hidden && videoElement.player && videoElement.player.isPlaying) {
+        statusEl.style.display = 'none';
+        hidden = true;
+        clearInterval(checkTimer);
+      }
+    }, 500);
+
+    // 10秒超时提示
+    setTimeout(function() {
+      if (!hidden) {
+        statusEl.textContent = '❌ 加载失败，请检查网络或 CORS';
+      }
+    }, 10000);
   </script>
 </body>
 </html>
