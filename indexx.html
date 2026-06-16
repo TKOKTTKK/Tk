@@ -24,18 +24,18 @@
       font-size: 14px;
       color: #aaa;
       z-index: 10;
+      padding: 0 20px;
     }
     #container {
       width: 100vw;
-      max-width: 480px;
-      position: relative;
+      max-width: 640px;
     }
     #container canvas {
       width: 100% !important;
       height: auto !important;
       display: block;
     }
-    #tap-to-unmute {
+    #tap-tip {
       position: fixed;
       bottom: 40px;
       left: 0; right: 0;
@@ -44,91 +44,42 @@
       color: rgba(255,255,255,0.6);
       display: none;
     }
-    #error-box {
-      display: none;
-      background: #1a1a1a;
-      border: 1px solid #ff4444;
-      border-radius: 10px;
-      padding: 20px;
-      margin: 20px;
-      max-width: 400px;
-      text-align: center;
-      line-height: 1.7;
-      font-size: 14px;
-      color: #ff8888;
-    }
   </style>
 </head>
 <body>
-
   <div id="status">⏳ 加载中...</div>
   <div id="container"></div>
-  <div id="tap-to-unmute">👆 点击屏幕开启声音</div>
-  <div id="error-box"></div>
+  <div id="tap-tip">👆 点击屏幕开启声音</div>
 
-  <script src="https://cdn.jsdelivr.net/gh/phoboslab/jsmpeg@master/jsmpeg.min.js"></script>
+  <script src="https://raw.githubusercontent.com/phoboslab/jsmpeg/master/jsmpeg.min.js"></script>
   <script>
-    const videoUrl = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/ScreenRecording_06-07-2026-18-26-11_1-2.ts';
-    const status   = document.getElementById('status');
-    const errBox   = document.getElementById('error-box');
-    const unmuteTip = document.getElementById('tap-to-unmute');
+    // 使用 jsmpeg 官网自己的测试视频
+    const videoUrl = 'https://jsmpeg.com/video.ts';
 
-    function showError(msg) {
-      status.style.display = 'none';
-      errBox.style.display = 'block';
-      errBox.innerHTML = msg;
+    const status = document.getElementById('status');
+
+    const player = new JSMpeg.Player(videoUrl, {
+      container: document.getElementById('container'),
+      autoplay: true,
+      loop: true,
+      audio: true,
+      onSourceEstablished: () => {
+        status.textContent = '✅ 连接成功，解码中...';
+      },
+      onVideoDecode: () => {
+        status.style.display = 'none';
+      },
+    });
+
+    // iOS 音频解锁
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      document.getElementById('tap-tip').style.display = 'block';
+      document.addEventListener('click', () => {
+        if (player.audioOut) player.audioOut.unlock();
+        document.getElementById('tap-tip').style.display = 'none';
+      }, { once: true });
     }
-
-    try {
-      const player = new JSMpeg.Player(videoUrl, {
-        container: document.getElementById('container'),
-        autoplay: true,
-        loop: true,
-        audio: true,
-        onSourceEstablished: () => {
-          status.textContent = '✅ 已连接，解码中...';
-        },
-        onVideoDecode: () => {
-          status.style.display = 'none';
-        },
-        onStalled: () => {
-          status.textContent = '⚠️ 网络慢，缓冲中...';
-          status.style.display = 'block';
-        },
-      });
-
-      // iOS 音频解锁提示
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        unmuteTip.style.display = 'block';
-        document.addEventListener('click', () => {
-          if (player.audioOut) player.audioOut.unlock();
-          unmuteTip.style.display = 'none';
-        }, { once: true });
-      }
-
-    } catch (e) {
-      showError(`
-        ❌ 播放器初始化失败<br><br>
-        错误：${e.message}<br><br>
-        可能原因：.mpg 格式不兼容，需转为 .ts 格式
-      `);
-    }
-
-    // 超时检测——10秒没有视频帧就报错提示
-    setTimeout(() => {
-      if (status.style.display !== 'none') {
-        showError(`
-          ❌ 无法播放此文件<br><br>
-          JSMpeg 需要 <b>MPEG-TS 容器（.ts）</b><br>
-          当前文件是 <b>.mpg（MPEG-PS 容器）</b><br><br>
-          请用以下 ffmpeg 命令重新转码：<br>
-          <code style="font-size:12px;color:#ffd;word-break:break-all;">
-          ffmpeg -i input.mp4 -f mpegts -codec:v mpeg1video -b:v 800k -r 25 -codec:a mp2 -b:a 128k output.ts
-          </code>
-        `);
-      }
-    }, 10000);
   </script>
 </body>
 </html>
