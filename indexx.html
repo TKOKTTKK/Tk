@@ -9,12 +9,9 @@
     body {
       background: #000;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      font-family: -apple-system, sans-serif;
-      color: #fff;
     }
     #status {
       position: fixed;
@@ -24,62 +21,32 @@
       font-size: 14px;
       color: #aaa;
       z-index: 10;
-      padding: 0 20px;
     }
-    #container {
-      width: 100vw;
-      max-width: 640px;
-    }
-    #container canvas {
-      width: 100% !important;
+    canvas {
+      width: 100vw !important;
       height: auto !important;
       display: block;
-    }
-    #tap-tip {
-      position: fixed;
-      bottom: 40px;
-      left: 0; right: 0;
-      text-align: center;
-      font-size: 13px;
-      color: rgba(255,255,255,0.6);
-      display: none;
     }
   </style>
 </head>
 <body>
   <div id="status">⏳ 加载中...</div>
-  <div id="container"></div>
-  <div id="tap-tip">👆 点击屏幕开启声音</div>
+  <canvas id="canvas"></canvas>
 
-  <script src="https://raw.githubusercontent.com/phoboslab/jsmpeg/master/jsmpeg.min.js"></script>
+  <!-- 旧版 jsmpeg，支持 .mpg 格式 -->
+  <script src="https://cdn.jsdelivr.net/gh/phoboslab/jsmpeg@master/jsmpeg.min.js"></script>
   <script>
-    // 使用 jsmpeg 官网自己的测试视频
-    const videoUrl = 'https://jsmpeg.com/video.ts';
+    var canvas = document.getElementById('canvas');
+    var videoUrl = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.mpg';
 
-    const status = document.getElementById('status');
-
-    const player = new JSMpeg.Player(videoUrl, {
-      container: document.getElementById('container'),
+    var player = new jsmpeg(videoUrl, {
+      canvas: canvas,
       autoplay: true,
       loop: true,
-      audio: true,
-      onSourceEstablished: () => {
-        status.textContent = '✅ 连接成功，解码中...';
-      },
-      onVideoDecode: () => {
-        status.style.display = 'none';
-      },
+      onload: function() {
+        document.getElementById('status').style.display = 'none';
+      }
     });
-
-    // iOS 音频解锁
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isIOS) {
-      document.getElementById('tap-tip').style.display = 'block';
-      document.addEventListener('click', () => {
-        if (player.audioOut) player.audioOut.unlock();
-        document.getElementById('tap-tip').style.display = 'none';
-      }, { once: true });
-    }
   </script>
 </body>
 </html>
