@@ -1,60 +1,243 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSMpeg 免疫拦截纯净测试</title>
+    <title>WebCodecs 降维打击防劫持测试</title>
     <style>
-        html, body { background: #111; color: #eee; margin: 0; padding: 15px; font-family: sans-serif; text-align: center; }
-        .wrapper { max-width: 500px; margin: 20px auto; background: #000; border-radius: 8px; overflow: hidden; }
-        #video-canvas { width: 100%; display: block; background: #222; aspect-ratio: 9 / 16; }
-        .btn-box { padding: 20px; }
-        .play-btn { background: #00bfff; color: #fff; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; font-weight: bold; }
+        html, body {
+            background: #0b0b0c;
+            color: #f5f5f7;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        h3 {
+            font-weight: 400;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        .player-container {
+            position: relative;
+            width: 90vw;
+            max-width: 380px;
+            aspect-ratio: 9 / 16; /* 💡 手机短视频黄金比例，如果是横屏请改为 16/9 */
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #canvas-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .ui-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            display: flex;
+            justify-content: center;
+        }
+        .btn-play {
+            background: rgba(255, 255, 255, 0.9);
+            color: #000;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        #status-hud {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #86868b;
+        }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
 
-    <script src="./jsmpeg.min.js"></script>
+    <script src="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.MP4"></script>
 </head>
 <body>
 
-    <h2>短视频 UC 防劫持测试</h2>
-    
-    <div class="wrapper">
-        <canvas id="video-canvas"></canvas>
-        <div class="btn-box">
-            <button class="play-btn" id="ctrl-btn">点击激活并播放</button>
+    <h3>极简高级感 · 硬件级防劫持播放</h3>
+
+    <div class="player-container">
+        <canvas id="canvas-player"></canvas>
+        
+        <div class="ui-overlay">
+            <button class="btn-play" id="play-trigger">加载视频中...</button>
         </div>
     </div>
 
+    <div id="status-hud">初始化解复用引擎...</div>
+
     <script>
-        // 3. 填入你真实的 Cloudflare R2 视频地址
-        // 💡 结合你图 1 的截图，注意看你在 R2 里的文件名到底带不带 .ts 后缀，必须完全一致
-        const myR2VideoUrl = 'https://你的R2公开域名/1987295692190133024.ts'; 
+        // ⚠️ 核心配置：把你 R2 上体积小、画质高的标准 H.264 MP4 链接贴在这里！
+        const mp4VideoUrl = 'https://你的R2公开域名/你的高画质视频.mp4';
 
-        const btn = document.getElementById('ctrl-btn');
-        const canvas = document.getElementById('video-canvas');
-        
-        // 此时 window.JSMpeg 绝对存在了
-        const player = new JSMpeg.Player(myR2VideoUrl, {
-            canvas: canvas,
-            autoplay: false,
-            loop: true,
-            volume: 0,
-            progressive: true
-        });
+        const canvas = document.getElementById('canvas-player');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('play-trigger');
+        const hud = document.getElementById('status-hud');
 
-        btn.addEventListener('click', function() {
-            if (player.isPlaying) {
-                player.pause();
-                btn.innerText = "已暂停";
+        let videoDecoder = null;
+        let mp4boxFile = null;
+        let frameQueue = [];
+        let isPlaying = false;
+        let fps = 30; // 默认帧率，稍后会自动从 MP4 的元数据中精准获取
+        let renderInterval = null;
+
+        // 检查当前手机浏览器是否支持硬解（2020年后的手机基本100%支持）
+        if (!window.VideoDecoder) {
+            hud.innerText = "❌ 抱歉，当前浏览器过于古老，不支持 WebCodecs 硬件解码！";
+            playBtn.innerText = "环境不支持";
+            throw new Error("WebCodecs not supported");
+        }
+
+        hud.innerText = "正在通过高级网络流拉取 MP4 原始数据...";
+
+        // 1. 初始化 MP4Box 文件解析器
+        mp4boxFile = MP4Box.createFile();
+
+        // 2. 当 MP4 头部关键元数据解析成功时触发
+        mp4boxFile.onReady = function (info) {
+            hud.innerText = "✅ MP4 元数据解析成功，正在唤醒手机硬件解码器...";
+            const videoTrack = info.videoTracks[0];
+            
+            // 动态修正画布基础分辨率与视频对齐
+            canvas.width = videoTrack.video_fields.width;
+            canvas.height = videoTrack.video_fields.height;
+            
+            // 计算真实帧率
+            if (videoTrack.nb_samples && videoTrack.duration) {
+                fps = Math.round((videoTrack.nb_samples / videoTrack.duration) * info.timescale);
+            }
+
+            // 配置原生的硬件解码器
+            videoDecoder = new VideoDecoder({
+                output: handleDecodedFrame, // 每一帧解码成功后的回调
+                error: (err) => console.error("⚠️ 硬件解码器罢工: ", err)
+            });
+
+            // 获取 H.264 的 avcC 核心初始化参数（SPS/PPS 极为关键，没有它解码器无法初始化）
+            const track = mp4boxFile.getTrackById(videoTrack.id);
+            const description = track.mdia.minf.stbl.stsd.entries[0].avcC.toBuffer();
+
+            videoDecoder.configure({
+                codec: videoTrack.codec,
+                codedWidth: videoTrack.video_fields.width,
+                codedHeight: videoTrack.video_fields.height,
+                description: description
+            });
+
+            // 告知 MP4Box 我们只要提取视频轨道的数据流
+            mp4boxFile.setExtractionOptions(videoTrack.id);
+            mp4boxFile.start();
+        };
+
+        // 3. MP4Box 拆包出来的每一个数据切片（Sample）直接喂给解码器
+        mp4boxFile.onSamples = function (id, user, samples) {
+            for (let sample of samples) {
+                const chunk = new EncodedVideoChunk({
+                    type: sample.is_sync ? 'key' : 'delta', // 区分 I帧（关键帧）和 P帧/B帧
+                    timestamp: sample.cts,
+                    duration: sample.duration,
+                    data: sample.data
+                });
+                videoDecoder.decode(chunk);
+            }
+        };
+
+        // 4. 解码器成功把 H.264 还原成裸像素帧的回调
+        function handleDecodedFrame(frame) {
+            // 把解出来的这一帧推进我们的“待渲染弹药库”
+            frameQueue.push(frame);
+            
+            if (playBtn.innerText === "加载视频中...") {
+                playBtn.innerText = "点击激活纯净播放";
+                hud.innerText = "🍿 缓存已就绪，等待用户首帧激活";
+            }
+        }
+
+        // 5. 极高频的 Canvas 渲染循环
+        function startRenderLoop() {
+            const frameDuration = 1000 / fps;
+            
+            renderInterval = setInterval(() => {
+                if (!isPlaying || frameQueue.length === 0) return;
+
+                // 顺次从弹药库头部取出一帧像素
+                const currentFrame = frameQueue.shift();
+                
+                // 绘制像素到画布上
+                ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
+                
+                // ⚠️ 【防闪退/防卡死关键防护】必须手动释放该帧在手机 GPU 里的内存！
+                // 否则手机内存会在 3 秒内被未释放的像素垃圾瞬间塞爆，导致 UC 直接闪退崩溃！
+                currentFrame.close();
+                
+            }, frameDuration);
+        }
+
+        // 6. 绑定按钮：夺回手机播放主导权
+        playBtn.addEventListener('click', function () {
+            if (!isPlaying) {
+                isPlaying = true;
+                playBtn.innerText = "正在防劫持播放 (点击暂停)";
+                playBtn.style.background = "#32cd32";
+                playBtn.style.color = "#fff";
+                if (!renderInterval) startRenderLoop();
             } else {
-                player.volume = 1; 
-                player.play();
-                btn.innerText = "正在纯净播放";
+                isPlaying = false;
+                playBtn.innerText = "已暂停 (点击继续)";
+                playBtn.style.background = "rgba(255, 255, 255, 0.9)";
+                playBtn.style.color = "#000";
             }
         });
+
+        // 🚀 核心启动逻辑：通过强大的流式 Fetch，一边下载视频一边送去拆包
+        fetch(mp4VideoUrl)
+            .then(response => {
+                const reader = response.body.getReader();
+                let offset = 0;
+
+                function pushBuffer() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) {
+                            mp4boxFile.flush();
+                            return;
+                        }
+                        // 转换格式并塞入解复用引擎
+                        const buffer = value.buffer;
+                        buffer.fileStart = offset;
+                        offset += buffer.byteLength;
+                        mp4boxFile.appendBuffer(buffer);
+                        
+                        return pushBuffer();
+                    });
+                }
+                return pushBuffer();
+            })
+            .catch(err => {
+                hud.innerText = "❌ 视频下载或 R2 跨域配置出错，请进小齿轮看 Network！";
+                console.error("Fetch 失败: ", err);
+            });
     </script>
 </body>
 </html>
