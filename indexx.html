@@ -1,115 +1,134 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSMpeg 强力抗拦截测试</title>
-    <style>
-        html, body { background: #111; color: #eee; margin: 0; padding: 15px; font-family: sans-serif; text-align: center; }
-        .wrapper { max-width: 500px; margin: 20px auto; background: #000; border-radius: 8px; overflow: hidden; }
-        #video-canvas { width: 100%; display: block; background: #222; aspect-ratio: 9 / 16; }
-        .btn-box { padding: 20px; }
-        .play-btn { background: #00bfff; color: #fff; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; font-weight: bold; }
-        #status-log { color: #ff3333; margin: 10px; font-size: 12px; }
-    </style>
-
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>JSMpeg 播放测试</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: -apple-system, sans-serif;
+      color: #fff;
+    }
+    #status {
+      position: fixed;
+      top: 20px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 14px;
+      color: #aaa;
+      z-index: 10;
+    }
+    #container {
+      width: 100vw;
+      max-width: 480px;
+      position: relative;
+    }
+    #container canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+    }
+    #tap-to-unmute {
+      position: fixed;
+      bottom: 40px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      display: none;
+    }
+    #error-box {
+      display: none;
+      background: #1a1a1a;
+      border: 1px solid #ff4444;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px;
+      max-width: 400px;
+      text-align: center;
+      line-height: 1.7;
+      font-size: 14px;
+      color: #ff8888;
+    }
+  </style>
 </head>
 <body>
 
-    <h2>短视频 UC 防劫持测试 (多流备用版)</h2>
-    <div id="status-log">正在检测解码库状态...</div>
-    
-    <div class="wrapper">
-        <canvas id="video-canvas"></canvas>
-        <div class="btn-box">
-            <button class="play-btn" id="ctrl-btn" disabled>等待解码库加载...</button>
-        </div>
-    </div>
+  <div id="status">⏳ 加载中...</div>
+  <div id="container"></div>
+  <div id="tap-to-unmute">👆 点击屏幕开启声音</div>
+  <div id="error-box"></div>
 
-    <script>
-        // 1. 填入你真实的 Cloudflare R2 视频地址
-        const myR2VideoUrl = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/2146681027389561175.ts'; 
+  <script src="https://cdn.jsdelivr.net/gh/phoboslab/jsmpeg@master/jsmpeg.min.js"></script>
+  <script>
+    const videoUrl = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/ScreenRecording_06-07-2026-18-26-11_1-2.ts';
+    const status   = document.getElementById('status');
+    const errBox   = document.getElementById('error-box');
+    const unmuteTip = document.getElementById('tap-to-unmute');
 
-        const statusLog = document.getElementById('status-log');
-        const btn = document.getElementById('ctrl-btn');
-        const canvas = document.getElementById('video-canvas');
-        let player = null;
+    function showError(msg) {
+      status.style.display = 'none';
+      errBox.style.display = 'block';
+      errBox.innerHTML = msg;
+    }
 
-        // 备用 CDN 列表（包含国内加速和国外加速）
-        const cdnList = [
-            "https://cdn.bootcdn.net/ajax/libs/jsmpeg/1.0.1/jsmpeg.min.js",
-            "https://cdn.jsdelivr.net/npm/jsmpeg@1.0.1/jsmpeg.min.js",
-            "https://unpkg.com/jsmpeg@1.0.1/jsmpeg.min.js"
-        ];
-        let currentCdnIndex = 0;
+    try {
+      const player = new JSMpeg.Player(videoUrl, {
+        container: document.getElementById('container'),
+        autoplay: true,
+        loop: true,
+        audio: true,
+        onSourceEstablished: () => {
+          status.textContent = '✅ 已连接，解码中...';
+        },
+        onVideoDecode: () => {
+          status.style.display = 'none';
+        },
+        onStalled: () => {
+          status.textContent = '⚠️ 网络慢，缓冲中...';
+          status.style.display = 'block';
+        },
+      });
 
-        // 动态脚本加载器
-        function loadJSMpeg() {
-            if (currentCdnIndex >= cdnList.length) {
-                statusLog.innerHTML = "❌ 所有 CDN 库加载均被你的测试环境拦截！请不要用预览工具，请直接上传到 Cloudflare Pages 线上测试。";
-                alert("环境受限：无法引入外部解码库，请直接部署到正式域名线上测试！");
-                return;
-            }
+      // iOS 音频解锁提示
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        unmuteTip.style.display = 'block';
+        document.addEventListener('click', () => {
+          if (player.audioOut) player.audioOut.unlock();
+          unmuteTip.style.display = 'none';
+        }, { once: true });
+      }
 
-            statusLog.innerHTML = `正在尝试通过节点 [${currentCdnIndex + 1}] 加载解码库...`;
-            const script = document.createElement('script');
-            script.src = cdnList[currentCdnIndex];
-            
-            // 加载成功
-            script.onload = function() {
-                statusLog.innerHTML = "✅ 解码库加载成功！";
-                statusLog.style.color = "#32cd32";
-                btn.removeAttribute('disabled');
-                btn.innerText = "点击激活并播放";
-                initPlayer();
-            };
+    } catch (e) {
+      showError(`
+        ❌ 播放器初始化失败<br><br>
+        错误：${e.message}<br><br>
+        可能原因：.mpg 格式不兼容，需转为 .ts 格式
+      `);
+    }
 
-            // 加载失败，自动切到下一个备用 CDN
-            script.onerror = function() {
-                console.warn(`节点 ${cdnList[currentCdnIndex]} 加载失败，正在切换...`);
-                currentCdnIndex++;
-                loadJSMpeg();
-            };
-
-            document.head.appendChild(script);
-        }
-
-        // 初始化播放器
-        function initPlayer() {
-            try {
-                player = new JSMpeg.Player(myR2VideoUrl, {
-                    canvas: canvas,
-                    autoplay: false,
-                    loop: true,
-                    volume: 0,
-                    progressive: true
-                });
-                console.log("JSMpeg 播放器实例创建成功！");
-            } catch (e) {
-                statusLog.innerHTML = "❌ 播放器初始化报错: " + e.message;
-                console.error(e);
-            }
-        }
-
-        // 绑定按钮控制
-        btn.addEventListener('click', function() {
-            if (!player) return;
-            if (player.isPlaying) {
-                player.pause();
-                btn.innerText = "已暂停 (点击继续)";
-                btn.style.background = "#ff4500";
-            } else {
-                player.volume = 1; 
-                player.play();
-                btn.innerText = "正在纯净播放 (再次点击暂停)";
-                btn.style.background = "#32cd32";
-            }
-        });
-
-        // 页面启动，开始加载
-        window.onload = loadJSMpeg;
-    </script>
+    // 超时检测——10秒没有视频帧就报错提示
+    setTimeout(() => {
+      if (status.style.display !== 'none') {
+        showError(`
+          ❌ 无法播放此文件<br><br>
+          JSMpeg 需要 <b>MPEG-TS 容器（.ts）</b><br>
+          当前文件是 <b>.mpg（MPEG-PS 容器）</b><br><br>
+          请用以下 ffmpeg 命令重新转码：<br>
+          <code style="font-size:12px;color:#ffd;word-break:break-all;">
+          ffmpeg -i input.mp4 -f mpegts -codec:v mpeg1video -b:v 800k -r 25 -codec:a mp2 -b:a 128k output.ts
+          </code>
+        `);
+      }
+    }, 10000);
+  </script>
 </body>
 </html>
