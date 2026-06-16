@@ -3,68 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>WebCodecs Player</title>
+  <title>WebCodecs Player - Fast Load</title>
+  
+  <link rel="preconnect" href="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev">
+  
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      background: #000;
-      overflow: hidden;
-      font-family: -apple-system, sans-serif;
-    }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, sans-serif; }
     #canvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: contain;
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; object-fit: contain;
     }
     #overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px;
+      z-index: 5;
     }
-    #status {
-      color: rgba(255,255,255,0.8);
-      font-size: 13px;
-      letter-spacing: 0.03em;
-    }
-    #progress-bar {
-      width: 160px;
-      height: 2px;
-      background: rgba(255,255,255,0.15);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    #progress-fill {
-      height: 100%;
-      width: 0%;
-      background: #fff;
-      border-radius: 2px;
-      transition: width 0.2s;
-    }
+    #status { color: rgba(255,255,255,0.75); font-size: 13px; }
+    #bar-wrap { width: 140px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+    #bar-fill { height: 100%; width: 0%; background: #fff; border-radius: 2px; transition: width .15s; }
     #tap-btn {
-      display: none;
-      margin-top: 8px;
-      padding: 10px 28px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 24px;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      display: none; padding: 9px 26px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 99px; color: #fff; font-size: 14px; cursor: pointer;
     }
-    #error {
-      display: none;
-      color: #ff6b6b;
-      font-size: 13px;
-      text-align: center;
-      padding: 0 32px;
-      line-height: 1.7;
+    #err { display: none; color: #ff6b6b; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.8; }
+    
+    #controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 48px; background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: none; align-items: center; padding: 0 16px; gap: 14px;
+      z-index: 10;
+    }
+    #play-pause-btn {
+      background: none; border: none; color: #fff; font-size: 16px;
+      cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    }
+    #seek-slider {
+      flex: 1; height: 4px; accent-color: #fff; cursor: pointer;
+      border-radius: 2px; background: rgba(255, 255, 255, 0.25); outline: none;
+    }
+    #time-display {
+      color: rgba(255, 255, 255, 0.85); font-size: 12px; font-family: monospace; white-space: nowrap;
     }
   </style>
 </head>
@@ -72,174 +54,242 @@
   <canvas id="canvas"></canvas>
   <div id="overlay">
     <div id="status">正在加载...</div>
-    <div id="progress-bar"><div id="progress-fill"></div></div>
-    <button id="tap-btn" onclick="startAudio()">▶ 点击开启声音</button>
-    <div id="error"></div>
+    <div id="bar-wrap"><div id="bar-fill"></div></div>
+    <button id="tap-btn" onclick="unlockAudio()">▶ 点击开启声音</button>
+    <div id="err"></div>
+  </div>
+
+  <div id="controls">
+    <button id="play-pause-btn" onclick="togglePlay()">⏸</button>
+    <input type="range" id="seek-slider" min="0" max="0" step="0.01" value="0">
+    <div id="time-display">00:00 / 00:00</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
   <script>
-  (function() {
-    const VIDEO_URL = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.MP4';
+  (function () {
+    const URL  = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.MP4';
+    const canvas    = document.getElementById('canvas');
+    const ctx       = canvas.getContext('2d');
+    const overlay   = document.getElementById('overlay');
+    const statusEl  = document.getElementById('status');
+    const fillEl    = document.getElementById('bar-fill');
+    const tapBtn    = document.getElementById('tap-btn');
+    const errEl     = document.getElementById('err');
+    
+    const controlsContainer = document.getElementById('controls');
+    const playPauseBtn      = document.getElementById('play-pause-btn');
+    const seekSlider        = document.getElementById('seek-slider');
+    const timeDisplay       = document.getElementById('time-display');
 
-    const canvas     = document.getElementById('canvas');
-    const ctx        = canvas.getContext('2d');
-    const statusEl   = document.getElementById('status');
-    const fillEl     = document.getElementById('progress-fill');
-    const overlayEl  = document.getElementById('overlay');
-    const tapBtn     = document.getElementById('tap-btn');
-    const errorEl    = document.getElementById('error');
-
-    // ── 检查 WebCodecs 支持 ──────────────────────────────────
     if (typeof VideoDecoder === 'undefined') {
-      showError('此浏览器不支持 WebCodecs API<br>请使用 Chrome / Safari 16.4+ / Edge');
-      return;
+      return showErr('浏览器不支持 WebCodecs<br>请用 Chrome / Safari 16.4+');
     }
 
-    // ── 状态变量 ──────────────────────────────────────────────
-    let decoder       = null;
-    let audioCtx      = null;
-    let frameTimings  = [];        // { ts, frame } 已解码帧
-    let sampleQueue   = [];        // 【新增】暂存未送入解码器的原始样本
-    let playing       = false;
-    let startTime     = 0;         // 视频起始时间基准
-    let videoWidth    = 0;
-    let videoHeight   = 0;
-    let totalSamples  = 0;
-    let decodedSamples = 0;
-    let rafId         = null;
-    let mp4boxFile    = null;
-    let trackId       = -1;
-    let pendingFrames = 0;         // 已送入 decoder 未输出的帧数
-    const MAX_QUEUE   = 60;        // 缓冲区最大维持帧数
-
-    // ── 错误显示 ──────────────────────────────────────────────
-    function showError(msg) {
-      overlayEl.style.display = 'flex';
+    function showErr(msg) {
+      errEl.innerHTML = msg; errEl.style.display = 'block';
       statusEl.style.display = 'none';
-      document.getElementById('progress-bar').style.display = 'none';
-      errorEl.innerHTML = msg;
-      errorEl.style.display = 'block';
+      document.getElementById('bar-wrap').style.display = 'none';
     }
 
-    // ── iOS 音频解锁 ──────────────────────────────────────────
-    function startAudio() {
+    function fitCanvas(w, h) {
+      canvas.width = w; canvas.height = h;
+      const s = Math.min(innerWidth / w, innerHeight / h);
+      canvas.style.width  = w * s + 'px';
+      canvas.style.height = h * s + 'px';
+      canvas.style.left   = (innerWidth  - w * s) / 2 + 'px';
+      canvas.style.top    = (innerHeight - h * s) / 2 + 'px';
+    }
+
+    function formatTime(secs) {
+      if (isNaN(secs)) return '00:00';
+      const m = Math.floor(secs / 60).toString().padStart(2, '0');
+      const s = Math.floor(secs % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    /* ── 音频 ── */
+    let audioCtx = null;
+    function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      audioCtx.resume();
       tapBtn.style.display = 'none';
     }
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
 
-    // ── Canvas 尺寸适配 ───────────────────────────────────────
-    function fitCanvas(w, h) {
-      canvas.width  = w;
-      canvas.height = h;
-      const scaleX = window.innerWidth  / w;
-      const scaleY = window.innerHeight / h;
-      const scale  = Math.min(scaleX, scaleY);
-      canvas.style.width  = (w * scale) + 'px';
-      canvas.style.height = (h * scale) + 'px';
-      canvas.style.left   = ((window.innerWidth  - w * scale) / 2) + 'px';
-      canvas.style.top    = ((window.innerHeight - h * scale) / 2) + 'px';
+    /* ── 状态控制变量 ── */
+    let frames        = []; 
+    let playing       = false;
+    let playStart     = 0; 
+    let pausedTime    = 0; 
+    let duration      = 0; 
+    let isInitialized = false; 
+    let rafId         = null;
+
+    function scheduleRender() {
+      rafId = requestAnimationFrame(scheduleRender);
+      const now = playing ? (performance.now() - playStart) / 1000 : pausedTime;
+
+      if (duration && now >= duration) {
+        loopPlayback();
+        return;
+      }
+
+      if (frames.length === 0) return;
+
+      while (frames.length > 1 && frames[1].ts <= now) {
+        frames.shift().frame.close();
+      }
+
+      const f = frames[0];
+      if (f && f.ts <= now + 0.05) {
+        ctx.drawImage(f.frame, 0, 0);
+      }
+
+      if (playing) {
+        seekSlider.value = now;
+        timeDisplay.textContent = `${formatTime(now)} / ${formatTime(duration)}`;
+      }
     }
 
-    // ── 渲染循环 ──────────────────────────────────────────────
-    function renderLoop() {
-      rafId = requestAnimationFrame(renderLoop);
-      if (!playing || frameTimings.length === 0) return;
-
-      const now = audioCtx
-        ? audioCtx.currentTime - startTime
-        : (performance.now() / 1000 - startTime);
-
-      // 释放已经播放过去的过期帧
-      while (frameTimings.length > 1 && frameTimings[1].ts <= now) {
-        frameTimings.shift().frame.close();
-      }
-
-      const current = frameTimings[0];
-      if (current && current.ts <= now + 0.05) {
-        ctx.drawImage(current.frame, 0, 0);
+    function togglePlay() {
+      if (!isInitialized) return;
+      if (playing) {
+        playing = false;
+        pausedTime = (performance.now() - playStart) / 1000;
+        playPauseBtn.textContent = '▶';
+      } else {
+        playing = true;
+        playStart = performance.now() - pausedTime * 1000;
+        playPauseBtn.textContent = '⏸';
       }
     }
 
-    // ── 【新增】向解码器喂数据的控制函数（背压机制） ──────────────────
-    function feedDecoder() {
-      while (sampleQueue.length > 0 && pendingFrames < MAX_QUEUE) {
-        const s = sampleQueue.shift();
-        const chunk = new EncodedVideoChunk({
-          type      : s.is_sync ? 'key' : 'delta',
-          timestamp : s.cts * 1_000_000 / s.timescale, // → μs
-          duration  : s.duration * 1_000_000 / s.timescale,
-          data      : s.data,
-        });
-        decoder.decode(chunk);
-        pendingFrames++;
-        decodedSamples++;
-      }
+    async function seekTo(targetTime) {
+      if (allSamples.length === 0) return;
       
-      // 更新解码渲染进度条
-      if (totalSamples) {
-        fillEl.style.width = Math.min(100, decodedSamples / totalSamples * 100) + '%';
+      const maxDownloadedTime = allSamples[allSamples.length - 1].cts / videoTimescale;
+      if (targetTime > maxDownloadedTime) {
+        targetTime = maxDownloadedTime;
+        seekSlider.value = targetTime;
       }
+
+      frames.forEach(f => f.frame.close());
+      frames = [];
+
+      buildDecoder();
+
+      let startIdx = 0;
+      for (let i = 0; i < allSamples.length; i++) {
+        const s = allSamples[i];
+        const sTime = s.cts / s.timescale;
+        if (s.is_sync && sTime <= targetTime) {
+          startIdx = i;
+        }
+        if (sTime > targetTime) break;
+      }
+
+      feedSamples(allSamples.slice(startIdx));
+
+      if (playing) {
+        playStart = performance.now() - targetTime * 1000;
+      } else {
+        pausedTime = targetTime;
+      }
+
+      decoder.flush();
     }
 
-    // ── VideoDecoder 初始化 ───────────────────────────────────
-    function initDecoder(config) {
+    /* ── VideoDecoder ── */
+    let decoder = null;
+    let decoderConfig = null;
+    let videoTimescale = 1;
+
+    function buildDecoder() {
+      if (decoder && decoder.state !== 'closed') decoder.close();
+
       decoder = new VideoDecoder({
-        output: (frame) => {
-          pendingFrames--;
-          feedDecoder(); // 【关键】解码器空出位置了，立刻尝试补充新帧数据
+        output(frame) {
+          const ts = frame.timestamp / 1_000_000; 
+          frames.push({ ts, frame });
 
-          const ts = frame.timestamp / 1_000_000; // μs → s
-          frameTimings.push({ ts, frame });
+          if (!isInitialized) {
+            isInitialized = true;
+            fitCanvas(frame.displayWidth, frame.displayHeight);
+            overlay.style.display = 'none';
+            controlsContainer.style.display = 'flex'; 
+            
+            playing = true;
+            playStart = performance.now() - ts * 1000;
+            playPauseBtn.textContent = '⏸';
+            
+            scheduleRender();
 
-          // 首帧处理：初始化 canvas 并开始运行渲染
-          if (!playing) {
-            videoWidth  = frame.displayWidth;
-            videoHeight = frame.displayHeight;
-            fitCanvas(videoWidth, videoHeight);
-
-            playing   = true;
-            startTime = audioCtx
-              ? audioCtx.currentTime
-              : performance.now() / 1000;
-
-            overlayEl.style.display = 'none';
-            renderLoop();
-
-            // iOS 声音开启提示
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            if (isIOS) {
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
               tapBtn.style.display = 'block';
-              overlayEl.style.display = 'flex';
-              statusEl.style.display  = 'none';
-              document.getElementById('progress-bar').style.display = 'none';
+              overlay.style.display = 'flex';
+              statusEl.style.display = 'none';
+              document.getElementById('bar-wrap').style.display = 'none';
             }
           }
         },
-        error: (e) => showError('解码失败：' + e.message),
+        error(e) { showErr('解码错误: ' + e.message); }
       });
 
-      decoder.configure(config);
+      decoder.configure(decoderConfig);
     }
 
-    // ── MP4Box 解封装 + 送帧 ─────────────────────────────────
+    /* ── MP4Box 解封装 ── */
+    let mp4File  = null;
+    let trackId  = -1;
+    let allSamples = []; 
+    let totalNb  = 0;
+    let collected = 0;
+
+    function feedSamples(samples) {
+      for (const s of samples) {
+        decoder.decode(new EncodedVideoChunk({
+          type      : s.is_sync ? 'key' : 'delta',
+          timestamp : s.cts * 1_000_000 / s.timescale,
+          duration  : s.duration * 1_000_000 / s.timescale,
+          data      : s.data,
+        }));
+      }
+    }
+
+    async function loopPlayback() {
+      frames.forEach(f => f.frame.close());
+      frames = [];
+      
+      if (playing) {
+        playStart = performance.now();
+      } else {
+        pausedTime = 0;
+      }
+
+      buildDecoder();
+      feedSamples(allSamples);
+      decoder.flush();
+    }
+
     function startDemux() {
-      mp4boxFile = MP4Box.createFile();
+      mp4File = MP4Box.createFile();
 
-      mp4boxFile.onReady = (info) => {
-        const vTrack = info.videoTracks[0];
-        if (!vTrack) { showError('视频中没有视频轨'); return; }
+      mp4File.onReady = (info) => {
+        const vt = info.videoTracks[0];
+        if (!vt) return showErr('找不到视频轨');
 
-        trackId      = vTrack.id;
-        totalSamples = vTrack.nb_samples;
-        const codec  = vTrack.codec;
-        statusEl.textContent = '解码中...';
+        trackId      = vt.id;
+        totalNb      = vt.nb_samples;
+        videoTimescale = vt.timescale;
+        duration     = vt.duration / vt.timescale; 
+        
+        seekSlider.max = duration; 
+        timeDisplay.textContent = `00:00 / ${formatTime(duration)}`;
 
-        // 提取 avcC / hvcC 等硬件加速所需的初始化配置
         let description;
         try {
-          const trak = mp4boxFile.getTrackById(trackId);
+          const trak = mp4File.getTrackById(trackId);
           for (const entry of trak.mdia.minf.stbl.stsd.entries) {
             const box = entry.avcC || entry.hvcC || entry.vpcC;
             if (box) {
@@ -251,55 +301,76 @@
           }
         } catch(e) {}
 
-        initDecoder({
-          codec,
-          codedWidth:  vTrack.track_width,
-          codedHeight: vTrack.track_height,
+        decoderConfig = {
+          codec           : vt.codec,
+          codedWidth      : vt.track_width,
+          codedHeight     : vt.track_height,
           description,
-          optimizeForLatency: false,
-        });
+          // 【优化2】解码层：强制开启低延迟模式，拒绝积压帧，画面解出立刻吐给 Canvas 渲染
+          optimizeForLatency: true,
+        };
 
-        mp4boxFile.setExtractionOptions(trackId, null, { nbSamples: 100 });
-        mp4boxFile.start();
+        buildDecoder();
+        // 【优化3】解封装层：将原来的 50 帧改小到 5 帧。第一波数据只要有 5 帧就立刻送交解码，极速唤醒首帧
+        mp4File.setExtractionOptions(trackId, null, { nbSamples: 5 });
+        mp4File.start();
       };
 
-      // 接收到 MP4Box 解出来的帧样本
-      mp4boxFile.onSamples = (id, user, samples) => {
-        sampleQueue.push(...samples); // 【关键】先安全存入排队队列，不直接丢弃
-        feedDecoder();                // 尝试往解码器喂数据
+      mp4File.onSamples = async (id, user, samples) => {
+        const saved = samples.map(s => ({
+          ...s,
+          data: new Uint8Array(s.data)
+        }));
+
+        allSamples.push(...saved);
+        collected += saved.length;
+
+        if (collected < totalNb) {
+          fillEl.style.width = Math.min(100, collected / totalNb * 100) + '%';
+        }
+
+        feedSamples(saved);
+        mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
+
+        if (collected >= totalNb) {
+          statusEl.textContent = '全部加载完成';
+          await decoder.flush();
+        }
       };
 
-      mp4boxFile.onError = (e) => showError('解封装失败：' + e);
+      mp4File.onError = (e) => showErr('MP4解析失败: ' + e);
 
-      // ── fetch 流式读取网络视频流送入 MP4Box ──────────────────────────
-      fetch(VIDEO_URL)
+      fetch(URL)
         .then(res => {
           if (!res.ok) throw new Error('HTTP ' + res.status);
-          const total = parseInt(res.headers.get('content-length') || '0');
+          const total  = +res.headers.get('content-length') || 0;
           const reader = res.body.getReader();
-          let offset = 0;
+          let offset   = 0;
 
           function pump() {
             return reader.read().then(({ done, value }) => {
-              if (done) { mp4boxFile.flush(); return; }
-              const buf = value.buffer;
-              buf.fileStart = offset;
-              offset += buf.byteLength;
-              mp4boxFile.appendBuffer(buf);
+              if (done) { mp4File.flush(); return; }
+              const buf      = value.buffer.slice(0);
+              buf.fileStart  = offset;
+              offset        += buf.byteLength;
+              if (total && collected < totalNb) fillEl.style.width = Math.min(90, offset / total * 100) + '%';
+              mp4File.appendBuffer(buf);
               return pump();
             });
           }
           return pump();
         })
-        .catch(e => showError('加载失败：' + e.message + '<br>请检查 R2 CORS 配置'));
+        .catch(e => showErr('加载失败: ' + e.message + '<br>请检查 R2 CORS 设置'));
     }
 
-    // ── 初始化音频上下文 ───────────────────────────────
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch(e) {
-      audioCtx = null;
-    }
+    seekSlider.addEventListener('input', (e) => {
+      const target = parseFloat(e.target.value);
+      timeDisplay.textContent = `${formatTime(target)} / ${formatTime(duration)}`;
+      seekTo(target);
+    });
+
+    window.togglePlay = togglePlay;
+    window.unlockAudio = unlockAudio;
 
     startDemux();
   })();
