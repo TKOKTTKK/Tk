@@ -3,29 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>WebCodecs Player - Fast Load</title>
+  <title>WebCodecs Player - 0ms Quantum Load</title>
   
-  <link rel="preconnect" href="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev">
+  <link rel="preconnect" href="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev" crossorigin>
   
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, sans-serif; }
+    
+    /* 【视觉优化】画布默认隐藏，解出首帧后再淡入，杜绝生硬闪烁 */
     #canvas {
       position: absolute; top: 0; left: 0;
       width: 100%; height: 100%; object-fit: contain;
+      opacity: 0; transition: opacity 0.2s ease-in-out;
+      z-index: 2;
     }
+    
+    /* 【视觉优化】第一帧封面图：尺寸、位置与 Canvas 完全一致，0秒呈现 */
+    #poster {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; object-fit: contain;
+      z-index: 1; filter: blur(4px); /* 可选：微微模糊显得更高级 */
+    }
+
     #overlay {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 14px;
       z-index: 5;
     }
-    #status { color: rgba(255,255,255,0.75); font-size: 13px; }
+    #status { color: rgba(255,255,255,0.75); font-size: 13px; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
     #bar-wrap { width: 140px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; }
     #bar-fill { height: 100%; width: 0%; background: #fff; border-radius: 2px; transition: width .15s; }
     #tap-btn {
       display: none; padding: 9px 26px;
-      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.25);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
       border-radius: 99px; color: #fff; font-size: 14px; cursor: pointer;
     }
     #err { display: none; color: #ff6b6b; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.8; }
@@ -51,9 +64,12 @@
   </style>
 </head>
 <body>
+  <img id="poster" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&auto=format&fit=crop" alt="Poster">
+  
   <canvas id="canvas"></canvas>
+  
   <div id="overlay">
-    <div id="status">正在加载...</div>
+    <div id="status">正在初始化...</div>
     <div id="bar-wrap"><div id="bar-fill"></div></div>
     <button id="tap-btn" onclick="unlockAudio()">▶ 点击开启声音</button>
     <div id="err"></div>
@@ -71,6 +87,7 @@
     const URL  = 'https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev/1987295692190133024%202.MP4';
     const canvas    = document.getElementById('canvas');
     const ctx       = canvas.getContext('2d');
+    const posterEl  = document.getElementById('poster');
     const overlay   = document.getElementById('overlay');
     const statusEl  = document.getElementById('status');
     const fillEl    = document.getElementById('bar-fill');
@@ -99,6 +116,14 @@
       canvas.style.height = h * s + 'px';
       canvas.style.left   = (innerWidth  - w * s) / 2 + 'px';
       canvas.style.top    = (innerHeight - h * s) / 2 + 'px';
+      
+      // 同步让封面图位置对齐
+      if(posterEl) {
+        posterEl.style.width = canvas.style.width;
+        posterEl.style.height = canvas.style.height;
+        posterEl.style.left = canvas.style.left;
+        posterEl.style.top = canvas.style.top;
+      }
     }
 
     function formatTime(secs) {
@@ -144,6 +169,12 @@
       const f = frames[0];
       if (f && f.ts <= now + 0.05) {
         ctx.drawImage(f.frame, 0, 0);
+        
+        // 【极限优化】首帧真正画到画布上时，再亮起 Canvas，隐藏封面，丝滑切换
+        if (canvas.style.opacity !== '1') {
+          canvas.style.opacity = '1';
+          if(posterEl) posterEl.style.display = 'none';
+        }
       }
 
       if (playing) {
@@ -306,13 +337,12 @@
           codedWidth      : vt.track_width,
           codedHeight     : vt.track_height,
           description,
-          // 【优化2】解码层：强制开启低延迟模式，拒绝积压帧，画面解出立刻吐给 Canvas 渲染
           optimizeForLatency: true,
         };
 
         buildDecoder();
-        // 【优化3】解封装层：将原来的 50 帧改小到 5 帧。第一波数据只要有 5 帧就立刻送交解码，极速唤醒首帧
-        mp4File.setExtractionOptions(trackId, null, { nbSamples: 5 });
+        
+        mp4File.setExtractionOptions(trackId, null, { nbSamples: 1 });
         mp4File.start();
       };
 
@@ -340,7 +370,7 @@
 
       mp4File.onError = (e) => showErr('MP4解析失败: ' + e);
 
-      fetch(URL)
+      fetch(URL, { priority: 'high' })
         .then(res => {
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const total  = +res.headers.get('content-length') || 0;
@@ -350,9 +380,15 @@
           function pump() {
             return reader.read().then(({ done, value }) => {
               if (done) { mp4File.flush(); return; }
-              const buf      = value.buffer.slice(0);
+              
+              let buf = value.buffer;
+              if (value.byteOffset !== 0 || value.byteLength !== buf.byteLength) {
+                buf = buf.slice(value.byteOffset, value.byteOffset + value.byteLength);
+              }
+              
               buf.fileStart  = offset;
-              offset        += buf.byteLength;
+              offset        += value.byteLength;
+              
               if (total && collected < totalNb) fillEl.style.width = Math.min(90, offset / total * 100) + '%';
               mp4File.appendBuffer(buf);
               return pump();
