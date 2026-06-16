@@ -1,73 +1,116 @@
+
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>JSMpeg 播放测试</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%; height: 100%;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #wrapper {
-      width: 100vw;
-      /* 高度按视频比例自动撑开 */
-    }
-    /* JSMpeg 自动生成的 canvas */
-    #wrapper canvas {
-      width: 100% !important;
-      height: auto !important;
-      display: block;
-    }
-    #status {
-      position: fixed;
-      top: 20px; left: 0; right: 0;
-      color: #fff; font-size: 14px;
-      font-family: -apple-system, sans-serif;
-      text-align: center;
-      pointer-events: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSMpeg 强力抗拦截测试</title>
+    <style>
+        html, body { background: #111; color: #eee; margin: 0; padding: 15px; font-family: sans-serif; text-align: center; }
+        .wrapper { max-width: 500px; margin: 20px auto; background: #000; border-radius: 8px; overflow: hidden; }
+        #video-canvas { width: 100%; display: block; background: #222; aspect-ratio: 9 / 16; }
+        .btn-box { padding: 20px; }
+        .play-btn { background: #00bfff; color: #fff; border: none; padding: 12px 30px; border-radius: 25px; font-size: 16px; font-weight: bold; }
+        #status-log { color: #ff3333; margin: 10px; font-size: 12px; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
 </head>
 <body>
-  <div id="status">⏳ 加载中...</div>
-  <div id="wrapper"></div>
 
-  <!-- 使用 @cycjimmy/jsmpeg-player，内含最新版 JSMpeg + iOS 音频自动解锁 -->
-  <script src="https://cdn.jsdelivr.net/npm/@cycjimmy/jsmpeg-player@6/dist/jsmpeg-player.umd.min.js"></script>
-  <script>
-    var videoUrl = 'https://jsmpeg.com/bjork-all-is-full-of-love.ts';
+    <h2>短视频 UC 防劫持测试 (多流备用版)</h2>
+    <div id="status-log">正在检测解码库状态...</div>
+    
+    <div class="wrapper">
+        <canvas id="video-canvas"></canvas>
+        <div class="btn-box">
+            <button class="play-btn" id="ctrl-btn" disabled>等待解码库加载...</button>
+        </div>
+    </div>
 
-    var videoElement = new JSMpeg.VideoElement('#wrapper', videoUrl, {
-      autoplay: true,
-      loop: true,
-      autoSetWrapperSize: true,
-    });
+    <script>
+        // 1. 填入你真实的 Cloudflare R2 视频地址
+        const myR2VideoUrl = 'https://jsmpeg.com/bjork-all-is-full-of-love.ts'; 
 
-    // 监听第一帧解码完成，隐藏加载提示
-    var originalDecode = videoElement.player.renderer && videoElement.player.renderer.renderFrame;
-    var statusEl = document.getElementById('status');
-    var hidden = false;
+        const statusLog = document.getElementById('status-log');
+        const btn = document.getElementById('ctrl-btn');
+        const canvas = document.getElementById('video-canvas');
+        let player = null;
 
-    // 简单定时检测：有画面就隐藏 status
-    var checkTimer = setInterval(function() {
-      if (!hidden && videoElement.player && videoElement.player.isPlaying) {
-        statusEl.style.display = 'none';
-        hidden = true;
-        clearInterval(checkTimer);
-      }
-    }, 500);
+        // 备用 CDN 列表（包含国内加速和国外加速）
+        const cdnList = [
+            "https://cdn.bootcdn.net/ajax/libs/jsmpeg/1.0.1/jsmpeg.min.js",
+            "https://cdn.jsdelivr.net/npm/jsmpeg@1.0.1/jsmpeg.min.js",
+            "https://unpkg.com/jsmpeg@1.0.1/jsmpeg.min.js"
+        ];
+        let currentCdnIndex = 0;
 
-    // 10秒超时提示
-    setTimeout(function() {
-      if (!hidden) {
-        statusEl.textContent = '❌ 加载失败，请检查网络或 CORS';
-      }
-    }, 10000);
-  </script>
+        // 动态脚本加载器
+        function loadJSMpeg() {
+            if (currentCdnIndex >= cdnList.length) {
+                statusLog.innerHTML = "❌ 所有 CDN 库加载均被你的测试环境拦截！请不要用预览工具，请直接上传到 Cloudflare Pages 线上测试。";
+                alert("环境受限：无法引入外部解码库，请直接部署到正式域名线上测试！");
+                return;
+            }
+
+            statusLog.innerHTML = `正在尝试通过节点 [${currentCdnIndex + 1}] 加载解码库...`;
+            const script = document.createElement('script');
+            script.src = cdnList[currentCdnIndex];
+            
+            // 加载成功
+            script.onload = function() {
+                statusLog.innerHTML = "✅ 解码库加载成功！";
+                statusLog.style.color = "#32cd32";
+                btn.removeAttribute('disabled');
+                btn.innerText = "点击激活并播放";
+                initPlayer();
+            };
+
+            // 加载失败，自动切到下一个备用 CDN
+            script.onerror = function() {
+                console.warn(`节点 ${cdnList[currentCdnIndex]} 加载失败，正在切换...`);
+                currentCdnIndex++;
+                loadJSMpeg();
+            };
+
+            document.head.appendChild(script);
+        }
+
+        // 初始化播放器
+        function initPlayer() {
+            try {
+                player = new JSMpeg.Player(myR2VideoUrl, {
+                    canvas: canvas,
+                    autoplay: false,
+                    loop: true,
+                    volume: 0,
+                    progressive: true
+                });
+                console.log("JSMpeg 播放器实例创建成功！");
+            } catch (e) {
+                statusLog.innerHTML = "❌ 播放器初始化报错: " + e.message;
+                console.error(e);
+            }
+        }
+
+        // 绑定按钮控制
+        btn.addEventListener('click', function() {
+            if (!player) return;
+            if (player.isPlaying) {
+                player.pause();
+                btn.innerText = "已暂停 (点击继续)";
+                btn.style.background = "#ff4500";
+            } else {
+                player.volume = 1; 
+                player.play();
+                btn.innerText = "正在纯净播放 (再次点击暂停)";
+                btn.style.background = "#32cd32";
+            }
+        });
+
+        // 页面启动，开始加载
+        window.onload = loadJSMpeg;
+    </script>
 </body>
 </html>
