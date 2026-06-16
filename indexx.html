@@ -99,10 +99,10 @@
     // ── 状态变量 ──────────────────────────────────────────────
     let decoder       = null;
     let audioCtx      = null;
-    let frameQueue    = [];        // 待渲染帧队列
     let frameTimings  = [];        // { ts, frame } 已解码帧
+    let sampleQueue   = [];        // 【新增】暂存未送入解码器的原始样本
     let playing       = false;
-    let startTime     = 0;         // audioCtx.currentTime 对应的视频起始时间
+    let startTime     = 0;         // 视频起始时间基准
     let videoWidth    = 0;
     let videoHeight   = 0;
     let totalSamples  = 0;
@@ -111,7 +111,7 @@
     let mp4boxFile    = null;
     let trackId       = -1;
     let pendingFrames = 0;         // 已送入 decoder 未输出的帧数
-    const MAX_QUEUE   = 60;        // 最多预解码帧数
+    const MAX_QUEUE   = 60;        // 缓冲区最大维持帧数
 
     // ── 错误显示 ──────────────────────────────────────────────
     function showError(msg) {
@@ -151,7 +151,7 @@
         ? audioCtx.currentTime - startTime
         : (performance.now() / 1000 - startTime);
 
-      // 找最近一帧
+      // 释放已经播放过去的过期帧
       while (frameTimings.length > 1 && frameTimings[1].ts <= now) {
         frameTimings.shift().frame.close();
       }
@@ -162,15 +162,38 @@
       }
     }
 
+    // ── 【新增】向解码器喂数据的控制函数（背压机制） ──────────────────
+    function feedDecoder() {
+      while (sampleQueue.length > 0 && pendingFrames < MAX_QUEUE) {
+        const s = sampleQueue.shift();
+        const chunk = new EncodedVideoChunk({
+          type      : s.is_sync ? 'key' : 'delta',
+          timestamp : s.cts * 1_000_000 / s.timescale, // → μs
+          duration  : s.duration * 1_000_000 / s.timescale,
+          data      : s.data,
+        });
+        decoder.decode(chunk);
+        pendingFrames++;
+        decodedSamples++;
+      }
+      
+      // 更新解码渲染进度条
+      if (totalSamples) {
+        fillEl.style.width = Math.min(100, decodedSamples / totalSamples * 100) + '%';
+      }
+    }
+
     // ── VideoDecoder 初始化 ───────────────────────────────────
     function initDecoder(config) {
       decoder = new VideoDecoder({
         output: (frame) => {
           pendingFrames--;
+          feedDecoder(); // 【关键】解码器空出位置了，立刻尝试补充新帧数据
+
           const ts = frame.timestamp / 1_000_000; // μs → s
           frameTimings.push({ ts, frame });
 
-          // 首帧：初始化 canvas、开始播放
+          // 首帧处理：初始化 canvas 并开始运行渲染
           if (!playing) {
             videoWidth  = frame.displayWidth;
             videoHeight = frame.displayHeight;
@@ -184,7 +207,7 @@
             overlayEl.style.display = 'none';
             renderLoop();
 
-            // iOS 提示
+            // iOS 声音开启提示
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
               tapBtn.style.display = 'block';
@@ -205,18 +228,15 @@
       mp4boxFile = MP4Box.createFile();
 
       mp4boxFile.onReady = (info) => {
-        // 找第一条视频轨
         const vTrack = info.videoTracks[0];
         if (!vTrack) { showError('视频中没有视频轨'); return; }
 
         trackId      = vTrack.id;
         totalSamples = vTrack.nb_samples;
-
-        // 解析 codec 描述
-        const codec = vTrack.codec;
+        const codec  = vTrack.codec;
         statusEl.textContent = '解码中...';
 
-        // 提取 avcC / hvcC extradata
+        // 提取 avcC / hvcC 等硬件加速所需的初始化配置
         let description;
         try {
           const trak = mp4boxFile.getTrackById(trackId);
@@ -243,29 +263,15 @@
         mp4boxFile.start();
       };
 
+      // 接收到 MP4Box 解出来的帧样本
       mp4boxFile.onSamples = (id, user, samples) => {
-        for (const s of samples) {
-          // 队列满时等待
-          if (pendingFrames > MAX_QUEUE) break;
-
-          const chunk = new EncodedVideoChunk({
-            type      : s.is_sync ? 'key' : 'delta',
-            timestamp : s.cts * 1_000_000 / s.timescale, // → μs
-            duration  : s.duration * 1_000_000 / s.timescale,
-            data      : s.data,
-          });
-          decoder.decode(chunk);
-          pendingFrames++;
-          decodedSamples++;
-
-          // 更新进度条（解封装进度）
-          fillEl.style.width = Math.min(100, decodedSamples / totalSamples * 100) + '%';
-        }
+        sampleQueue.push(...samples); // 【关键】先安全存入排队队列，不直接丢弃
+        feedDecoder();                // 尝试往解码器喂数据
       };
 
       mp4boxFile.onError = (e) => showError('解封装失败：' + e);
 
-      // ── fetch + 分块送入 MP4Box ──────────────────────────
+      // ── fetch 流式读取网络视频流送入 MP4Box ──────────────────────────
       fetch(VIDEO_URL)
         .then(res => {
           if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -279,7 +285,6 @@
               const buf = value.buffer;
               buf.fileStart = offset;
               offset += buf.byteLength;
-              if (total) fillEl.style.width = Math.min(95, offset / total * 100) + '%';
               mp4boxFile.appendBuffer(buf);
               return pump();
             });
@@ -289,11 +294,11 @@
         .catch(e => showError('加载失败：' + e.message + '<br>请检查 R2 CORS 配置'));
     }
 
-    // ── 初始化音频上下文并开始 ───────────────────────────────
+    // ── 初始化音频上下文 ───────────────────────────────
     try {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     } catch(e) {
-      audioCtx = null; // 没有音频也能播视频
+      audioCtx = null;
     }
 
     startDemux();
