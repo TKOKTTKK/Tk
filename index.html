@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>WebCodecs Player - Extreme Edition</title>
 
-  <!-- 优化1: fetchpriority="high" 加速预连接上抢占带宽 -->
   <link rel="preconnect" href="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev" crossorigin fetchpriority="high">
 
   <style>
@@ -70,7 +69,8 @@
   <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
   <script>
   (function () {
-    const SRC = 'https://s.cccmmm.cc/out_fast.mp4';
+    const SRC       = 'https://s.cccmmm.cc/out_fast%202.bin'; // 视频源
+    const SRC_AUDIO = 'https://s.cccmmm.cc/out_fast%20-2.bin'; // 音频源
 
     const canvas       = document.getElementById('canvas');
     const ctx          = canvas.getContext('2d');
@@ -112,28 +112,61 @@
       return `${m}:${s}`;
     }
 
-    /* ── 音频 ── */
-    let audioCtx = null;
+    /* ── 音频控制及同步核心变量 ── */
+    let audioCtx        = null;
+    let audioBuffer     = null; // 存储解码后的音频数据
+    let audioSource     = null; // 音频节点实例
+    let audioStartTime  = 0;    // 音频启动时的 audioCtx.currentTime 基准
+    let backupPlayStart = 0;    // 兜底系统时钟基准
+
     function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtx.resume();
-      tapBtn.style.display = 'none';
+      audioCtx.resume().then(() => {
+        tapBtn.style.display = 'none';
+        // 如果当前视频已经在播，音频也加载好了但没声音，立刻无缝接管启动音频
+        if (playing && audioBuffer && !audioSource) {
+          const currentPos = getNow();
+          startAudioNode(currentPos);
+        }
+      });
     }
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+
+    // 创建并启动音频节点的封装函数
+    function startAudioNode(offsetTime) {
+      if (!audioBuffer || !audioCtx || audioCtx.state !== 'running') return;
+      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
+      
+      audioSource = audioCtx.createBufferSource();
+      audioSource.buffer = audioBuffer;
+      audioSource.connect(audioCtx.destination);
+      audioStartTime = audioCtx.currentTime - offsetTime;
+      audioSource.start(0, offsetTime);
+    }
 
     /* ── 播放状态 ── */
     let frames        = [];
     let playing       = false;
-    let playStart     = 0;
     let pausedTime    = 0;
     let duration      = 0;
     let isInitialized = false;
     let isLooping     = false; // 防止 loopPlayback 重入
 
+    /* ── 统一高精度时钟获取方法 ── */
+    function getNow() {
+      if (!playing) return pausedTime;
+      // 核心同步：如果音频已就绪且激活，使用绝对精准的音频硬件时钟驱动
+      if (audioBuffer && audioCtx && audioCtx.state === 'running' && audioStartTime > 0) {
+        return audioCtx.currentTime - audioStartTime;
+      }
+      // 兜底：音频加载中或 iOS 尚未点击解锁时，使用高精度系统时钟确保画面正常走动
+      return (performance.now() - backupPlayStart) / 1000;
+    }
+
     /* ── 渲染循环 ── */
     function scheduleRender() {
       requestAnimationFrame(scheduleRender);
-      const now = playing ? (performance.now() - playStart) / 1000 : pausedTime;
+      const now = getNow();
 
       if (duration && now >= duration && !isLooping) {
         isLooping = true;
@@ -143,6 +176,7 @@
 
       if (!frames.length) return;
 
+      // 追帧机制：如果主线程卡顿导致队列积压，连续丢弃过期视频帧追赶时钟
       while (frames.length > 1 && frames[1].ts <= now) {
         frames.shift().frame.close();
       }
@@ -161,11 +195,15 @@
       if (!isInitialized) return;
       if (playing) {
         playing    = false;
-        pausedTime = (performance.now() - playStart) / 1000;
+        pausedTime = getNow();
+        // 暂停时立刻切断音频节点
+        if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
         playPauseBtn.textContent = '▶';
       } else {
         playing   = true;
-        playStart = performance.now() - pausedTime * 1000;
+        backupPlayStart = performance.now() - pausedTime * 1000;
+        // 恢复播放时重建音频节点，对齐当前进度
+        startAudioNode(pausedTime);
         playPauseBtn.textContent = '⏸';
       }
     }
@@ -175,7 +213,6 @@
     let decoderConfig  = null;
     let videoTimescale = 1;
 
-    // 抽出成独立函数，DRY
     function makeSample(s) {
       return new EncodedVideoChunk({
         type     : s.is_sync ? 'key' : 'delta',
@@ -185,7 +222,6 @@
       });
     }
 
-    // 优化3: 仅在首次创建 decoder 实例（new VideoDecoder 有 GC 成本）
     function initDecoder() {
       decoder = new VideoDecoder({
         output(frame) {
@@ -194,12 +230,15 @@
 
           if (!isInitialized) {
             isInitialized = true;
-            // 用 displayWidth/Height 修正实际显示尺寸（处理非方形像素等边缘情况）
             fitCanvas(frame.displayWidth, frame.displayHeight);
             overlay.style.display    = 'none';
             controlsEl.style.display = 'flex';
             playing   = true;
-            playStart = performance.now() - ts * 1000;
+            
+            // 初始化双时钟基准
+            backupPlayStart = performance.now() - ts * 1000;
+            startAudioNode(ts);
+
             playPauseBtn.textContent = '⏸';
             scheduleRender();
 
@@ -216,7 +255,6 @@
       decoder.configure(decoderConfig);
     }
 
-    // 优化4: seek/loop 时 reset() + configure() 复用同一实例，比 close+new 快
     function resetDecoder() {
       if (decoder && decoder.state !== 'closed') {
         decoder.reset();
@@ -226,17 +264,14 @@
       }
     }
 
-    /* ── 优化5: 带背压 + feedSeq 可中断的批量投喂（专用于 seek/loop） ── */
     let feedSeq = 0;
-
     async function feedBatch(samples) {
-      const seq = ++feedSeq; // 递增后，上一轮 feedBatch 检测到不匹配自动退出
+      const seq = ++feedSeq;
       for (const s of samples) {
         if (feedSeq !== seq || decoder.state !== 'configured') return;
-        // 解码队列积压时等待排空，防止内存暴涨
         if (decoder.decodeQueueSize > 20) {
           try { await decoder.flush(); } catch { return; }
-          if (feedSeq !== seq) return; // flush 等待期间被新 seek 抢占则退出
+          if (feedSeq !== seq) return;
         }
         try { decoder.decode(makeSample(s)); } catch { return; }
       }
@@ -249,9 +284,12 @@
       const maxTime = allSamples[allSamples.length - 1].cts / videoTimescale;
       if (targetTime > maxTime) { targetTime = maxTime; seekSlider.value = targetTime; }
 
+      // Seek时停掉当前音频
+      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
+
       frames.forEach(f => f.frame.close());
       frames = [];
-      resetDecoder(); // 比 close+new 快
+      resetDecoder();
 
       let startIdx = 0;
       for (let i = 0; i < allSamples.length; i++) {
@@ -260,21 +298,51 @@
         if (t > targetTime) break;
       }
 
-      // 异步后台执行，可被下一次 seek 中断，不阻塞 UI
       feedBatch(allSamples.slice(startIdx));
 
-      if (playing) playStart = performance.now() - targetTime * 1000;
-      else         pausedTime = targetTime;
+      if (playing) {
+        backupPlayStart = performance.now() - targetTime * 1000;
+        startAudioNode(targetTime); // 播放状态下直接在目标时间点建立新音频流
+      } else {
+        pausedTime = targetTime;
+      }
     }
 
     /* ── Loop ── */
     async function loopPlayback() {
+      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
       frames.forEach(f => f.frame.close());
       frames = [];
-      if (playing) playStart = performance.now();
-      else         pausedTime = 0;
+      
+      if (playing) {
+        backupPlayStart = performance.now();
+        startAudioNode(0);
+      } else {
+        pausedTime = 0;
+      }
       resetDecoder();
       await feedBatch(allSamples);
+    }
+
+    /* ── 音频文件独立后台加载 ── */
+    function startAudioFetch() {
+      fetch(SRC_AUDIO)
+        .then(res => {
+          if (!res.ok) throw new Error('Audio Network Error');
+          return res.arrayBuffer();
+        })
+        .then(arrayBuffer => {
+          // 如果未来需要混淆解密，直接在此对 ArrayBuffer 处理即可
+          return audioCtx.decodeAudioData(arrayBuffer);
+        })
+        .then(buffer => {
+          audioBuffer = buffer;
+          // 如果音频解码慢于视频第一帧，且当前视频已在播，立刻无缝切入硬件同步
+          if (playing && audioCtx && audioCtx.state === 'running' && !audioSource) {
+            startAudioNode(getNow());
+          }
+        })
+        .catch(e => console.error('音频加载或解码失败:', e));
     }
 
     /* ── MP4Box 解封装 ── */
@@ -299,7 +367,6 @@
         seekSlider.max = duration;
         timeDisplay.textContent = `00:00 / ${formatTime(duration)}`;
 
-        // 优化6: 元数据就绪立即预设 canvas 布局，减少首帧显示延迟
         fitCanvas(vt.track_width, vt.track_height);
 
         let description;
@@ -322,7 +389,7 @@
           codedHeight         : vt.track_height,
           description,
           optimizeForLatency  : true,
-          hardwareAcceleration: 'prefer-hardware', // 优化7: 优先硬件解码，不支持时自动回退软件
+          hardwareAcceleration: 'prefer-hardware',
         };
 
         initDecoder();
@@ -330,7 +397,6 @@
         mp4File.start();
       };
 
-      // 优化8: 改为同步回调，每次仅 1 帧，直接 decode，避免 async/Promise 堆叠开销
       mp4File.onSamples = (id, user, samples) => {
         const saved = samples.map(s => ({ ...s, data: new Uint8Array(s.data) }));
         allSamples.push(...saved);
@@ -340,7 +406,6 @@
           fillEl.style.width = Math.min(100, collected / totalNb * 100) + '%';
         }
 
-        // 单帧投喂，无需背压，直接 decode
         for (const s of saved) {
           if (decoder.state !== 'configured') break;
           try { decoder.decode(makeSample(s)); } catch {}
@@ -350,7 +415,7 @@
 
         if (collected >= totalNb) {
           statusEl.textContent = '全部加载完成';
-          decoder.flush().catch(() => {}); // fire-and-forget，不阻塞
+          decoder.flush().catch(() => {});
         }
       };
 
@@ -388,7 +453,6 @@
         .catch(e => showErr('加载失败: ' + e.message + '<br>请检查 R2 CORS 设置'));
     }
 
-    // 优化9: seek 防抖 150ms，杜绝拖动时连续触发 decoder reset
     let seekTimer = null;
     seekSlider.addEventListener('input', e => {
       const t = parseFloat(e.target.value);
@@ -400,7 +464,9 @@
     window.togglePlay  = togglePlay;
     window.unlockAudio = unlockAudio;
 
+    // 并行启动：视频流解析与音频二进制文件获取
     startDemux();
+    startAudioFetch();
   })();
   </script>
 </body>
