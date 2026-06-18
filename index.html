@@ -3,470 +3,617 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>WebCodecs Player - Extreme Edition</title>
-
-  <link rel="preconnect" href="https://pub-bd77bd83901245459c0a9fac4a491765.r2.dev" crossorigin fetchpriority="high">
-
+  <title>抖音风格 WebCodecs 播放器</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, sans-serif; }
-    #canvas {
-      position: absolute; top: 0; left: 0;
-      width: 100%; height: 100%; object-fit: contain;
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+
+    /* ── 竖向滑动容器 ── */
+    #feed {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    #overlay {
+    #feed::-webkit-scrollbar { display: none; }
+
+    .page {
+      position: relative;
+      width: 100%; height: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .page canvas {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    .page-overlay {
       position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 14px;
-      z-index: 5;
+      z-index: 5; pointer-events: none;
     }
-    #status { color: rgba(255,255,255,0.75); font-size: 13px; }
-    #bar-wrap { width: 140px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; }
-    /* 优化2: 去掉 transition，消除加载期间的 CSS 重绘开销 */
-    #bar-fill { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
-    #tap-btn {
-      display: none; padding: 9px 26px;
-      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 99px; color: #fff; font-size: 14px; cursor: pointer;
-    }
-    #err { display: none; color: #ff6b6b; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.8; }
+    .status { color: rgba(255,255,255,0.75); font-size: 13px; }
+    .bar-wrap { width: 140px; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+    .bar-fill { height: 100%; width: 0%; background: #fff; border-radius: 2px; transition: width .15s; }
+    .err { display: none; color: #ff6b6b; font-size: 12px; text-align: center; padding: 0 28px; line-height: 1.8; }
 
-    #controls {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: 48px; background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      display: none; align-items: center; padding: 0 16px; gap: 14px;
-      z-index: 10;
+    /* 点击层（透明，捕获播放/暂停） */
+    .tap-layer {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 8; cursor: pointer;
     }
-    #play-pause-btn {
-      background: none; border: none; color: #fff; font-size: 16px;
-      cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+
+    /* ── 巨型中置播放按钮 ── */
+    .center-play {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 66px; height: 66px; background: rgba(0, 0, 0, 0.4); border-radius: 50%;
+      display: none; align-items: center; justify-content: center; z-index: 11; pointer-events: none;
     }
-    #seek-slider {
-      flex: 1; height: 4px; accent-color: #fff; cursor: pointer;
-      border-radius: 2px; background: rgba(255,255,255,0.25); outline: none;
+    .center-play svg { margin-left: 4px; width: 30px; height: 30px; }
+
+    /* ════════ 顶部栏 ════════ */
+    .top-bar {
+      position: absolute; top: 0; left: 0; right: 0;
+      z-index: 20; pointer-events: none;
+      padding-top: env(safe-area-inset-top, 0);
     }
-    #time-display {
-      color: rgba(255,255,255,0.85); font-size: 12px; font-family: monospace; white-space: nowrap;
+
+    .nav-tabs {
+      display: flex; align-items: center; gap: 18px;
+      padding: 14px 18px 12px; color: rgba(255,255,255,0.6);
+      font-size: 17px; pointer-events: auto;
+      overflow-x: auto; scrollbar-width: none;
     }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tabs .menu-icon { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+    .nav-tabs .menu-icon span { width: 18px; height: 2px; background: #fff; border-radius: 2px; }
+    .nav-tabs .menu-icon span:nth-child(2){ width: 13px; }
+    .nav-tabs .tab { flex-shrink: 0; position: relative; padding-bottom: 4px; }
+    .nav-tabs .tab.active { color: #fff; font-weight: 600; }
+    .nav-tabs .tab.active::after {
+      content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+      width: 16px; height: 2.5px; background: #fff; border-radius: 2px;
+    }
+    .nav-tabs .search { margin-left: auto; flex-shrink: 0; }
+    .nav-tabs .search svg { width: 22px; height: 22px; fill: #fff; }
+
+    /* ════════ 右侧边栏 ════════ */
+    .sidebar {
+      position: absolute; right: 10px; bottom: 110px;
+      z-index: 20; display: flex; flex-direction: column;
+      align-items: center; gap: 20px;
+    }
+    .sidebar .avatar-wrap { position: relative; margin-bottom: 6px; }
+    .sidebar .avatar {
+      width: 50px; height: 50px; border-radius: 50%;
+      border: 2px solid #fff; object-fit: cover; display: block;
+      background: #333;
+    }
+    .sidebar .follow {
+      position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%);
+      width: 20px; height: 20px; background: #fe2c55; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .sidebar .follow svg { width: 12px; height: 12px; fill: #fff; }
+    .sidebar .action { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+    .sidebar .action svg { width: 38px; height: 38px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3)); }
+    .sidebar .action.liked svg path { fill: #fe2c55; }
+    .sidebar .action span { color: #fff; font-size: 13px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+    .sidebar .disc {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: #1a1a1a; border: 8px solid #000;
+      display: flex; align-items: center; justify-content: center;
+      animation: spin 4s linear infinite; margin-top: 8px;
+    }
+    .sidebar .disc img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════════ 底部信息 ════════ */
+    .bottom-info {
+      position: absolute; left: 0; right: 70px; bottom: 78px;
+      z-index: 20; padding: 0 16px; color: #fff;
+    }
+    .bottom-info .author { font-size: 17px; font-weight: 700; margin-bottom: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+    .bottom-info .desc {
+      font-size: 15px; line-height: 1.4; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .bottom-info .desc svg { width: 14px; height: 14px; fill: #fff; opacity: .8; }
+
+    /* ════════ 底部导航栏 ════════ */
+    .bottom-nav {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      z-index: 25; height: 64px; background: #000;
+      display: flex; align-items: center; justify-content: space-around;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      border-top: .5px solid rgba(255,255,255,0.08);
+    }
+    .bottom-nav .nav-item { color: rgba(255,255,255,0.6); font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bottom-nav .nav-item.active { color: #fff; font-weight: 600; }
+    .bottom-nav .nav-item.active span { font-size: 17px; font-weight: 600; }
+    .bottom-nav .nav-item span { font-size: 17px; }
+    .bottom-nav .plus {
+      width: 44px; height: 30px; border: 2.5px solid #fff; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .bottom-nav .plus svg { width: 20px; height: 20px; fill: #fff; }
   </style>
 </head>
 <body>
-  <canvas id="canvas"></canvas>
-  <div id="overlay">
-    <div id="status">正在加载...</div>
-    <div id="bar-wrap"><div id="bar-fill"></div></div>
-    <button id="tap-btn" onclick="unlockAudio()">▶ 点击开启声音</button>
-    <div id="err"></div>
-  </div>
-
-  <div id="controls">
-    <button id="play-pause-btn" onclick="togglePlay()">⏸</button>
-    <input type="range" id="seek-slider" min="0" max="0" step="0.01" value="0">
-    <div id="time-display">00:00 / 00:00</div>
-  </div>
+  <div id="feed"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/mp4box@0.5.2/dist/mp4box.all.min.js"></script>
   <script>
   (function () {
-    const SRC       = 'https://s.cccmmm.cc/out_fast%202.bin'; // 视频源
-    const SRC_AUDIO = 'https://s.cccmmm.cc/out_fast%20-2.bin'; // 音频源
-
-    const canvas       = document.getElementById('canvas');
-    const ctx          = canvas.getContext('2d');
-    const overlay      = document.getElementById('overlay');
-    const statusEl     = document.getElementById('status');
-    const fillEl       = document.getElementById('bar-fill');
-    const tapBtn       = document.getElementById('tap-btn');
-    const errEl        = document.getElementById('err');
-    const controlsEl   = document.getElementById('controls');
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const seekSlider   = document.getElementById('seek-slider');
-    const timeDisplay  = document.getElementById('time-display');
+    // ════════════════ 全局配置 ════════════════
+    const VIDEO_URL = 'https://s.cccmmm.cc/out_fast%202.bin';   // 视频源（后期可替换）
+    const AUDIO_URL = 'https://s.cccmmm.cc/out_fast%20-2.bin';  // 音频源（后期可替换）
+    const TOTAL_PAGES = 15;
+    const PRELOAD_AHEAD = 2;  // 预加载当前页前后 N 页（抖音式预加载）
 
     if (typeof VideoDecoder === 'undefined') {
-      return showErr('浏览器不支持 WebCodecs<br>请用 Chrome / Safari 16.4+');
+      document.body.innerHTML = '<div style="color:#ff6b6b;display:flex;height:100%;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:14px;line-height:1.8">浏览器不支持 WebCodecs<br>请用 Chrome / Safari 16.4+</div>';
+      return;
     }
 
-    function showErr(msg) {
-      errEl.innerHTML = msg;
-      errEl.style.display = 'block';
-      statusEl.style.display = 'none';
-      document.getElementById('bar-wrap').style.display = 'none';
+    // ════════════════ 共享音频缓冲（所有页面复用同一个音频解码结果）════════════════
+    let sharedAudioCtx = null;
+    let sharedAudioBuffer = null;
+    let audioLoadPromise = null;
+    try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+
+    function loadSharedAudio() {
+      if (audioLoadPromise) return audioLoadPromise;
+      audioLoadPromise = fetch(AUDIO_URL)
+        .then(res => { if (!res.ok) throw new Error('音频 ' + res.status); return res.arrayBuffer(); })
+        .then(buf => {
+          if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          return sharedAudioCtx.decodeAudioData(buf);
+        })
+        .then(decoded => { sharedAudioBuffer = decoded; console.log('共享音频解码成功'); return decoded; })
+        .catch(err => { console.error('音频加载失败，降级无声:', err); return null; });
+      return audioLoadPromise;
     }
 
-    function fitCanvas(w, h) {
-      canvas.width  = w;
-      canvas.height = h;
-      const s = Math.min(innerWidth / w, innerHeight / h);
-      canvas.style.width  = w * s + 'px';
-      canvas.style.height = h * s + 'px';
-      canvas.style.left   = (innerWidth  - w * s) / 2 + 'px';
-      canvas.style.top    = (innerHeight - h * s) / 2 + 'px';
-    }
+    // ════════════════ 共享视频样本缓存（只解封装一次，所有页面复用）════════════════
+    let sharedSamples = null;          // 解封装后的全部视频 samples
+    let sharedDecoderConfig = null;    // VideoDecoder 配置
+    let sharedDuration = 0;
+    let videoLoadPromise = null;
 
-    function formatTime(secs) {
-      if (isNaN(secs)) return '00:00';
-      const m = Math.floor(secs / 60).toString().padStart(2, '0');
-      const s = Math.floor(secs % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    }
+    function loadSharedVideo(onProgress) {
+      if (videoLoadPromise) return videoLoadPromise;
+      videoLoadPromise = new Promise((resolve, reject) => {
+        const mp4File = MP4Box.createFile();
+        let trackId = -1, totalNb = 0;
+        const allSamples = [];
 
-    /* ── 音频控制及同步核心变量 ── */
-    let audioCtx        = null;
-    let audioBuffer     = null; // 存储解码后的音频数据
-    let audioSource     = null; // 音频节点实例
-    let audioStartTime  = 0;    // 音频启动时的 audioCtx.currentTime 基准
-    let backupPlayStart = 0;    // 兜底系统时钟基准
+        mp4File.onReady = (info) => {
+          const vt = info.videoTracks[0];
+          if (!vt) { reject(new Error('找不到视频轨')); return; }
+          trackId = vt.id;
+          totalNb = vt.nb_samples;
+          sharedDuration = vt.duration / vt.timescale;
 
-    function unlockAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      audioCtx.resume().then(() => {
-        tapBtn.style.display = 'none';
-        // 如果当前视频已经在播，音频也加载好了但没声音，立刻无缝接管启动音频
-        if (playing && audioBuffer && !audioSource) {
-          const currentPos = getNow();
-          startAudioNode(currentPos);
-        }
-      });
-    }
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-
-    // 创建并启动音频节点的封装函数
-    function startAudioNode(offsetTime) {
-      if (!audioBuffer || !audioCtx || audioCtx.state !== 'running') return;
-      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
-      
-      audioSource = audioCtx.createBufferSource();
-      audioSource.buffer = audioBuffer;
-      audioSource.connect(audioCtx.destination);
-      audioStartTime = audioCtx.currentTime - offsetTime;
-      audioSource.start(0, offsetTime);
-    }
-
-    /* ── 播放状态 ── */
-    let frames        = [];
-    let playing       = false;
-    let pausedTime    = 0;
-    let duration      = 0;
-    let isInitialized = false;
-    let isLooping     = false; // 防止 loopPlayback 重入
-
-    /* ── 统一高精度时钟获取方法 ── */
-    function getNow() {
-      if (!playing) return pausedTime;
-      // 核心同步：如果音频已就绪且激活，使用绝对精准的音频硬件时钟驱动
-      if (audioBuffer && audioCtx && audioCtx.state === 'running' && audioStartTime > 0) {
-        return audioCtx.currentTime - audioStartTime;
-      }
-      // 兜底：音频加载中或 iOS 尚未点击解锁时，使用高精度系统时钟确保画面正常走动
-      return (performance.now() - backupPlayStart) / 1000;
-    }
-
-    /* ── 渲染循环 ── */
-    function scheduleRender() {
-      requestAnimationFrame(scheduleRender);
-      const now = getNow();
-
-      if (duration && now >= duration && !isLooping) {
-        isLooping = true;
-        loopPlayback().finally(() => { isLooping = false; });
-        return;
-      }
-
-      if (!frames.length) return;
-
-      // 追帧机制：如果主线程卡顿导致队列积压，连续丢弃过期视频帧追赶时钟
-      while (frames.length > 1 && frames[1].ts <= now) {
-        frames.shift().frame.close();
-      }
-
-      const f = frames[0];
-      if (f && f.ts <= now + 0.05) ctx.drawImage(f.frame, 0, 0);
-
-      if (playing) {
-        seekSlider.value = now;
-        timeDisplay.textContent = `${formatTime(now)} / ${formatTime(duration)}`;
-      }
-    }
-
-    /* ── 播放控制 ── */
-    function togglePlay() {
-      if (!isInitialized) return;
-      if (playing) {
-        playing    = false;
-        pausedTime = getNow();
-        // 暂停时立刻切断音频节点
-        if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
-        playPauseBtn.textContent = '▶';
-      } else {
-        playing   = true;
-        backupPlayStart = performance.now() - pausedTime * 1000;
-        // 恢复播放时重建音频节点，对齐当前进度
-        startAudioNode(pausedTime);
-        playPauseBtn.textContent = '⏸';
-      }
-    }
-
-    /* ── VideoDecoder ── */
-    let decoder        = null;
-    let decoderConfig  = null;
-    let videoTimescale = 1;
-
-    function makeSample(s) {
-      return new EncodedVideoChunk({
-        type     : s.is_sync ? 'key' : 'delta',
-        timestamp: s.cts * 1_000_000 / s.timescale,
-        duration : s.duration * 1_000_000 / s.timescale,
-        data     : s.data,
-      });
-    }
-
-    function initDecoder() {
-      decoder = new VideoDecoder({
-        output(frame) {
-          const ts = frame.timestamp / 1_000_000;
-          frames.push({ ts, frame });
-
-          if (!isInitialized) {
-            isInitialized = true;
-            fitCanvas(frame.displayWidth, frame.displayHeight);
-            overlay.style.display    = 'none';
-            controlsEl.style.display = 'flex';
-            playing   = true;
-            
-            // 初始化双时钟基准
-            backupPlayStart = performance.now() - ts * 1000;
-            startAudioNode(ts);
-
-            playPauseBtn.textContent = '⏸';
-            scheduleRender();
-
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-              tapBtn.style.display   = 'block';
-              overlay.style.display  = 'flex';
-              statusEl.style.display = 'none';
-              document.getElementById('bar-wrap').style.display = 'none';
+          let description;
+          try {
+            const trak = mp4File.getTrackById(trackId);
+            for (const entry of trak.mdia.minf.stbl.stsd.entries) {
+              const box = entry.avcC || entry.hvcC || entry.vpcC;
+              if (box) {
+                const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+                box.write(stream);
+                description = new Uint8Array(stream.buffer, 8);
+                break;
+              }
             }
-          }
-        },
-        error(e) { showErr('解码错误: ' + e.message); }
-      });
-      decoder.configure(decoderConfig);
-    }
+          } catch(e) {}
 
-    function resetDecoder() {
-      if (decoder && decoder.state !== 'closed') {
-        decoder.reset();
-        decoder.configure(decoderConfig);
-      } else {
-        initDecoder();
-      }
-    }
+          sharedDecoderConfig = {
+            codec: vt.codec,
+            codedWidth: vt.track_width,
+            codedHeight: vt.track_height,
+            description,
+            optimizeForLatency: false,
+          };
 
-    let feedSeq = 0;
-    async function feedBatch(samples) {
-      const seq = ++feedSeq;
-      for (const s of samples) {
-        if (feedSeq !== seq || decoder.state !== 'configured') return;
-        if (decoder.decodeQueueSize > 20) {
-          try { await decoder.flush(); } catch { return; }
-          if (feedSeq !== seq) return;
-        }
-        try { decoder.decode(makeSample(s)); } catch { return; }
-      }
-    }
-
-    /* ── Seek ── */
-    async function seekTo(targetTime) {
-      if (!allSamples.length) return;
-
-      const maxTime = allSamples[allSamples.length - 1].cts / videoTimescale;
-      if (targetTime > maxTime) { targetTime = maxTime; seekSlider.value = targetTime; }
-
-      // Seek时停掉当前音频
-      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
-
-      frames.forEach(f => f.frame.close());
-      frames = [];
-      resetDecoder();
-
-      let startIdx = 0;
-      for (let i = 0; i < allSamples.length; i++) {
-        const t = allSamples[i].cts / allSamples[i].timescale;
-        if (allSamples[i].is_sync && t <= targetTime) startIdx = i;
-        if (t > targetTime) break;
-      }
-
-      feedBatch(allSamples.slice(startIdx));
-
-      if (playing) {
-        backupPlayStart = performance.now() - targetTime * 1000;
-        startAudioNode(targetTime); // 播放状态下直接在目标时间点建立新音频流
-      } else {
-        pausedTime = targetTime;
-      }
-    }
-
-    /* ── Loop ── */
-    async function loopPlayback() {
-      if (audioSource) { try { audioSource.stop(); } catch(e){} audioSource = null; }
-      frames.forEach(f => f.frame.close());
-      frames = [];
-      
-      if (playing) {
-        backupPlayStart = performance.now();
-        startAudioNode(0);
-      } else {
-        pausedTime = 0;
-      }
-      resetDecoder();
-      await feedBatch(allSamples);
-    }
-
-    /* ── 音频文件独立后台加载 ── */
-    function startAudioFetch() {
-      fetch(SRC_AUDIO)
-        .then(res => {
-          if (!res.ok) throw new Error('Audio Network Error');
-          return res.arrayBuffer();
-        })
-        .then(arrayBuffer => {
-          // 如果未来需要混淆解密，直接在此对 ArrayBuffer 处理即可
-          return audioCtx.decodeAudioData(arrayBuffer);
-        })
-        .then(buffer => {
-          audioBuffer = buffer;
-          // 如果音频解码慢于视频第一帧，且当前视频已在播，立刻无缝切入硬件同步
-          if (playing && audioCtx && audioCtx.state === 'running' && !audioSource) {
-            startAudioNode(getNow());
-          }
-        })
-        .catch(e => console.error('音频加载或解码失败:', e));
-    }
-
-    /* ── MP4Box 解封装 ── */
-    let mp4File    = null;
-    let trackId    = -1;
-    let allSamples = [];
-    let totalNb    = 0;
-    let collected  = 0;
-
-    function startDemux() {
-      mp4File = MP4Box.createFile();
-
-      mp4File.onReady = (info) => {
-        const vt = info.videoTracks[0];
-        if (!vt) return showErr('找不到视频轨');
-
-        trackId        = vt.id;
-        totalNb        = vt.nb_samples;
-        videoTimescale = vt.timescale;
-        duration       = vt.duration / vt.timescale;
-
-        seekSlider.max = duration;
-        timeDisplay.textContent = `00:00 / ${formatTime(duration)}`;
-
-        fitCanvas(vt.track_width, vt.track_height);
-
-        let description;
-        try {
-          const trak = mp4File.getTrackById(trackId);
-          for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-            const box = entry.avcC || entry.hvcC || entry.vpcC;
-            if (box) {
-              const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
-              box.write(stream);
-              description = new Uint8Array(stream.buffer, 8);
-              break;
-            }
-          }
-        } catch(e) {}
-
-        decoderConfig = {
-          codec               : vt.codec,
-          codedWidth          : vt.track_width,
-          codedHeight         : vt.track_height,
-          description,
-          optimizeForLatency  : true,
-          hardwareAcceleration: 'prefer-hardware',
+          mp4File.setExtractionOptions(trackId, null, { nbSamples: 100 });
+          mp4File.start();
         };
 
-        initDecoder();
-        mp4File.setExtractionOptions(trackId, null, { nbSamples: 1 });
-        mp4File.start();
-      };
-
-      mp4File.onSamples = (id, user, samples) => {
-        const saved = samples.map(s => ({ ...s, data: new Uint8Array(s.data) }));
-        allSamples.push(...saved);
-        collected += saved.length;
-
-        if (collected < totalNb) {
-          fillEl.style.width = Math.min(100, collected / totalNb * 100) + '%';
-        }
-
-        for (const s of saved) {
-          if (decoder.state !== 'configured') break;
-          try { decoder.decode(makeSample(s)); } catch {}
-        }
-
-        mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
-
-        if (collected >= totalNb) {
-          statusEl.textContent = '全部加载完成';
-          decoder.flush().catch(() => {});
-        }
-      };
-
-      mp4File.onError = (e) => showErr('MP4解析失败: ' + e);
-
-      fetch(SRC, { priority: 'high' })
-        .then(res => {
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const total  = +res.headers.get('content-length') || 0;
-          const reader = res.body.getReader();
-          let offset   = 0;
-
-          function pump() {
-            return reader.read().then(({ done, value }) => {
-              if (done) { mp4File.flush(); return; }
-
-              let buf = value.buffer;
-              if (value.byteOffset !== 0 || value.byteLength !== buf.byteLength) {
-                buf = buf.slice(value.byteOffset, value.byteOffset + value.byteLength);
-              }
-
-              buf.fileStart = offset;
-              offset += value.byteLength;
-
-              if (total && collected < totalNb) {
-                fillEl.style.width = Math.min(90, offset / total * 100) + '%';
-              }
-
-              mp4File.appendBuffer(buf);
-              return pump();
+        mp4File.onSamples = (id, user, samples) => {
+          for (const s of samples) {
+            allSamples.push({
+              type: s.is_sync ? 'key' : 'delta',
+              timestamp: s.cts * 1_000_000 / s.timescale,
+              duration: s.duration * 1_000_000 / s.timescale,
+              data: new Uint8Array(s.data),
             });
           }
-          return pump();
-        })
-        .catch(e => showErr('加载失败: ' + e.message + '<br>请检查 R2 CORS 设置'));
+          mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
+          if (onProgress) onProgress(Math.min(100, allSamples.length / totalNb * 100));
+          if (allSamples.length >= totalNb) {
+            sharedSamples = allSamples;
+            resolve(allSamples);
+          }
+        };
+
+        mp4File.onError = (e) => reject(new Error('MP4解析失败: ' + e));
+
+        fetch(VIDEO_URL)
+          .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const total = +res.headers.get('content-length') || 0;
+            const reader = res.body.getReader();
+            let offset = 0;
+            function pump() {
+              return reader.read().then(({ done, value }) => {
+                if (done) { mp4File.flush(); return; }
+                const buf = value.buffer.slice(0);
+                buf.fileStart = offset;
+                offset += buf.byteLength;
+                if (onProgress && total) onProgress(Math.min(90, offset / total * 100));
+                mp4File.appendBuffer(buf);
+                return pump();
+              });
+            }
+            return pump();
+          })
+          .catch(reject);
+      });
+      return videoLoadPromise;
     }
 
-    let seekTimer = null;
-    seekSlider.addEventListener('input', e => {
-      const t = parseFloat(e.target.value);
-      timeDisplay.textContent = `${formatTime(t)} / ${formatTime(duration)}`;
-      clearTimeout(seekTimer);
-      seekTimer = setTimeout(() => seekTo(t), 150);
-    });
+    // ════════════════ 单页播放器 ════════════════
+    class VideoPage {
+      constructor(index, pageEl) {
+        this.index = index;
+        this.pageEl = pageEl;
+        this.canvas = pageEl.querySelector('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.overlay = pageEl.querySelector('.page-overlay');
+        this.statusEl = pageEl.querySelector('.status');
+        this.fillEl = pageEl.querySelector('.bar-fill');
+        this.errEl = pageEl.querySelector('.err');
+        this.centerPlayBtn = pageEl.querySelector('.center-play');
 
-    window.togglePlay  = togglePlay;
-    window.unlockAudio = unlockAudio;
+        this.frames = [];
+        this.playing = false;
+        this.playStart = 0;
+        this.pausedTime = 0;
+        this.duration = 0;
+        this.canvasReady = false;   // canvas 是否已适配过尺寸
 
-    // 并行启动：视频流解析与音频二进制文件获取
-    startDemux();
-    startAudioFetch();
+        this.rafId = null;          // 修复①：deactivate 时 cancel
+        this.decoder = null;
+        this.feedGen = 0;           // 修复④：每轮 feed 的代数，防止旧 feed 干扰新轮
+        this.audioSource = null;
+        this.audioStartTimeCtx = 0;
+        this.audioStartTimeVideo = 0;
+
+        this.prepared = false;      // 修复②：prepare 只解首帧，activate 复用
+        this.active = false;
+
+        pageEl.querySelector('.tap-layer').addEventListener('click', () => {
+          if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+          this.togglePlay();
+        });
+      }
+
+      showErr(msg) {
+        this.errEl.innerHTML = msg; this.errEl.style.display = 'block';
+        this.statusEl.style.display = 'none';
+        this.pageEl.querySelector('.bar-wrap').style.display = 'none';
+      }
+
+      // canvas 只需适配一次，转屏时不重算（当前场景固定竖屏）
+      fitCanvas(w, h) {
+        if (this.canvasReady) return;
+        this.canvasReady = true;
+        this.canvas.width = w; this.canvas.height = h;
+        const s = Math.max(innerWidth / w, innerHeight / h);
+        this.canvas.style.width = w * s + 'px';
+        this.canvas.style.height = h * s + 'px';
+        this.canvas.style.left = (innerWidth - w * s) / 2 + 'px';
+        this.canvas.style.top = (innerHeight - h * s) / 2 + 'px';
+        this.overlay.style.display = 'none';
+      }
+
+      startAudioNode(timestamp) {
+        if (!sharedAudioBuffer || !this.active) return;
+        if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+        this.audioSource = sharedAudioCtx.createBufferSource();
+        this.audioSource.buffer = sharedAudioBuffer;
+        this.audioSource.connect(sharedAudioCtx.destination);
+        this.audioStartTimeCtx = sharedAudioCtx.currentTime;
+        this.audioStartTimeVideo = timestamp;
+        this.audioSource.start(0, timestamp);
+      }
+
+      stopAudioNode() {
+        if (this.audioSource) {
+          try { this.audioSource.stop(); } catch(e) {}
+          this.audioSource = null;
+        }
+      }
+
+      // 修复①：统一通过这个方法停 rAF
+      stopRaf() {
+        if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+      }
+
+      // 修复③：统一通过这个方法释放所有帧
+      flushFrames() {
+        this.frames.forEach(f => f.frame.close());
+        this.frames = [];
+      }
+
+      closeDecoder() {
+        if (this.decoder && this.decoder.state !== 'closed') this.decoder.close();
+        this.decoder = null;
+      }
+
+      openDecoder() {
+        this.decoder = new VideoDecoder({
+          output: (frame) => {
+            this.frames.push({ ts: frame.timestamp / 1_000_000, frame });
+          },
+          error: (e) => this.showErr('解码错误: ' + e.message),
+        });
+        this.decoder.configure(sharedDecoderConfig);
+      }
+
+      // 修复④：限流 feed，控制 decodeQueueSize，防止内存暴涨
+      // feedGen 机制确保旧 feed 循环在 loopPlayback/deactivate 后立即退出
+      async feedSamplesThrottled() {
+        const gen = ++this.feedGen;
+        const MAX_QUEUE = 8;
+        for (const s of sharedSamples) {
+          if (gen !== this.feedGen || !this.active || !this.decoder || this.decoder.state === 'closed') break;
+          while (this.decoder && this.decoder.decodeQueueSize >= MAX_QUEUE) {
+            await new Promise(r => setTimeout(r, 4));
+            if (gen !== this.feedGen || !this.active) return;
+          }
+          try {
+            this.decoder.decode(new EncodedVideoChunk({
+              type: s.type, timestamp: s.timestamp, duration: s.duration, data: s.data,
+            }));
+          } catch(e) { break; }
+        }
+        if (gen === this.feedGen && this.decoder && this.decoder.state !== 'closed' && this.active) {
+          this.decoder.flush().catch(() => {});
+        }
+      }
+
+      scheduleRender() {
+        this.rafId = requestAnimationFrame(() => this.scheduleRender());
+        if (!this.active) return;
+
+        let now = this.pausedTime;
+        if (this.playing) {
+          if (sharedAudioBuffer && this.audioSource) {
+            now = sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo;
+          } else {
+            now = (performance.now() - this.playStart) / 1000;
+          }
+        }
+        if (this.duration && now >= this.duration) { this.loopPlayback(); return; }
+        if (this.frames.length === 0) return;
+        while (this.frames.length > 1 && this.frames[1].ts <= now) {
+          this.frames.shift().frame.close();
+        }
+        const f = this.frames[0];
+        if (f && f.ts <= now + 0.05) this.ctx.drawImage(f.frame, 0, 0);
+      }
+
+      loopPlayback() {
+        this.flushFrames();   // 修复③：loop 时立即释放旧帧
+        this.closeDecoder();  // 关旧 decoder，feedGen 机制会让旧 feed 自动退出
+
+        if (!this.active) return;
+
+        if (this.playing) {
+          if (sharedAudioBuffer) { this.stopAudioNode(); this.startAudioNode(0); }
+          else this.playStart = performance.now();
+        } else {
+          this.pausedTime = 0;
+        }
+        this.openDecoder();
+        this.feedSamplesThrottled(); // 不 await，渲染循环继续跑
+      }
+
+      togglePlay() {
+        if (!this.active) return;
+        if (this.playing) {
+          this.playing = false;
+          if (sharedAudioBuffer && this.audioSource) {
+            this.pausedTime = sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo;
+            this.stopAudioNode();
+          } else {
+            this.pausedTime = (performance.now() - this.playStart) / 1000;
+          }
+          this.centerPlayBtn.style.display = 'flex';
+        } else {
+          this.playing = true;
+          if (sharedAudioBuffer) this.startAudioNode(this.pausedTime);
+          else this.playStart = performance.now() - this.pausedTime * 1000;
+          this.centerPlayBtn.style.display = 'none';
+        }
+      }
+
+      // 修复②：prepare 只解第一个关键帧画到 canvas，不启动渲染循环，不保留 decoder
+      async prepare() {
+        if (this.prepared) return;
+        this.prepared = true;
+        try {
+          await loadSharedVideo((p) => { this.fillEl.style.width = p + '%'; });
+          this.duration = sharedDuration;
+
+          const keySample = sharedSamples.find(s => s.type === 'key');
+          if (!keySample) return;
+
+          await new Promise((resolve) => {
+            const dec = new VideoDecoder({
+              output: (frame) => {
+                this.fitCanvas(frame.displayWidth, frame.displayHeight);
+                this.ctx.drawImage(frame, 0, 0);
+                frame.close();             // 修复③：画完立即释放，不留在 frames
+                if (dec.state !== 'closed') dec.close();
+                resolve();
+              },
+              error: () => resolve(),      // 失败也不卡住
+            });
+            dec.configure(sharedDecoderConfig);
+            dec.decode(new EncodedVideoChunk({
+              type: keySample.type, timestamp: keySample.timestamp,
+              duration: keySample.duration, data: keySample.data,
+            }));
+            dec.flush().catch(() => resolve());
+          });
+        } catch(e) {
+          this.showErr('预加载失败: ' + e.message);
+        }
+      }
+
+      // 修复②：activate 复用 prepare 的 canvas 适配结果，不再二次解码
+      async activate() {
+        this.active = true;
+        await this.prepare();        // 已经完成则直接返回
+
+        this.stopRaf();              // 修复①：先停旧循环
+        this.flushFrames();          // 修复③：清空残留帧
+        this.closeDecoder();         // 关旧 decoder（兜底）
+
+        this.pausedTime = 0;
+        this.playing = true;
+
+        this.openDecoder();
+        this.scheduleRender();       // 先启动渲染循环
+
+        if (sharedAudioBuffer) { this.stopAudioNode(); this.startAudioNode(0); }
+        else this.playStart = performance.now();
+
+        this.centerPlayBtn.style.display = 'none';
+        this.feedSamplesThrottled(); // 修复④：限流异步 feed，不 await
+      }
+
+      // 修复①③：deactivate 停 rAF、释放帧、关 decoder
+      deactivate() {
+        this.active = false;
+        this.playing = false;
+        this.stopAudioNode();
+        this.stopRaf();              // 修复①：真正停掉 rAF
+        this.flushFrames();          // 修复③：释放所有帧，不再堆积
+        this.closeDecoder();         // 关 decoder，feedGen 自动让旧 feed 退出
+        this.pausedTime = 0;
+        // prepared 保留 true，下次 activate 无需重新加载首帧
+      }
+    }
+
+    // ════════════════ 构建页面 DOM ════════════════
+    const feed = document.getElementById('feed');
+    const pages = [];
+
+    const SIDEBAR_HTML = (idx) => `
+      <div class="sidebar">
+        <div class="avatar-wrap">
+          <div class="avatar"></div>
+          <div class="follow"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg></div>
+        </div>
+        <div class="action like"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg><span class="like-count">2408</span></div>
+        <div class="action comment"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 2C6.48 2 2 6.04 2 11c0 2.6 1.23 4.94 3.2 6.57L4 22l4.78-1.7c1 .26 2.08.4 3.22.4 5.52 0 10-4.04 10-9s-4.48-9-10-9z"/></svg><span>711</span></div>
+        <div class="action collect"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span>288</span></div>
+        <div class="action share"><svg viewBox="0 0 24 24"><path fill="#fff" d="M21 12l-9-9v5C6 9 3 14 2 19c2.5-3.5 6-5.1 10-5.1V19l9-7z"/></svg><span>6435</span></div>
+        <div class="disc"><img class="disc-img" alt=""></div>
+      </div>`;
+
+    const TOPBAR_HTML = `
+      <div class="top-bar">
+        <div class="nav-tabs">
+          <div class="menu-icon"><span></span><span></span><span></span></div>
+          <div class="tab">热点</div>
+          <div class="tab">精选</div>
+          <div class="tab">经验</div>
+          <div class="tab">直播</div>
+          <div class="tab">朋友</div>
+          <div class="tab">关注</div>
+          <div class="tab active">推荐</div>
+          <div class="search"><svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+        </div>
+      </div>`;
+
+    const BOTTOMNAV_HTML = `
+      <div class="bottom-nav">
+        <div class="nav-item active"><span>首页</span></div>
+        <div class="nav-item"><span>商城</span></div>
+        <div class="nav-item"><div class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg></div></div>
+        <div class="nav-item"><span>消息</span></div>
+        <div class="nav-item"><span>我</span></div>
+      </div>`;
+
+    for (let i = 0; i < TOTAL_PAGES; i++) {
+      const page = document.createElement('div');
+      page.className = 'page';
+      page.dataset.index = i;
+      page.innerHTML = `
+        <canvas></canvas>
+        <div class="tap-layer"></div>
+        <div class="center-play"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 5v14l11-7z"/></svg></div>
+        <div class="page-overlay">
+          <div class="status">正在加载...</div>
+          <div class="bar-wrap"><div class="bar-fill"></div></div>
+          <div class="err"></div>
+        </div>
+        ${TOPBAR_HTML}
+        ${SIDEBAR_HTML(i)}
+        <div class="bottom-info">
+          <div class="author">@吃个泡芙</div>
+          <div class="desc">宁波椒麻鱼大王！<svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+        </div>
+        ${BOTTOMNAV_HTML}
+      `;
+      feed.appendChild(page);
+      pages.push(new VideoPage(i, page));
+    }
+
+    // ════════════════ 滑动检测 + 抖音式预加载 ════════════════
+    let currentIndex = -1;
+
+    function setActive(idx) {
+      if (idx === currentIndex) return;
+      // 停掉旧页
+      if (currentIndex >= 0 && pages[currentIndex]) pages[currentIndex].deactivate();
+      currentIndex = idx;
+      // 激活当前页
+      pages[idx].activate();
+      // 预加载前后页（抖音式预加载）
+      for (let d = 1; d <= PRELOAD_AHEAD; d++) {
+        if (pages[idx + d]) pages[idx + d].prepare();
+        if (pages[idx - d]) pages[idx - d].prepare();
+      }
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          setActive(parseInt(entry.target.dataset.index, 10));
+        }
+      });
+    }, { threshold: [0.6] });
+
+    pages.forEach(p => io.observe(p.pageEl));
+
+    // ════════════════ 启动 ════════════════
+    loadSharedAudio();
+    // 首页立即激活
+    setActive(0);
   })();
   </script>
 </body>
