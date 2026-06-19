@@ -169,6 +169,20 @@
     let audioLoadPromise = null;
     try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
 
+    // ════════════════ 全局音频解锁：任意首次触摸/点击都尝试唤醒 AudioContext ════════════════
+    // 自动播放策略要求 resume() 必须发生在真实的用户手势回调里。这里把"任意触摸/点击"都当作
+    // 手势来源，而不是只在点击视频本身时才 resume —— 这样划动到下一条视频这个动作的 touchstart
+    // 本身也能提前把音频解锁掉，不需要专门去点一下视频。resume() 在已运行时调用是无副作用的，
+    // 所以监听器一直挂着即可（比如后台切回前台导致 ctx 被系统挂起，再摸一下屏幕也能自动恢复）。
+    function unlockAudioOnGesture() {
+      if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') {
+        sharedAudioCtx.resume().catch(() => {});
+      }
+    }
+    ['touchstart', 'click'].forEach(evt => {
+      document.addEventListener(evt, unlockAudioOnGesture, { passive: true, capture: true });
+    });
+
     function loadSharedAudio() {
       if (audioLoadPromise) return audioLoadPromise;
       audioLoadPromise = fetch(AUDIO_URL)
@@ -300,6 +314,7 @@
 
         this.prepared = false;      // 修复②：prepare 只解首帧，activate 复用
         this.active = false;
+        this.audioHintShown = false; // 音频被自动播放策略锁住时，是否正在显示提示
 
         pageEl.querySelector('.tap-layer').addEventListener('click', () => {
           if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
@@ -395,6 +410,30 @@
       scheduleRender() {
         this.rafId = requestAnimationFrame(() => this.scheduleRender());
         if (!this.active) return;
+
+        // 视觉容错 + 自动恢复：检测音频是否被自动播放策略锁住
+        if (this.playing && sharedAudioBuffer) {
+          const locked = sharedAudioCtx.state !== 'running';
+          if (locked && !this.audioHintShown) {
+            // 锁住了：露出中间播放按钮，提示用户点一下屏幕
+            this.audioHintShown = true;
+            this.centerPlayBtn.style.display = 'flex';
+          } else if (!locked && this.audioHintShown) {
+            // 刚解锁成功（可能是全局监听器在别处摸了一下屏幕触发的）：
+            // 自动重新挂载音频，对齐当前已播放到的位置，不需要用户手动点暂停再点播放
+            this.audioHintShown = false;
+            this.centerPlayBtn.style.display = 'none';
+            const elapsed = this.audioSource
+              ? Math.max(0, sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo)
+              : Math.max(0, (performance.now() - this.playStart) / 1000);
+            this.stopAudioNode();
+            this.startAudioNode(elapsed);
+          } else if (!locked && !this.audioSource) {
+            // 没被锁住，只是音频比画面晚加载完：对齐当前进度直接接上即可
+            const elapsed = Math.max(0, (performance.now() - this.playStart) / 1000);
+            this.startAudioNode(elapsed);
+          }
+        }
 
         let now = this.pausedTime;
         if (this.playing) {
@@ -493,6 +532,7 @@
 
         this.pausedTime = 0;
         this.playing = true;
+        this.audioHintShown = false; // 重置音频锁定提示状态
 
         this.openDecoder();
         this.scheduleRender();       // 先启动渲染循环
@@ -513,6 +553,10 @@
         this.flushFrames();          // 修复③：释放所有帧，不再堆积
         this.closeDecoder();         // 关 decoder，feedGen 自动让旧 feed 退出
         this.pausedTime = 0;
+        if (this.audioHintShown) {
+          this.audioHintShown = false;
+          this.centerPlayBtn.style.display = 'none';
+        }
         // prepared 保留 true，下次 activate 无需重新加载首帧
       }
     }
