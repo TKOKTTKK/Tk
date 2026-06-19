@@ -115,6 +115,22 @@
     .sidebar .disc img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* 取消静音提示：默认隐藏，需要时展开成深色文字胶囊，5秒不点击自动收起成浅色圆形小图标 */
+    .sidebar .mute-hint {
+      display: none;
+      align-items: center; gap: 6px;
+      margin-top: 10px; padding: 9px 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.5); color: #fff;
+      font-size: 12px; white-space: nowrap;
+      cursor: pointer;
+      transition: padding .25s ease, background-color .25s ease, color .25s ease;
+    }
+    .sidebar .mute-hint.show { display: flex; }
+    .sidebar .mute-hint .mute-icon { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar .mute-hint.collapsed { padding: 10px; background: rgba(255,255,255,0.92); color: #000; }
+    .sidebar .mute-hint.collapsed .mute-label { display: none; }
+
     /* ════════ 底部信息 ════════ */
     .bottom-info {
       position: absolute; left: 0; right: 70px; bottom: 78px;
@@ -297,6 +313,7 @@
         this.fillEl = pageEl.querySelector('.bar-fill');
         this.errEl = pageEl.querySelector('.err');
         this.centerPlayBtn = pageEl.querySelector('.center-play');
+        this.muteHintEl = pageEl.querySelector('.mute-hint');
 
         this.frames = [];
         this.playing = false;
@@ -314,11 +331,23 @@
 
         this.prepared = false;      // 修复②：prepare 只解首帧，activate 复用
         this.active = false;
-        this.audioHintShown = false; // 音频被自动播放策略锁住时，是否正在显示提示
+        this.muteHintShown = false; // 静音提示是否正在显示（展开或已收起小图标都算）
+        this.muteHintTimer = null;  // 5秒后自动收起成小图标的定时器
 
         pageEl.querySelector('.tap-layer').addEventListener('click', () => {
-          if (sharedAudioCtx && sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
           this.togglePlay();
+        });
+
+        // 点击静音提示：阻止冒泡到 tap-layer（不应触发暂停/播放），立即把声音接上
+        this.muteHintEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.hideMuteHint();
+          sharedAudioCtx.resume().then(() => {
+            if (!this.audioSource) {
+              const now = this.playing ? (performance.now() - this.playStart) / 1000 : this.pausedTime;
+              this.startAudioNode(now);
+            }
+          }).catch(() => {});
         });
       }
 
@@ -341,9 +370,11 @@
         this.overlay.style.display = 'none';
       }
 
+      // 只在 AudioContext 真正 running 时才创建节点；否则直接跳过，
+      // 等 scheduleRender 检测到解锁后自动补上（见下方"静默音频同步"）
       startAudioNode(timestamp) {
         if (!sharedAudioBuffer || !this.active) return;
-        if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+        if (sharedAudioCtx.state !== 'running') return;
         this.audioSource = sharedAudioCtx.createBufferSource();
         this.audioSource.buffer = sharedAudioBuffer;
         this.audioSource.connect(sharedAudioCtx.destination);
@@ -362,6 +393,24 @@
       // 修复①：统一通过这个方法停 rAF
       stopRaf() {
         if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+      }
+
+      // 展开"取消静音"提示，5秒不点击就自动收起成小图标（不隐藏，仍可点击）
+      showMuteHint() {
+        if (this.muteHintShown) return;
+        this.muteHintShown = true;
+        this.muteHintEl.classList.remove('collapsed');
+        this.muteHintEl.classList.add('show');
+        this.muteHintTimer = setTimeout(() => {
+          this.muteHintEl.classList.add('collapsed');
+        }, 5000);
+      }
+
+      // 隐藏静音提示（声音已接上 / 页面离开 / 用户点击了它）
+      hideMuteHint() {
+        if (this.muteHintTimer) { clearTimeout(this.muteHintTimer); this.muteHintTimer = null; }
+        this.muteHintShown = false;
+        this.muteHintEl.classList.remove('show', 'collapsed');
       }
 
       // 修复③：统一通过这个方法释放所有帧
@@ -411,38 +460,22 @@
         this.rafId = requestAnimationFrame(() => this.scheduleRender());
         if (!this.active) return;
 
-        // 视觉容错 + 自动恢复：检测音频是否被自动播放策略锁住
+        // 画面始终按 performance.now() 自走，不等音频、不依赖 AudioContext 状态，
+        // 所以无论声音是否被自动播放策略锁住，画面都会立刻自动播放。
+        let now = this.playing ? (performance.now() - this.playStart) / 1000 : this.pausedTime;
+
+        // 静默音频同步 + 静音提示：
+        // - 已经 running（大部分浏览器，本来就有声音）：直接接上，不显示任何提示
+        // - 还没 running（少部分浏览器需要交互）：展示提示，5秒后自动收起成小图标
         if (this.playing && sharedAudioBuffer) {
-          const locked = sharedAudioCtx.state !== 'running';
-          if (locked && !this.audioHintShown) {
-            // 锁住了：露出中间播放按钮，提示用户点一下屏幕
-            this.audioHintShown = true;
-            this.centerPlayBtn.style.display = 'flex';
-          } else if (!locked && this.audioHintShown) {
-            // 刚解锁成功（可能是全局监听器在别处摸了一下屏幕触发的）：
-            // 自动重新挂载音频，对齐当前已播放到的位置，不需要用户手动点暂停再点播放
-            this.audioHintShown = false;
-            this.centerPlayBtn.style.display = 'none';
-            const elapsed = this.audioSource
-              ? Math.max(0, sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo)
-              : Math.max(0, (performance.now() - this.playStart) / 1000);
-            this.stopAudioNode();
-            this.startAudioNode(elapsed);
-          } else if (!locked && !this.audioSource) {
-            // 没被锁住，只是音频比画面晚加载完：对齐当前进度直接接上即可
-            const elapsed = Math.max(0, (performance.now() - this.playStart) / 1000);
-            this.startAudioNode(elapsed);
+          if (sharedAudioCtx.state === 'running') {
+            if (!this.audioSource) this.startAudioNode(now);
+            if (this.muteHintShown) this.hideMuteHint();
+          } else if (!this.muteHintShown) {
+            this.showMuteHint();
           }
         }
 
-        let now = this.pausedTime;
-        if (this.playing) {
-          if (sharedAudioBuffer && this.audioSource) {
-            now = sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo;
-          } else {
-            now = (performance.now() - this.playStart) / 1000;
-          }
-        }
         if (this.duration && now >= this.duration) { this.loopPlayback(); return; }
         if (this.frames.length === 0) return;
         while (this.frames.length > 1 && this.frames[1].ts <= now) {
@@ -459,8 +492,9 @@
         if (!this.active) return;
 
         if (this.playing) {
-          if (sharedAudioBuffer) { this.stopAudioNode(); this.startAudioNode(0); }
-          else this.playStart = performance.now();
+          this.playStart = performance.now();
+          this.stopAudioNode();
+          this.startAudioNode(0); // 若此刻还没解锁/加载完会被内部跳过，scheduleRender 会自动补上
         } else {
           this.pausedTime = 0;
         }
@@ -472,17 +506,13 @@
         if (!this.active) return;
         if (this.playing) {
           this.playing = false;
-          if (sharedAudioBuffer && this.audioSource) {
-            this.pausedTime = sharedAudioCtx.currentTime - this.audioStartTimeCtx + this.audioStartTimeVideo;
-            this.stopAudioNode();
-          } else {
-            this.pausedTime = (performance.now() - this.playStart) / 1000;
-          }
+          this.pausedTime = (performance.now() - this.playStart) / 1000;
+          this.stopAudioNode();
           this.centerPlayBtn.style.display = 'flex';
         } else {
           this.playing = true;
-          if (sharedAudioBuffer) this.startAudioNode(this.pausedTime);
-          else this.playStart = performance.now() - this.pausedTime * 1000;
+          this.playStart = performance.now() - this.pausedTime * 1000;
+          this.startAudioNode(this.pausedTime); // 没解锁也没关系，scheduleRender 会自动补上
           this.centerPlayBtn.style.display = 'none';
         }
       }
@@ -532,13 +562,14 @@
 
         this.pausedTime = 0;
         this.playing = true;
-        this.audioHintShown = false; // 重置音频锁定提示状态
+        this.playStart = performance.now();   // 画面立刻开始走表，不等音频
+        this.hideMuteHint();                  // 重置静音提示状态
 
         this.openDecoder();
         this.scheduleRender();       // 先启动渲染循环
 
-        if (sharedAudioBuffer) { this.stopAudioNode(); this.startAudioNode(0); }
-        else this.playStart = performance.now();
+        this.stopAudioNode();
+        this.startAudioNode(0);      // 没解锁/没加载完会被内部跳过，scheduleRender 会自动补上
 
         this.centerPlayBtn.style.display = 'none';
         this.feedSamplesThrottled(); // 修复④：限流异步 feed，不 await
@@ -553,10 +584,7 @@
         this.flushFrames();          // 修复③：释放所有帧，不再堆积
         this.closeDecoder();         // 关 decoder，feedGen 自动让旧 feed 退出
         this.pausedTime = 0;
-        if (this.audioHintShown) {
-          this.audioHintShown = false;
-          this.centerPlayBtn.style.display = 'none';
-        }
+        this.hideMuteHint();
         // prepared 保留 true，下次 activate 无需重新加载首帧
       }
     }
@@ -576,6 +604,10 @@
         <div class="action collect"><svg viewBox="0 0 24 24"><path fill="#fff" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span>288</span></div>
         <div class="action share"><svg viewBox="0 0 24 24"><path fill="#fff" d="M21 12l-9-9v5C6 9 3 14 2 19c2.5-3.5 6-5.1 10-5.1V19l9-7z"/></svg><span>6435</span></div>
         <div class="disc"><img class="disc-img" alt=""></div>
+        <div class="mute-hint">
+          <svg viewBox="0 0 24 24" class="mute-icon"><path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span class="mute-label">取消静音</span>
+        </div>
       </div>`;
 
     const TOPBAR_HTML = `
