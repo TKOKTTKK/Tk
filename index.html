@@ -58,7 +58,7 @@
     }
     .center-play svg { margin-left: 4px; width: 30px; height: 30px; }
 
-    /* ════════ 顶部栏（固定，文字已居中）════════ */
+    /* ════════ 顶部栏 ════════ */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0;
       z-index: 40; pointer-events: none;
@@ -71,23 +71,38 @@
       padding: 14px 18px 12px; color: rgba(255,255,255,0.6);
       font-size: 17px; pointer-events: auto;
       overflow-x: auto; scrollbar-width: none;
+      font-weight: 500;
     }
     .nav-tabs::-webkit-scrollbar { display: none; }
-    .nav-tabs .menu-icon { position: absolute; left: 18px; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; cursor: pointer; }
-    .nav-tabs .menu-icon span { width: 18px; height: 2px; background: #fff; border-radius: 2px; }
-    .nav-tabs .menu-icon span:nth-child(2){ width: 13px; }
+    
+    /* 菜单图标 */
+    .nav-tabs .menu-icon { 
+      position: absolute; left: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; 
+      flex-shrink: 0; cursor: pointer; 
+    }
+    .nav-tabs .menu-icon span { 
+      display:block; height:2px; background:#fff; border-radius:1px; width:22px; 
+    }
+    .nav-tabs .menu-icon span:nth-child(2){ width:16px; }
+
     .nav-tabs .tab { flex-shrink: 0; position: relative; padding-bottom: 4px; cursor: pointer; }
-    .nav-tabs .tab.active { color: #fff; font-weight: 600; }
+    .nav-tabs .tab.active { color: #fff; font-weight: 700; }
     .nav-tabs .tab.active::after {
       content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
       width: 16px; height: 2.5px; background: #fff; border-radius: 2px;
     }
-    .nav-tabs .search { position: absolute; right: 18px; flex-shrink: 0; cursor: pointer; }
-    .nav-tabs .search svg { width: 22px; height: 22px; fill: #fff; }
+    
+    /* 搜索图标（已加入 margin-top 微调向下对齐） */
+    .nav-tabs .search { 
+      position: absolute; right: 18px; top: 50%; transform: translateY(-50%); margin-top: 3px; flex-shrink: 0; cursor: pointer; 
+    }
+    .nav-tabs .search svg { 
+      width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2.5;
+    }
 
-    /* ════════ 右侧边栏（间隙已缩小）════════ */
+    /* ════════ 右侧边栏 ════════ */
     .sidebar {
-      position: absolute; right: 10px; bottom: 90px;
+      position: absolute; right: 10px; bottom: 66px;
       z-index: 30; display: flex; flex-direction: column;
       align-items: center; gap: 12px;
       width: 50px;
@@ -102,7 +117,7 @@
       position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%);
       width: 20px; height: 20px; background: #fe2c55; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: opacity .2s;
+      cursor: pointer; transition: opacity .2s, transform .2s;
     }
     .sidebar .follow svg { width: 12px; height: 12px; fill: #fff; }
     .sidebar .follow.followed { background: #fff; }
@@ -125,7 +140,7 @@
       width: 50px; height: 50px; border-radius: 50%;
       background: #1a1a1a; border: 8px solid #000;
       display: flex; align-items: center; justify-content: center;
-      animation: spin 4s linear infinite;
+      animation: spin 8s linear infinite;
     }
     .sidebar .disc img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -142,6 +157,7 @@
       cursor: pointer;
       flex-direction: row-reverse;
       transition: padding .25s ease;
+      z-index: 15;
     }
     .sidebar .mute-hint.show { display: flex; }
     .sidebar .mute-hint.collapsed {
@@ -151,9 +167,9 @@
     .sidebar .mute-hint.collapsed .mute-label { display: none; }
     .sidebar .mute-hint .mute-icon { width: 24px; height: 24px; flex-shrink: 0; }
 
-    /* ════════ 底部信息 ════════ */
+    /* ── 底部信息 ── */
     .bottom-info {
-      position: absolute; left: 0; right: 70px; bottom: 78px;
+      position: absolute; left: 0; right: 70px; bottom: 65px;
       z-index: 30; padding: 0 16px; color: #fff;
     }
     .bottom-info .author { font-size: 17px; font-weight: 700; margin-bottom: 10px; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
@@ -163,25 +179,25 @@
     }
     .bottom-info .desc svg { width: 14px; height: 14px; fill: #fff; opacity: .8; }
 
-    /* ════════ 底部导航栏 ════════ */
+    /* ════════ 底部导航 ════════ */
     .bottom-nav {
       position: fixed; left: 0; right: 0; bottom: 0;
-      z-index: 40; height: 64px; background: #000;
+      z-index: 40; height: 55px; background: #000;
       display: flex; align-items: center; justify-content: space-around;
       padding-bottom: env(safe-area-inset-bottom, 0);
       border-top: .5px solid rgba(255,255,255,0.08);
     }
-    .bottom-nav .nav-item { color: rgba(255,255,255,0.6); font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .bottom-nav .nav-item.active { color: #fff; font-weight: 600; }
-    .bottom-nav .nav-item.active span { font-size: 17px; font-weight: 600; }
-    .bottom-nav .nav-item span { font-size: 17px; }
+    .bottom-nav .nav-item { color: rgba(255,255,255,0.6); font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-weight: 500; }
+    .bottom-nav .nav-item.active { color: #fff; font-weight: 700; }
+    .bottom-nav .nav-item.active span { font-size: 16px; font-weight: 700; }
+    .bottom-nav .nav-item span { font-size: 16px; }
     .bottom-nav .plus {
-      width: 44px; height: 30px; border: 2.5px solid #fff; border-radius: 9px;
+      width: 40px; height: 26px; border: 2.5px solid #fff; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
     }
-    .bottom-nav .plus svg { width: 20px; height: 20px; fill: #fff; }
+    .bottom-nav .plus svg { width: 18px; height: 18px; fill: #fff; }
 
-    /* ════════ 全局提示弹窗 ════════ */
+    /* ── 全局提示弹窗 ── */
     .toast {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0, 0, 0, 0.85); color: #fff; padding: 12px 24px;
@@ -203,7 +219,12 @@
       <div class="tab">直播</div>
       <div class="tab">关注</div>
       <div class="tab active">推荐</div>
-      <div class="search"><svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>
+      <div class="search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
     </div>
   </div>
 
@@ -229,7 +250,8 @@
       return;
     }
 
-    // ════════════════ 全局 Toast 提示函数 ════════════════
+    let globalMuteHintTriggered = false;
+
     function showToast(msg) {
       let toast = document.querySelector('.global-toast');
       if (!toast) {
@@ -245,12 +267,10 @@
       }, 1500);
     }
 
-    // 给顶部栏的组件绑定提示
     document.querySelector('.nav-tabs').addEventListener('click', (e) => {
       showToast('正在开发中...');
     });
 
-    // ════════════════ 共享音频缓冲 ════════════════
     let sharedAudioCtx = null;
     let sharedAudioBuffer = null;
     let audioLoadPromise = null;
@@ -278,7 +298,6 @@
       return audioLoadPromise;
     }
 
-    // ════════════════ 共享视频样本缓存 ════════════════
     let sharedSamples = null;
     let sharedDecoderConfig = null;
     let sharedDuration = 0;
@@ -367,7 +386,6 @@
       return videoLoadPromise;
     }
 
-    // ════════════════ 单页播放器 ════════════════
     class VideoPage {
       constructor(index, pageEl) {
         this.index = index;
@@ -381,7 +399,6 @@
         this.centerPlayBtn = pageEl.querySelector('.center-play');
 
         this.muteHintEl = pageEl.querySelector('.mute-hint');
-        this.muteHintShown = false;
         this.muteHintTimer = null;
 
         this.frames = [];
@@ -409,7 +426,6 @@
         this.bindMuteHint();
       }
 
-      // 侧边栏按钮点击提示与基本交互
       bindSidebarActions() {
         const avatarWrap = this.pageEl.querySelector('.avatar-wrap');
         const followBtn = this.pageEl.querySelector('.follow');
@@ -424,17 +440,16 @@
         const likeBase = parseInt(likeCountEl.textContent, 10) || 0;
         const collectBase = parseInt(collectCountEl.textContent, 10) || 0;
 
-        avatarWrap.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showToast('正在开发中...');
-        });
-
+        avatarWrap.addEventListener('click', (e) => { e.stopPropagation(); showToast('正在开发中...'); });
+        
         followBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          followed = !followed;
-          followBtn.classList.toggle('followed', followed);
-          followBtn.style.opacity = followed ? '0' : '1';
-          showToast('正在开发中...');
+          if (followed) return; 
+          followed = true;
+          followBtn.classList.add('followed');
+          followBtn.style.opacity = '0';
+          followBtn.style.pointerEvents = 'none';
+          showToast('已关注');
         });
 
         likeBtn.addEventListener('click', (e) => {
@@ -442,33 +457,32 @@
           liked = !liked;
           likeBtn.classList.toggle('liked', liked);
           likeCountEl.textContent = likeBase + (liked ? 1 : 0);
-          showToast('正在开发中...');
         });
 
-        commentBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showToast('正在开发中...');
-        });
+        commentBtn.addEventListener('click', (e) => { e.stopPropagation(); showToast('正在开发中...'); });
 
         collectBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           collected = !collected;
           collectBtn.classList.toggle('collected', collected);
           collectCountEl.textContent = collectBase + (collected ? 1 : 0);
-          showToast('正在开发中...');
         });
 
-        shareBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showToast('正在开发中...');
-        });
+        shareBtn.addEventListener('click', (e) => { e.stopPropagation(); showToast('正在开发中...'); });
       }
 
       showMuteHint() {
-        if (this.muteHintShown) return;
-        this.muteHintShown = true;
+        if (this.muteHintEl.classList.contains('show')) return; 
+
+        if (globalMuteHintTriggered) {
+          this.muteHintEl.classList.add('show', 'collapsed');
+          return;
+        }
+        
+        globalMuteHintTriggered = true;
         this.muteHintEl.classList.remove('collapsed');
         this.muteHintEl.classList.add('show');
+        
         this.muteHintTimer = setTimeout(() => {
           this.muteHintEl.classList.add('collapsed');
         }, 5000);
@@ -476,7 +490,6 @@
 
       hideMuteHint() {
         if (this.muteHintTimer) { clearTimeout(this.muteHintTimer); this.muteHintTimer = null; }
-        this.muteHintShown = false;
         this.muteHintEl.classList.remove('show', 'collapsed');
       }
 
@@ -546,9 +559,7 @@
 
       openDecoder() {
         this.decoder = new VideoDecoder({
-          output: (frame) => {
-            this.frames.push({ ts: frame.timestamp / 1_000_000, frame });
-          },
+          output: (frame) => { this.frames.push({ ts: frame.timestamp / 1_000_000, frame }); },
           error: (e) => this.showErr('解码错误: ' + e.message),
         });
         this.decoder.configure(sharedDecoderConfig);
@@ -583,9 +594,9 @@
         if (this.playing && sharedAudioBuffer) {
           if (sharedAudioCtx.state === 'running') {
             if (!this.audioSource) this.startAudioNode(now);
-            if (this.muteHintShown) this.hideMuteHint();
-          } else if (!this.muteHintShown) {
-            this.showMuteHint();
+            this.hideMuteHint(); 
+          } else {
+            this.showMuteHint(); 
           }
         }
 
@@ -601,7 +612,6 @@
       loopPlayback() {
         this.flushFrames();
         this.closeDecoder();
-
         if (!this.active) return;
 
         if (this.playing) {
@@ -674,7 +684,6 @@
         this.pausedTime = 0;
         this.playing = true;
         this.playStart = performance.now();
-        this.hideMuteHint();
 
         this.openDecoder();
         this.scheduleRender();
@@ -698,7 +707,6 @@
       }
     }
 
-    // ════════════════ 构建页面 DOM ════════════════
     const feed = document.getElementById('feed');
     const pages = [];
 
@@ -743,7 +751,6 @@
       pages.push(new VideoPage(i, page));
     }
 
-    // ════════════════ 滑动检测 + 预加载 ════════════════
     let currentIndex = -1;
 
     function setActive(idx) {
@@ -767,7 +774,6 @@
 
     pages.forEach(p => io.observe(p.pageEl));
 
-    // ════════════════ 启动 ════════════════
     loadSharedAudio();
     setActive(0);
   })();
