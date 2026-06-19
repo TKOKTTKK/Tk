@@ -131,14 +131,14 @@
 
     .sidebar .disc-wrap {
       position: relative;
-      width: 50px; height: 45px; /* 宽度与头像一致(50px)，保证左右对齐基准相同 */
+      width: 50px; height: 45px;
       margin-top: 4px;
       flex-shrink: 0;
     }
         
     .sidebar .disc {
       position: absolute;
-      top: 0; left: 2.5px; /* (50-45)/2，精确居中；用 left 而非 transform，避免和下面 animation 共用 transform 属性 */
+      top: 0; left: 2.5px;
       width: 45px; height: 45px; 
       border-radius: 50%;
       background: #1a1a1a;
@@ -146,10 +146,7 @@
       animation: spin 8s linear infinite;
       overflow: hidden;
     }
-    /* Adjusted the size of the record image to match the avatar */
     .sidebar .disc img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-    /* 用外部图片替换 SVG 后，原有针对 svg.disc-img 的样式将不再起作用 */
-    /* .sidebar .disc svg.disc-img { width: 34px; height: 34px; display: block; } */
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .sidebar .mute-hint {
@@ -247,28 +244,29 @@
   <script>
   (function () {
     // ════════════════ 全局配置 ════════════════
-    // ════════ 每一页的视频/音频链接 ════════
-    // 数组下标对应页码：[0] = 第1页，[1] = 第2页 ... 以此类推
-    // 想换某一页的视频或音频，直接改这里对应那一项的 video / audio 字段即可
     const PAGE_SOURCES = [
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第1页
-      { video: 'https://s.cccmmm.cc/3.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第2页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第3页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第4页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第5页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第6页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第7页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第8页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第9页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第10页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第11页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第12页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第13页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第14页
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第15页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/3.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
     ];
     const TOTAL_PAGES = PAGE_SOURCES.length;
-    const PRELOAD_AHEAD = 2;  
+
+    // ── 改动 1/2：预加载缩减为前后各 1 页 ──────────────────────────────
+    const PRELOAD_AHEAD = 1;
+    // ── 改动 2/2：超出此距离的页释放原始数据 ────────────────────────────
+    const RELEASE_DISTANCE = 3;
 
     if (typeof VideoDecoder === 'undefined') {
       document.body.innerHTML = '<div style="color:#ff6b6b;display:flex;height:100%;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:14px;line-height:1.8">浏览器不支持 WebCodecs<br>请用 Chrome / Safari 16.4+</div>';
@@ -434,9 +432,9 @@
         this.duration = 0;
         this.canvasReady = false;
 
-        this.samples = null;          // 本页解析出来的视频帧样本（每页独立）
-        this.decoderConfig = null;    // 本页的解码器配置（每页独立）
-        this.audioBuffer = null;      // 本页解码好的音频（每页独立）
+        this.samples = null;
+        this.decoderConfig = null;
+        this.audioBuffer = null;
 
         this.rafId = null;
         this.decoder = null;
@@ -740,6 +738,20 @@
         this.pausedTime = 0;
         this.hideMuteHint();
       }
+
+      // ── 改动 3/4：释放原始解码数据，让 GC 可以回收 ───────────────────
+      // 仅清理「原始数据」；canvas 内容（封面帧）和 canvasReady 保留，
+      // 让远离的页面继续显示最后一帧而不变成黑屏。
+      // 调用后 prepared=false，下次 prepare() 会从 loadVideoSource 重取
+      // （若缓存仍在则零开销；若缓存也被清理则重新下载）。
+      releaseData() {
+        if (!this.prepared) return;          // 尚未加载过，无需操作
+        this.samples = null;
+        this.decoderConfig = null;
+        this.audioBuffer = null;
+        this.duration = 0;
+        this.prepared = false;
+      }
     }
 
     const feed = document.getElementById('feed');
@@ -766,14 +778,14 @@
           </div>
           <div class="action like"><svg viewBox="15.88 15.88 992.25 992.25" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M667.786667 117.333333C832.864 117.333333 938.666667 249.706667 938.666667 427.861333c0 138.250667-125.098667 290.506667-371.573334 461.589334a96.768 96.768 0 0 1-110.186666 0C210.432 718.368 85.333333 566.112 85.333333 427.861333 85.333333 249.706667 191.136 117.333333 356.213333 117.333333c59.616 0 100.053333 20.832 155.786667 68.096C567.744 138.176 608.170667 117.333333 667.786667 117.333333z"/></svg><span class="like-count">2408</span></div>
           <div class="action comment"><svg viewBox="-11.91 -11.91 1047.81 1047.81" xmlns="http://www.w3.org/2000/svg">
-  <mask id="commentMask">
+  <mask id="commentMask${i}">
     <path fill="#fff" d="M512 512m-450.56 0a450.56 450.56 0 1 0 901.12 0 450.56 450.56 0 1 0-901.12 0Z"/>
     <path fill="#fff" d="M225.28 798.72h286.72v163.84H148.6848a40.96 40.96 0 0 1-27.19744-71.5776L225.28 798.72z"/>
     <path fill="#000" d="M276.48 512m-71.68 0a71.68 71.68 0 1 0 143.36 0 71.68 71.68 0 1 0-143.36 0Z"/>
     <path fill="#000" d="M512 512m-71.68 0a71.68 71.68 0 1 0 143.36 0 71.68 71.68 0 1 0-143.36 0Z"/>
     <path fill="#000" d="M747.52 512m-71.68 0a71.68 71.68 0 1 0 143.36 0 71.68 71.68 0 1 0-143.36 0Z"/>
   </mask>
-  <rect x="0" y="0" width="1024" height="1024" fill="#fff" mask="url(#commentMask)"/>
+  <rect x="0" y="0" width="1024" height="1024" fill="#fff" mask="url(#commentMask${i})"/>
 </svg><span>711</span></div>
           <div class="action collect"><svg viewBox="15.88 15.88 992.23 992.23" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M335.008 916.629333c-35.914667 22.314667-82.88 10.773333-104.693333-25.557333a77.333333 77.333333 0 0 1-8.96-57.429333l46.485333-198.24a13.141333 13.141333 0 0 0-4.021333-12.864l-152.16-132.586667c-31.605333-27.52-35.253333-75.648-8.234667-107.733333a75.68 75.68 0 0 1 51.733333-26.752L354.848 339.2c4.352-0.362667 8.245333-3.232 10.026667-7.594667l76.938666-188.170666c16.032-39.2 60.618667-57.92 99.52-41.461334a76.309333 76.309333 0 0 1 40.832 41.461334l76.938667 188.16c1.781333 4.373333 5.674667 7.253333 10.026667 7.605333l199.712 16.277333c41.877333 3.413333 72.885333 40.458667 69.568 82.517334a76.938667 76.938667 0 0 1-26.08 51.978666l-152.16 132.586667c-3.541333 3.082667-5.141333 8.074667-4.021334 12.853333l46.485334 198.24c9.621333 41.013333-15.36 82.336-56.138667 92.224a75.285333 75.285333 0 0 1-57.525333-9.237333l-170.976-106.24a11.296 11.296 0 0 0-12.010667 0l-170.986667 106.24z"/></svg><span class="collect-count">288</span></div>
           <div class="action share"><svg viewBox="-33.74 -33.73 1091.47 1091.47" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M965.930667 562.197333L603.626667 882.688c-30.784 29.397333-80.896 6.912-80.896-36.352v-161.450667a516.224 516.224 0 0 0-36.821334-1.386666c-165.973333 0-310.570667 77.696-386.56 192.917333-15.658667 23.530667-51.136 14.549333-54.165333-13.845333A423.722667 423.722667 0 0 1 42.666667 816.213333c0-241.706667 208.341333-441.749333 480.234666-477.034666V177.664c0-43.264 50.133333-65.749333 80.896-36.352l362.304 348.394667c20.330667 19.370667 20.330667 52.949333-0.170666 72.490666z"/></svg><span>6435</span></div>
@@ -799,6 +811,33 @@
 
     let currentIndex = -1;
 
+    // ── 改动 4/4：释放远离窗口的页面数据，同时清理孤立缓存 ────────────
+    function releaseDistantPages(idx) {
+      const lo = Math.max(0, idx - RELEASE_DISTANCE);
+      const hi = Math.min(TOTAL_PAGES - 1, idx + RELEASE_DISTANCE);
+
+      // 收集保留窗口内仍需要的 URL，避免误删被多页共享的缓存
+      const neededVideo = new Set();
+      const neededAudio = new Set();
+      for (let i = lo; i <= hi; i++) {
+        neededVideo.add(PAGE_SOURCES[i].video);
+        neededAudio.add(PAGE_SOURCES[i].audio);
+      }
+
+      // 释放窗口外各页的原始数据（VideoPage.samples / audioBuffer）
+      for (let i = 0; i < pages.length; i++) {
+        if (i < lo || i > hi) pages[i].releaseData();
+      }
+
+      // 删除不再被保留窗口内任何页使用的 URL 缓存项
+      for (const url of videoLoadCache.keys()) {
+        if (!neededVideo.has(url)) videoLoadCache.delete(url);
+      }
+      for (const url of audioLoadCache.keys()) {
+        if (!neededAudio.has(url)) audioLoadCache.delete(url);
+      }
+    }
+
     function setActive(idx) {
       if (idx === currentIndex) return;
       if (currentIndex >= 0 && pages[currentIndex]) pages[currentIndex].deactivate();
@@ -808,6 +847,7 @@
         if (pages[idx + d]) pages[idx + d].prepare();
         if (pages[idx - d]) pages[idx - d].prepare();
       }
+      releaseDistantPages(idx);  // 每次切页后触发一次内存清理
     }
 
     const io = new IntersectionObserver((entries) => {
