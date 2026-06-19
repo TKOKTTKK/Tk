@@ -53,10 +53,10 @@
     /* ── 巨型中置播放按钮 ── */
     .center-play {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 66px; height: 66px; background: rgba(0, 0, 0, 0.4); border-radius: 50%;
+      width: 84px; height: 84px;
       display: none; align-items: center; justify-content: center; z-index: 11; pointer-events: none;
     }
-    .center-play svg { margin-left: 4px; width: 30px; height: 30px; }
+    .center-play svg { width: 84px; height: 84px; }
 
     /* ════════ 顶部栏 ════════ */
     .top-bar {
@@ -247,9 +247,27 @@
   <script>
   (function () {
     // ════════════════ 全局配置 ════════════════
-    const VIDEO_URL = 'https://s.cccmmm.cc/out_fast%202.bin';   
-    const AUDIO_URL = 'https://s.cccmmm.cc/out_fast%20-2.bin';  
-    const TOTAL_PAGES = 15;
+    // ════════ 每一页的视频/音频链接 ════════
+    // 数组下标对应页码：[0] = 第1页，[1] = 第2页 ... 以此类推
+    // 想换某一页的视频或音频，直接改这里对应那一项的 video / audio 字段即可
+    const PAGE_SOURCES = [
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第1页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第2页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第3页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第4页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第5页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第6页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第7页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第8页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第9页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第10页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第11页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第12页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第13页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第14页
+      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' }, // 第15页
+    ];
+    const TOTAL_PAGES = PAGE_SOURCES.length;
     const PRELOAD_AHEAD = 2;  
 
     if (typeof VideoDecoder === 'undefined') {
@@ -279,8 +297,7 @@
     });
 
     let sharedAudioCtx = null;
-    let sharedAudioBuffer = null;
-    let audioLoadPromise = null;
+    const audioLoadCache = new Map(); // url -> Promise<AudioBuffer>
     try { sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
 
     function unlockAudioOnGesture() {
@@ -292,37 +309,37 @@
       document.addEventListener(evt, unlockAudioOnGesture, { passive: true, capture: true });
     });
 
-    function loadSharedAudio() {
-      if (audioLoadPromise) return audioLoadPromise;
-      audioLoadPromise = fetch(AUDIO_URL)
+    function loadAudioSource(url) {
+      if (!url) return Promise.resolve(null);
+      if (audioLoadCache.has(url)) return audioLoadCache.get(url);
+      const promise = fetch(url)
         .then(res => { if (!res.ok) throw new Error('音频 ' + res.status); return res.arrayBuffer(); })
         .then(buf => {
           if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
           return sharedAudioCtx.decodeAudioData(buf);
         })
-        .then(decoded => { sharedAudioBuffer = decoded; console.log('共享音频解码成功'); return decoded; })
         .catch(err => { console.error('音频加载失败，降级无声:', err); return null; });
-      return audioLoadPromise;
+      audioLoadCache.set(url, promise);
+      return promise;
     }
 
-    let sharedSamples = null;
-    let sharedDecoderConfig = null;
-    let sharedDuration = 0;
-    let videoLoadPromise = null;
+    const videoLoadCache = new Map(); // url -> Promise<{samples, decoderConfig, duration}>
 
-    function loadSharedVideo(onProgress) {
-      if (videoLoadPromise) return videoLoadPromise;
-      videoLoadPromise = new Promise((resolve, reject) => {
+    function loadVideoSource(url, onProgress) {
+      if (videoLoadCache.has(url)) return videoLoadCache.get(url);
+      const promise = new Promise((resolve, reject) => {
         const mp4File = MP4Box.createFile();
         let trackId = -1, totalNb = 0;
         const allSamples = [];
+        let duration = 0;
+        let decoderConfig = null;
 
         mp4File.onReady = (info) => {
           const vt = info.videoTracks[0];
           if (!vt) { reject(new Error('找不到视频轨')); return; }
           trackId = vt.id;
           totalNb = vt.nb_samples;
-          sharedDuration = vt.duration / vt.timescale;
+          duration = vt.duration / vt.timescale;
 
           let description;
           try {
@@ -338,7 +355,7 @@
             }
           } catch(e) {}
 
-          sharedDecoderConfig = {
+          decoderConfig = {
             codec: vt.codec,
             codedWidth: vt.track_width,
             codedHeight: vt.track_height,
@@ -362,14 +379,13 @@
           mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
           if (onProgress) onProgress(Math.min(100, allSamples.length / totalNb * 100));
           if (allSamples.length >= totalNb) {
-            sharedSamples = allSamples;
-            resolve(allSamples);
+            resolve({ samples: allSamples, decoderConfig, duration });
           }
         };
 
         mp4File.onError = (e) => reject(new Error('MP4解析失败: ' + e));
 
-        fetch(VIDEO_URL)
+        fetch(url)
           .then(res => {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const total = +res.headers.get('content-length') || 0;
@@ -390,13 +406,16 @@
           })
           .catch(reject);
       });
-      return videoLoadPromise;
+      videoLoadCache.set(url, promise);
+      return promise;
     }
 
     class VideoPage {
-      constructor(index, pageEl) {
+      constructor(index, pageEl, source) {
         this.index = index;
         this.pageEl = pageEl;
+        this.videoUrl = source.video;
+        this.audioUrl = source.audio;
         this.canvas = pageEl.querySelector('canvas');
         this.ctx = this.canvas.getContext('2d');
         this.overlay = pageEl.querySelector('.page-overlay');
@@ -414,6 +433,10 @@
         this.pausedTime = 0;
         this.duration = 0;
         this.canvasReady = false;
+
+        this.samples = null;          // 本页解析出来的视频帧样本（每页独立）
+        this.decoderConfig = null;    // 本页的解码器配置（每页独立）
+        this.audioBuffer = null;      // 本页解码好的音频（每页独立）
 
         this.rafId = null;
         this.decoder = null;
@@ -533,10 +556,10 @@
       }
 
       startAudioNode(timestamp) {
-        if (!sharedAudioBuffer || !this.active) return;
+        if (!this.audioBuffer || !this.active) return;
         if (sharedAudioCtx.state !== 'running') return;
         this.audioSource = sharedAudioCtx.createBufferSource();
-        this.audioSource.buffer = sharedAudioBuffer;
+        this.audioSource.buffer = this.audioBuffer;
         this.audioSource.connect(sharedAudioCtx.destination);
         this.audioStartTimeCtx = sharedAudioCtx.currentTime;
         this.audioStartTimeVideo = timestamp;
@@ -569,13 +592,13 @@
           output: (frame) => { this.frames.push({ ts: frame.timestamp / 1_000_000, frame }); },
           error: (e) => this.showErr('解码错误: ' + e.message),
         });
-        this.decoder.configure(sharedDecoderConfig);
+        this.decoder.configure(this.decoderConfig);
       }
 
       async feedSamplesThrottled() {
         const gen = ++this.feedGen;
         const MAX_QUEUE = 8;
-        for (const s of sharedSamples) {
+        for (const s of this.samples) {
           if (gen !== this.feedGen || !this.active || !this.decoder || this.decoder.state === 'closed') break;
           while (this.decoder && this.decoder.decodeQueueSize >= MAX_QUEUE) {
             await new Promise(r => setTimeout(r, 4));
@@ -598,7 +621,7 @@
 
         let now = this.playing ? (performance.now() - this.playStart) / 1000 : this.pausedTime;
 
-        if (this.playing && sharedAudioBuffer) {
+        if (this.playing && this.audioBuffer) {
           if (sharedAudioCtx.state === 'running') {
             if (!this.audioSource) this.startAudioNode(now);
             this.hideMuteHint(); 
@@ -651,10 +674,15 @@
         if (this.prepared) return;
         this.prepared = true;
         try {
-          await loadSharedVideo((p) => { this.fillEl.style.width = p + '%'; });
-          this.duration = sharedDuration;
+          const [videoResult] = await Promise.all([
+            loadVideoSource(this.videoUrl, (p) => { this.fillEl.style.width = p + '%'; }),
+            loadAudioSource(this.audioUrl).then(buf => { this.audioBuffer = buf; }),
+          ]);
+          this.samples = videoResult.samples;
+          this.decoderConfig = videoResult.decoderConfig;
+          this.duration = videoResult.duration;
 
-          const keySample = sharedSamples.find(s => s.type === 'key');
+          const keySample = this.samples.find(s => s.type === 'key');
           if (!keySample) return;
 
           await new Promise((resolve) => {
@@ -668,7 +696,7 @@
               },
               error: () => resolve(),
             });
-            dec.configure(sharedDecoderConfig);
+            dec.configure(this.decoderConfig);
             dec.decode(new EncodedVideoChunk({
               type: keySample.type, timestamp: keySample.timestamp,
               duration: keySample.duration, data: keySample.data,
@@ -724,7 +752,7 @@
       page.innerHTML = `
         <canvas></canvas>
         <div class="tap-layer"></div>
-        <div class="center-play"><svg viewBox="0 0 24 24"><path fill="#fff" d="M8 5v14l11-7z"/></svg></div>
+        <div class="center-play"><svg viewBox="0 0 24 24"><path fill="rgba(255,255,255,0.55)" d="M8,7 L8,17 Q8,19 9.69,17.93 L17.31,13.07 Q19,12 17.31,10.93 L9.69,6.07 Q8,5 8,7 Z"/></svg></div>
         <div class="page-overlay">
           <div class="status">正在加载...</div>
           <div class="bar-wrap"><div class="bar-fill"></div></div>
@@ -766,7 +794,7 @@
         </div>
       `;
       feed.appendChild(page);
-      pages.push(new VideoPage(i, page));
+      pages.push(new VideoPage(i, page, PAGE_SOURCES[i]));
     }
 
     let currentIndex = -1;
@@ -792,7 +820,6 @@
 
     pages.forEach(p => io.observe(p.pageEl));
 
-    loadSharedAudio();
     setActive(0);
   })();
   </script>
