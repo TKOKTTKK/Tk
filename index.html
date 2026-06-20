@@ -144,8 +144,10 @@
       background: #1a1a1a;
       display: flex; align-items: center; justify-content: center;
       animation: spin 8s linear infinite;
+      animation-play-state: paused;
       overflow: hidden;
     }
+    .sidebar .disc.spinning { animation-play-state: running; }
     .sidebar .disc img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -330,6 +332,7 @@
     // vstream.ready   : Promise，攒够 START_PLAY_SECONDS 秒（或全部加载完）后 resolve
     // vstream.complete: Promise，全部帧解析完成后 resolve
     // vstream.samples : 实时增长的帧数组，播放端直接消费
+    // vstream.waitForMore(fromLen): Promise，在样本数 > fromLen 或 done 时 resolve（事件驱动，替代轮询）
     function loadVideoSource(url, onProgress) {
       if (videoLoadCache.has(url)) return videoLoadCache.get(url);
 
@@ -344,16 +347,32 @@
         _readyDone: false, // 内部标志，防止重复 resolve
         _resolveReady: null,
         _resolveComplete: null,
+        _waiters: [],       // 等待"有新样本到达或 done"的回调列表
       };
       vs.ready    = new Promise(r => { vs._resolveReady    = r; });
       vs.complete = new Promise(r => { vs._resolveComplete = r; });
+
+      // 事件驱动等待：消费者传入自己已读到的长度 fromLen，
+      // 一旦 samples.length > fromLen 或 done=true，立即 resolve。
+      // 替代原来的 setTimeout 轮询。
+      vs.waitForMore = function(fromLen) {
+        if (vs.samples.length > fromLen || vs.done) return Promise.resolve();
+        return new Promise((resolve) => { vs._waiters.push(resolve); });
+      };
+
+      function notifyWaiters() {
+        if (vs._waiters.length === 0) return;
+        const waiters = vs._waiters;
+        vs._waiters = [];
+        waiters.forEach(fn => fn());
+      }
 
       const mp4File = MP4Box.createFile();
       let trackId = -1;
 
       mp4File.onReady = (info) => {
         const vt = info.videoTracks[0];
-        if (!vt) { vs._resolveReady(); vs._resolveComplete(); return; }
+        if (!vt) { vs._resolveReady(); vs._resolveComplete(); notifyWaiters(); return; }
         trackId      = vt.id;
         vs.totalNb   = vt.nb_samples;
         vs.duration  = vt.duration / vt.timescale;
@@ -381,7 +400,7 @@
           optimizeForLatency: false,
         };
 
-        if (vs.totalNb === 0) { vs._resolveReady(); vs._resolveComplete(); return; }
+        if (vs.totalNb === 0) { vs._resolveReady(); vs._resolveComplete(); notifyWaiters(); return; }
         mp4File.setExtractionOptions(trackId, null, { nbSamples: 100 });
         mp4File.start();
       };
@@ -412,9 +431,11 @@
           vs.done = true;
           vs._resolveComplete();
         }
+
+        notifyWaiters();  // 通知所有等待新样本的消费者
       };
 
-      mp4File.onError = () => { vs._resolveReady(); vs._resolveComplete(); };
+      mp4File.onError = () => { vs._resolveReady(); vs._resolveComplete(); notifyWaiters(); };
 
       fetch(url)
         .then(res => {
@@ -435,7 +456,7 @@
           }
           return pump();
         })
-        .catch(() => { vs._resolveReady(); vs._resolveComplete(); });
+        .catch(() => { vs._resolveReady(); vs._resolveComplete(); notifyWaiters(); });
 
       videoLoadCache.set(url, vs);
       return vs;
@@ -454,6 +475,7 @@
         this.fillEl = pageEl.querySelector('.bar-fill');
         this.errEl = pageEl.querySelector('.err');
         this.centerPlayBtn = pageEl.querySelector('.center-play');
+        this.discEl = pageEl.querySelector('.disc');
 
         this.muteHintEl = pageEl.querySelector('.mute-hint');
         this.muteHintTimer = null;
@@ -607,7 +629,14 @@
         }
       }
 
+      // ── RAF 防泄漏：用一个唯一 token 标识"这一轮 RAF 链"。
+      // stopRaf() 把 token 置为 null 并 cancel 当前帧的句柄；
+      // 调度时携带自己的 token，下一帧执行时若 token 已不是当前 token
+      // （说明期间被 stopRaf 过），直接停止自我延续，不再排队。
+      // 这样即使 cancelAnimationFrame 因为某种原因没拦住，链条也会在下一帧断掉，
+      // 不会出现"旧循环和新循环同时空转"的情况。
       stopRaf() {
+        this._rafToken = null;
         if (this.rafId) { cancelAnimationFrame(this.rafId); this.rafId = null; }
       }
 
@@ -629,6 +658,10 @@
         this.decoder.configure(this.decoderConfig);
       }
 
+      // ── 轮询改事件驱动：不再用 setTimeout(16) 死循环检测"是否有新样本"，
+      // 而是调用 vstream.waitForMore(idx)，由 mp4box 的 onSamples 回调
+      // 在真正有新数据时唤醒等待者。decoder 队列已满时仍需要短暂等待，
+      // 但这是等待硬件解码器消费，属于必要的节流，不是无意义忙等。
       async feedSamplesThrottled() {
         const gen = ++this.feedGen;
         const MAX_QUEUE = 8;
@@ -640,12 +673,19 @@
           // 追上了当前缓冲末尾
           if (idx >= this.samples.length) {
             if (this.stream && this.stream.done) break;  // 全量已到，正常结束
-            // 还在下载中，等一帧时间再看
-            await new Promise(r => setTimeout(r, 16));
+            // 事件驱动等待：直到 stream 真正推送了新样本（或下载完成）才被唤醒
+            if (this.stream) {
+              await this.stream.waitForMore(idx);
+            } else {
+              break; // 没有 stream 引用，无法继续等待
+            }
             continue;
           }
 
-          // 控制解码器队列深度，避免内存堆积
+          // 控制解码器队列深度，避免内存堆积。
+          // decodeQueueSize 没有原生的"队列变空"事件，这里用极短间隔
+          // 轮询，但只在队列确实拥堵时才进入，且每次只等 4ms，
+          // 影响远小于"无数据可读也死等"的那种轮询。
           while (this.decoder && this.decoder.decodeQueueSize >= MAX_QUEUE) {
             await new Promise(r => setTimeout(r, 4));
             if (gen !== this.feedGen || !this.active) return;
@@ -664,8 +704,15 @@
         }
       }
 
-      scheduleRender() {
-        this.rafId = requestAnimationFrame(() => this.scheduleRender());
+      // ── RAF 自身的渲染逻辑拆出来，scheduleRender 只负责"排队下一帧"，
+      // renderFrame 才是真正干活的部分，便于 stopRaf 后彻底停止递归。
+      renderFrame(token) {
+        // 如果在这一帧执行前 token 已经失效（说明被 stopRaf 过），
+        // 直接返回，不再排队下一帧——这是防止 RAF 链泄漏的关键。
+        if (token !== this._rafToken) return;
+
+        this.rafId = requestAnimationFrame(() => this.renderFrame(token));
+
         if (!this.active) return;
 
         let now = this.playing ? (performance.now() - this.playStart) / 1000 : this.pausedTime;
@@ -686,6 +733,14 @@
         }
         const f = this.frames[0];
         if (f && f.ts <= now + 0.05) this.ctx.drawImage(f.frame, 0, 0);
+      }
+
+      scheduleRender() {
+        // 生成新 token 并立即启动第一帧；只有持有当前 token 的链条
+        // 才会继续自我延续，旧链条在下一帧检测到 token 不符就会自然终止。
+        const token = Symbol('raf');
+        this._rafToken = token;
+        this.rafId = requestAnimationFrame(() => this.renderFrame(token));
       }
 
       loopPlayback() {
@@ -711,11 +766,13 @@
           this.pausedTime = (performance.now() - this.playStart) / 1000;
           this.stopAudioNode();
           this.centerPlayBtn.style.display = 'flex';
+          if (this.discEl) this.discEl.classList.remove('spinning');
         } else {
           this.playing = true;
           this.playStart = performance.now() - this.pausedTime * 1000;
           this.startAudioNode(this.pausedTime);
           this.centerPlayBtn.style.display = 'none';
+          if (this.discEl) this.discEl.classList.add('spinning');
         }
       }
 
@@ -798,6 +855,7 @@
         this.startAudioNode(0);
 
         this.centerPlayBtn.style.display = 'none';
+        if (this.discEl) this.discEl.classList.add('spinning');
         this.feedSamplesThrottled();
       }
 
@@ -810,6 +868,7 @@
         this.closeDecoder();
         this.pausedTime = 0;
         this.hideMuteHint();
+        if (this.discEl) this.discEl.classList.remove('spinning');
       }
 
       // ── 改动 3/4：释放原始解码数据，让 GC 可以回收 ───────────────────
