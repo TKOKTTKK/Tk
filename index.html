@@ -247,9 +247,10 @@
     const PAGE_SOURCES = [
       { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
       { video: 'https://s.cccmmm.cc/3.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
-      { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
+      { video: 'https://s.cccmmm.cc/4.bin', audio: 'https://s.cccmmm.cc/-4.bin' },
+      { video: 'https://s.cccmmm.cc/5.bin', audio: 'https://s.cccmmm.cc/-5.bin' },
+      { video: 'https://s.cccmmm.cc/6.bin', audio: 'https://s.cccmmm.cc/-6.bin' },
+      { video: 'https://s.cccmmm.cc/%E8%BE%93%E5%87%BA.bin', audio: 'https://s.cccmmm.cc/-6.bin' },
       { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
       { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
       { video: 'https://s.cccmmm.cc/out_fast%202.bin', audio: 'https://s.cccmmm.cc/out_fast%20-2.bin' },
@@ -264,9 +265,11 @@
     const TOTAL_PAGES = PAGE_SOURCES.length;
 
     // ── 改动 1/2：预加载缩减为前后各 1 页 ──────────────────────────────
-    const PRELOAD_AHEAD = 1;
+    const PRELOAD_AHEAD      = 1;
     // ── 改动 2/2：超出此距离的页释放原始数据 ────────────────────────────
-    const RELEASE_DISTANCE = 3;
+    const RELEASE_DISTANCE   = 3;
+    // ── 边下边播：攒够这么多秒的帧就开播 ────────────────────────────────
+    const START_PLAY_SECONDS = 3;
 
     if (typeof VideoDecoder === 'undefined') {
       document.body.innerHTML = '<div style="color:#ff6b6b;display:flex;height:100%;align-items:center;justify-content:center;text-align:center;padding:30px;font-size:14px;line-height:1.8">浏览器不支持 WebCodecs<br>请用 Chrome / Safari 16.4+</div>';
@@ -321,91 +324,121 @@
       return promise;
     }
 
-    const videoLoadCache = new Map(); // url -> Promise<{samples, decoderConfig, duration}>
+    const videoLoadCache = new Map(); // url -> vstream 对象（边下边播）
 
+    // 返回一个 vstream 描述符（同步），内部异步推送帧数据。
+    // vstream.ready   : Promise，攒够 START_PLAY_SECONDS 秒（或全部加载完）后 resolve
+    // vstream.complete: Promise，全部帧解析完成后 resolve
+    // vstream.samples : 实时增长的帧数组，播放端直接消费
     function loadVideoSource(url, onProgress) {
       if (videoLoadCache.has(url)) return videoLoadCache.get(url);
-      const promise = new Promise((resolve, reject) => {
-        const mp4File = MP4Box.createFile();
-        let trackId = -1, totalNb = 0;
-        const allSamples = [];
-        let duration = 0;
-        let decoderConfig = null;
 
-        mp4File.onReady = (info) => {
-          const vt = info.videoTracks[0];
-          if (!vt) { reject(new Error('找不到视频轨')); return; }
-          trackId = vt.id;
-          totalNb = vt.nb_samples;
-          duration = vt.duration / vt.timescale;
+      const vs = {
+        samples: [],
+        decoderConfig: null,
+        duration: 0,
+        totalNb: 0,
+        done: false,
+        ready: null,       // Promise
+        complete: null,    // Promise
+        _readyDone: false, // 内部标志，防止重复 resolve
+        _resolveReady: null,
+        _resolveComplete: null,
+      };
+      vs.ready    = new Promise(r => { vs._resolveReady    = r; });
+      vs.complete = new Promise(r => { vs._resolveComplete = r; });
 
-          let description;
-          try {
-            const trak = mp4File.getTrackById(trackId);
-            for (const entry of trak.mdia.minf.stbl.stsd.entries) {
-              const box = entry.avcC || entry.hvcC || entry.vpcC;
-              if (box) {
-                const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
-                box.write(stream);
-                description = new Uint8Array(stream.buffer, 8);
-                break;
-              }
+      const mp4File = MP4Box.createFile();
+      let trackId = -1;
+
+      mp4File.onReady = (info) => {
+        const vt = info.videoTracks[0];
+        if (!vt) { vs._resolveReady(); vs._resolveComplete(); return; }
+        trackId      = vt.id;
+        vs.totalNb   = vt.nb_samples;
+        vs.duration  = vt.duration / vt.timescale;
+
+        // 提取 avcC/hvcC 描述符
+        let description;
+        try {
+          const trak = mp4File.getTrackById(trackId);
+          for (const entry of trak.mdia.minf.stbl.stsd.entries) {
+            const box = entry.avcC || entry.hvcC || entry.vpcC;
+            if (box) {
+              const ds = new DataStream(undefined, 0, DataStream.BIG_ENDIAN);
+              box.write(ds);
+              description = new Uint8Array(ds.buffer, 8);
+              break;
             }
-          } catch(e) {}
+          }
+        } catch(e) {}
 
-          decoderConfig = {
-            codec: vt.codec,
-            codedWidth: vt.track_width,
-            codedHeight: vt.track_height,
-            description,
-            optimizeForLatency: false,
-          };
-
-          mp4File.setExtractionOptions(trackId, null, { nbSamples: 100 });
-          mp4File.start();
+        vs.decoderConfig = {
+          codec: vt.codec,
+          codedWidth: vt.track_width,
+          codedHeight: vt.track_height,
+          description,
+          optimizeForLatency: false,
         };
 
-        mp4File.onSamples = (id, user, samples) => {
-          for (const s of samples) {
-            allSamples.push({
-              type: s.is_sync ? 'key' : 'delta',
-              timestamp: s.cts * 1_000_000 / s.timescale,
-              duration: s.duration * 1_000_000 / s.timescale,
-              data: new Uint8Array(s.data),
+        if (vs.totalNb === 0) { vs._resolveReady(); vs._resolveComplete(); return; }
+        mp4File.setExtractionOptions(trackId, null, { nbSamples: 100 });
+        mp4File.start();
+      };
+
+      mp4File.onSamples = (id, user, samples) => {
+        for (const s of samples) {
+          vs.samples.push({
+            type:      s.is_sync ? 'key' : 'delta',
+            timestamp: s.cts * 1_000_000 / s.timescale,
+            duration:  s.duration * 1_000_000 / s.timescale,
+            data:      new Uint8Array(s.data),
+          });
+        }
+        mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
+        if (onProgress) onProgress(Math.min(100, vs.samples.length / vs.totalNb * 100));
+
+        // 攒够 START_PLAY_SECONDS 秒（或全部到齐），标记 ready
+        if (!vs._readyDone) {
+          const lastTs = vs.samples[vs.samples.length - 1].timestamp / 1_000_000;
+          if (lastTs >= START_PLAY_SECONDS || vs.samples.length >= vs.totalNb) {
+            vs._readyDone = true;
+            vs._resolveReady();
+          }
+        }
+
+        // 全量完成
+        if (vs.samples.length >= vs.totalNb) {
+          vs.done = true;
+          vs._resolveComplete();
+        }
+      };
+
+      mp4File.onError = () => { vs._resolveReady(); vs._resolveComplete(); };
+
+      fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const total  = +res.headers.get('content-length') || 0;
+          const reader = res.body.getReader();
+          let offset   = 0;
+          function pump() {
+            return reader.read().then(({ done, value }) => {
+              if (done) { mp4File.flush(); return; }
+              const buf    = value.buffer.slice(0);
+              buf.fileStart = offset;
+              offset       += buf.byteLength;
+              if (onProgress && total) onProgress(Math.min(90, offset / total * 100));
+              mp4File.appendBuffer(buf);
+              return pump();
             });
           }
-          mp4File.releaseUsedSamples(trackId, samples[samples.length - 1].number);
-          if (onProgress) onProgress(Math.min(100, allSamples.length / totalNb * 100));
-          if (allSamples.length >= totalNb) {
-            resolve({ samples: allSamples, decoderConfig, duration });
-          }
-        };
+          return pump();
+        })
+        .catch(() => { vs._resolveReady(); vs._resolveComplete(); });
 
-        mp4File.onError = (e) => reject(new Error('MP4解析失败: ' + e));
-
-        fetch(url)
-          .then(res => {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const total = +res.headers.get('content-length') || 0;
-            const reader = res.body.getReader();
-            let offset = 0;
-            function pump() {
-              return reader.read().then(({ done, value }) => {
-                if (done) { mp4File.flush(); return; }
-                const buf = value.buffer.slice(0);
-                buf.fileStart = offset;
-                offset += buf.byteLength;
-                if (onProgress && total) onProgress(Math.min(90, offset / total * 100));
-                mp4File.appendBuffer(buf);
-                return pump();
-              });
-            }
-            return pump();
-          })
-          .catch(reject);
-      });
-      videoLoadCache.set(url, promise);
-      return promise;
+      videoLoadCache.set(url, vs);
+      return vs;
     }
 
     class VideoPage {
@@ -435,6 +468,7 @@
         this.samples = null;
         this.decoderConfig = null;
         this.audioBuffer = null;
+        this.stream = null;             // 当前视频的 vstream 描述符（边下边播用）
 
         this.rafId = null;
         this.decoder = null;
@@ -445,6 +479,8 @@
 
         this.prepared = false;
         this.active = false;
+        this._preparePromise = null;  // 全部调用方共享同一个加载 Promise
+        this._activateGen    = 0;     // 激活版本号，防止异步交叉覆盖状态
 
         pageEl.querySelector('.tap-layer').addEventListener('click', () => {
           this.togglePlay();
@@ -596,18 +632,33 @@
       async feedSamplesThrottled() {
         const gen = ++this.feedGen;
         const MAX_QUEUE = 8;
-        for (const s of this.samples) {
+        let idx = 0;
+
+        while (true) {
           if (gen !== this.feedGen || !this.active || !this.decoder || this.decoder.state === 'closed') break;
+
+          // 追上了当前缓冲末尾
+          if (idx >= this.samples.length) {
+            if (this.stream && this.stream.done) break;  // 全量已到，正常结束
+            // 还在下载中，等一帧时间再看
+            await new Promise(r => setTimeout(r, 16));
+            continue;
+          }
+
+          // 控制解码器队列深度，避免内存堆积
           while (this.decoder && this.decoder.decodeQueueSize >= MAX_QUEUE) {
             await new Promise(r => setTimeout(r, 4));
             if (gen !== this.feedGen || !this.active) return;
           }
+
           try {
+            const s = this.samples[idx++];
             this.decoder.decode(new EncodedVideoChunk({
               type: s.type, timestamp: s.timestamp, duration: s.duration, data: s.data,
             }));
           } catch(e) { break; }
         }
+
         if (gen === this.feedGen && this.decoder && this.decoder.state !== 'closed' && this.active) {
           this.decoder.flush().catch(() => {});
         }
@@ -668,18 +719,34 @@
         }
       }
 
-      async prepare() {
-        if (this.prepared) return;
-        this.prepared = true;
-        try {
-          const [videoResult] = await Promise.all([
-            loadVideoSource(this.videoUrl, (p) => { this.fillEl.style.width = p + '%'; }),
-            loadAudioSource(this.audioUrl).then(buf => { this.audioBuffer = buf; }),
-          ]);
-          this.samples = videoResult.samples;
-          this.decoderConfig = videoResult.decoderConfig;
-          this.duration = videoResult.duration;
+      // 所有调用方（preload / activate）共享同一个 Promise；
+      // 避免"第二次调用看到 prepared=true 立即 return，
+      // 但 samples 还没赋值"的经典竞态。
+      prepare() {
+        if (this._preparePromise) return this._preparePromise;
+        this._preparePromise = this._doLoad();
+        return this._preparePromise;
+      }
 
+      async _doLoad() {
+        try {
+          // 同时启动：视频流（立即返回 vstream，后台边下边解析）+ 音频（全量）
+          const vs           = loadVideoSource(this.videoUrl, (p) => { this.fillEl.style.width = p + '%'; });
+          const audioPromise = loadAudioSource(this.audioUrl).then(buf => { this.audioBuffer = buf; });
+
+          // 等待"视频攒够 START_PLAY_SECONDS 秒"且"音频全量就绪"
+          await Promise.all([vs.ready, audioPromise]);
+
+          if (!vs.decoderConfig) throw new Error('无法获取视频配置');
+
+          // 把 live samples 数组引用挂到 this，feedSamplesThrottled 会随加载动态消费
+          this.stream       = vs;
+          this.samples      = vs.samples;   // 指向同一个实时增长的数组
+          this.decoderConfig = vs.decoderConfig;
+          this.duration     = vs.duration;
+          this.prepared     = true;
+
+          // 解码第一个关键帧作为封面，让页面不再显示加载遮罩
           const keySample = this.samples.find(s => s.type === 'key');
           if (!keySample) return;
 
@@ -707,8 +774,14 @@
       }
 
       async activate() {
+        // 每次调用分配新版本号；await 结束后若版本已变（说明期间
+        // 又发生了 deactivate→activate），则放弃，避免双轨并发。
+        const myGen = ++this._activateGen;
         this.active = true;
-        await this.prepare();
+        await this.prepare();   // 等待数据真正就绪（共享 Promise）
+
+        // 若加载期间被 deactivate() 掉，或更新的 activate() 已接管，直接退出
+        if (!this.active || myGen !== this._activateGen) return;
 
         this.stopRaf();
         this.flushFrames();
@@ -749,8 +822,10 @@
         this.samples = null;
         this.decoderConfig = null;
         this.audioBuffer = null;
+        this.stream = null;
         this.duration = 0;
         this.prepared = false;
+        this._preparePromise = null;         // 允许下次 prepare() 重新发起加载
       }
     }
 
