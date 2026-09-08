@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover">
+    <title>WeChat客服 - 专家管理端</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; padding: 0; height: 100dvh; width: 100vw; display: flex; flex-direction: column; background: #ededed; font-family: -apple-system, sans-serif; overflow: hidden; position: fixed; top: 0; left: 0; }
+
+        /* ── 顶部栏 ── */
+        #header-wrapper { background: #ededed; border-bottom: 1px solid #dcdcdc; padding-top: env(safe-area-inset-top); flex-shrink: 0; z-index: 10; }
+        #header { height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; font-size: 17px; font-weight: 500; }
+        .head-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        #status-bar { width: 100%; text-align: center; color: #b2b2b2; font-size: 12px; padding: 2px 0; transition: color 0.3s; }
+        #loc-bar { font-size: 13px; color: #07c160; font-weight: normal; margin-left: 6px; display: none; }
+
+        #container { flex: 1; display: flex; overflow: hidden; }
+
+        /* ── 左侧列表 ── */
+        #side-list { width: 85px; background: #ededed; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-right: 1px solid #dcdcdc; }
+        .u-item { padding: 12px 2px; text-align: center; color: #333; cursor: pointer; font-size: 13px; position: relative; border-bottom: 1px solid #e0e0e0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .u-item.active { background: #e2e2e2; font-weight: bold; }
+        /* ── 被拉黑用户在侧边栏显示红色 ── */
+        .u-item.banned-user { color: #fa5151; }
+        .u-item.banned-user .u-label::after { content: " 🚫"; font-size: 10px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; transition: background 0.3s; }
+        .online { background: #07c160; box-shadow: 0 0 4px #07c160; }
+        .offline { background: #b2b2b2; }
+        .badge { position: absolute; top: 2px; right: 2px; background: #fa5151; color: white; border-radius: 10px; min-width: 16px; height: 16px; line-height: 16px; font-size: 10px; padding: 0 4px; }
+
+        /* ── 聊天区 ── */
+        #chat-area { flex: 1; background: #ededed; display: flex; flex-direction: column; overflow: hidden; }
+        #box { flex: 1; overflow-y: auto; padding: 15px 10px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+        .msg-time { text-align: center; font-size: 12px; color: #b2b2b2; margin: 10px 0 16px 0; clear: both; }
+
+        .msg-row { display: flex; margin-bottom: 16px; align-items: flex-start; }
+        .msg-row.admin { flex-direction: row-reverse; }
+        .avatar { width: 38px; height: 38px; border-radius: 4px; background: #fff; flex-shrink: 0; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .bubble-txt { position: relative; max-width: 70%; padding: 10px 12px; font-size: 16px; line-height: 1.4; border-radius: 6px; margin: 0 10px; min-height: 38px; word-wrap: break-word; }
+        .visitor .bubble-txt { background: #fff; }
+        .visitor .bubble-txt::before { content: ""; position: absolute; left: -9px; top: 12px; border: 5px solid transparent; border-right-color: #fff; }
+        .admin .bubble-txt { background: #95ec69; }
+        .admin .bubble-txt::before { content: ""; position: absolute; right: -9px; top: 12px; border: 5px solid transparent; border-left-color: #95ec69; }
+
+        .bubble-txt a { color: #1677FF; text-decoration: underline; word-break: break-all; }
+        .admin .bubble-txt a { color: #0a5fd1; }
+
+        .bubble-img { max-width: 160px; border-radius: 4px; margin: 0 10px; border: 1px solid #dcdcdc; display: block; cursor: pointer; }
+
+        /* ── Toast ── */
+        #toast { position: fixed; top: calc(60px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.72); color: #fff; padding: 7px 18px; border-radius: 20px; font-size: 14px; z-index: 200; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; }
+        #toast.show { opacity: 1; }
+
+        /* ── 底部输入区 ── */
+        #footer { background: #f7f7f7; border-top: 1px solid #dcdcdc; padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); flex-shrink: 0; z-index: 10; }
+        #input-row { display: flex; align-items: flex-end; gap: 10px; }
+        .btn-plus { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-bottom: 2px; }
+        #ipt { flex: 1; min-height: 38px; max-height: 120px; border: none; background: #fff; border-radius: 6px; padding: 8px 12px; font-size: 16px; outline: none; resize: none; -webkit-appearance: none; caret-color: #07c160; }
+        .send-btn { background: #07c160; color: #fff; border: none; border-radius: 4px; padding: 0 15px; height: 36px; font-size: 15px; cursor: pointer; flex-shrink: 0; margin-bottom: 1px; }
+
+        /* ── 右上角拉黑快捷按钮（嵌在 header 内）── */
+        #ban-quick-btn {
+            display: none; /* 未选中用户时隐藏 */
+            border: none; border-radius: 4px; padding: 0 10px; height: 28px;
+            font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+            margin-left: 6px;
+        }
+        #ban-quick-btn.show { display: inline-flex; align-items: center; }
+        #ban-quick-btn.do-ban { background: #fa5151; color: #fff; }
+        #ban-quick-btn.do-unban { background: #07c160; color: #fff; }
+
+        .ban-btn {
+            border: none; border-radius: 4px; padding: 0 12px; height: 30px;
+            font-size: 13px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+        }
+        .ban-btn.do-ban { background: #fa5151; color: #fff; }
+        .ban-btn.do-unban { background: #07c160; color: #fff; }
+
+        /* ── 拉黑管理弹窗 ── */
+        #ban-modal {
+            display: none; position: fixed; inset: 0; z-index: 300;
+            background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center;
+        }
+        #ban-modal.show { display: flex; }
+        #ban-panel {
+            background: #fff; width: 100%; max-width: 480px;
+            border-radius: 16px 16px 0 0;
+            padding: 0 0 calc(20px + env(safe-area-inset-bottom));
+            max-height: 70dvh; display: flex; flex-direction: column;
+        }
+        #ban-panel-header {
+            padding: 16px 16px 12px; border-bottom: 1px solid #f0f0f0;
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 16px; font-weight: 600; flex-shrink: 0;
+        }
+        .close-modal { font-size: 22px; color: #999; cursor: pointer; line-height: 1; }
+        #ban-input-row { display: flex; gap: 8px; padding: 12px 16px; flex-shrink: 0; border-bottom: 1px solid #f0f0f0; }
+        #ban-vid-input { flex: 1; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 12px; font-size: 14px; outline: none; }
+        #ban-reason-input { flex: 1; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 12px; font-size: 14px; outline: none; }
+        .modal-btn { border: none; border-radius: 6px; padding: 0 14px; height: 36px; font-size: 14px; cursor: pointer; white-space: nowrap; }
+        .modal-btn.red { background: #fa5151; color: #fff; }
+        .modal-btn.green { background: #07c160; color: #fff; }
+        #ban-list-area { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .ban-item {
+            display: flex; align-items: center; padding: 10px 16px; gap: 10px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .ban-item-info { flex: 1; min-width: 0; }
+        .ban-item-vid { font-size: 12px; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; }
+        .ban-item-meta { font-size: 11px; color: #b2b2b2; margin-top: 2px; }
+        .unban-btn { border: 1px solid #07c160; background: transparent; color: #07c160; border-radius: 4px; padding: 0 10px; height: 26px; font-size: 12px; cursor: pointer; flex-shrink: 0; }
+        #ban-empty { text-align: center; padding: 30px; color: #b2b2b2; font-size: 14px; }
+
+        #viewer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 100; }
+        #viewer img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        #empty-tip { flex: 1; display: flex; align-items: center; justify-content: center; color: #b2b2b2; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+<div id="header-wrapper">
+    <div id="header">
+        <div class="head-icon" onclick="history.back()">
+            <svg viewBox="0 0 24 24" width="22" height="22" stroke="#111" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </div>
+        <span id="title-name">WePro 客户管理</span><span id="loc-bar"></span>
+        <!-- ── 右上角：拉黑快捷按钮（选中用户后出现）+ 管理弹窗入口 ── -->
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            <button id="ban-quick-btn" onclick="quickBanToggle()">拉黑</button>
+            <div class="head-icon" onclick="openBanModal()" title="拉黑管理">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#111" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <line x1="5.5" y1="5.5" x2="18.5" y2="18.5"></line>
+                </svg>
+            </div>
+        </div>
+    </div>
+    <div id="status-bar">正在连接...</div>
+</div>
+
+<div id="container">
+    <div id="side-list"></div>
+    <div id="chat-area">
+        <div id="empty-tip">← 选择一位用户开始对话</div>
+        <div id="box" style="display:none" onclick="dismissKeyboard()"></div>
+    </div>
+</div>
+
+<div id="footer">
+    <div id="input-row">
+        <div class="btn-plus" onclick="document.getElementById('file-ipt').click()">
+            <svg viewBox="0 0 24 24" width="30" height="30" stroke="#333" stroke-width="1.2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        </div>
+        <input type="file" id="file-ipt" accept="image/*" style="display:none">
+        <textarea id="ipt" rows="1" placeholder="发送消息..." disabled onkeydown="handleKeyDown(event)"></textarea>
+        <button class="send-btn" onclick="sendText()">发送</button>
+    </div>
+</div>
+
+<!-- ── 拉黑管理弹窗 ── -->
+<div id="ban-modal" onclick="closeBanModalIfBg(event)">
+    <div id="ban-panel">
+        <div id="ban-panel-header">
+            <span>🚫 拉黑管理</span>
+            <span class="close-modal" onclick="closeBanModal()">×</span>
+        </div>
+        <!-- 手动输入 visitorId 拉黑 -->
+        <div style="padding: 10px 16px 0; font-size: 12px; color: #999;">手动添加拉黑</div>
+        <div id="ban-input-row">
+            <input id="ban-vid-input" placeholder="粘贴 visitorId（指纹ID）" />
+            <input id="ban-reason-input" placeholder="原因（可选）" style="max-width:90px" />
+            <button class="modal-btn red" onclick="manualBan()">拉黑</button>
+        </div>
+        <!-- 拉黑列表 -->
+        <div id="ban-list-area">
+            <div id="ban-empty">暂无被拉黑用户</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+<div id="viewer" onclick="this.style.display='none'"><img id="viewer-img"></div>
+
+<script>
+// ── 后端地址 ────────────────────────────────────────────
+const SERVER_BASE = 'https://page-c4hm.onrender.com';
+
+// ── 持久化已读时间戳 ─────────────────────────────────────
+let lastReadMap = JSON.parse(localStorage.getItem('wepro_lastread') || '{}');
+
+// ── 状态 ────────────────────────────────────────────────
+let activeId = "";
+let msgMap = new Map();
+let ws;
+let unreadMap = {};
+let onlineStatus = {};
+let onlineTimer = {};
+let renderedKeys = new Set();
+let lastRenderedTs = 0;
+const ONLINE_TIMEOUT = 5 * 60 * 1000;
+
+// ── 位置 Map ─────────────────────────────────────────────
+const userLocations = new Map();
+
+// ── 新增：用户指纹 Map（uid → visitorId）─────────────────
+const userVisitorIds = new Map();
+
+// ── 新增：本地拉黑缓存（减少重复请求）───────────────────
+const localBanSet = new Set();
+
+const ipt = document.getElementById('ipt');
+const box = document.getElementById('box');
+const emptyTip = document.getElementById('empty-tip');
+const fileIpt = document.getElementById('file-ipt');
+
+fileIpt.addEventListener('change', function () { directSendImg(this); });
+
+let toastTimer = null;
+function showToast(msg, duration = 2500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ── 链接渲染（原有逻辑不变）──────────────────────────────
+function renderTextWithLinks(text) {
+    if (!text) return '';
+    let s = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+        (_, label, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    s = s.replace(/(https?:\/\/[^\s\u4e00-\u9fa5，。！？、；：""''【】《》（）&<>]+)/g, url => {
+        const clean = url.replace(/[.,!?;:'")\]]+$/, '');
+        return `<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>`;
+    });
+    return s;
+}
+
+function isConnected() { return ws && ws.readyState === WebSocket.OPEN; }
+
+function getShortName(id) {
+    const num = id.replace(/[^0-9]/g, "").slice(-1) || "1";
+    const names = ["访客", "用户", "客户", "咨询", "买家"];
+    return names[id.length % names.length] + num;
+}
+
+function markOnline(uid) {
+    onlineStatus[uid] = true;
+    if (onlineTimer[uid]) clearTimeout(onlineTimer[uid]);
+    onlineTimer[uid] = setTimeout(() => {
+        onlineStatus[uid] = false;
+        renderSideList();
+    }, ONLINE_TIMEOUT);
+}
+
+// ── WebSocket ────────────────────────────────────────────
+function connect() {
+    ws = new WebSocket('wss://page-production-49f9.up.railway.app');
+
+    ws.onopen = () => {
+        const status = document.getElementById('status-bar');
+        status.innerText = "已连接";
+        status.style.color = "#07c160";
+    };
+
+    ws.onclose = () => {
+        const status = document.getElementById('status-bar');
+        status.innerText = "重连中...";
+        status.style.color = "#fa5151";
+        setTimeout(connect, 3000);
+    };
+
+    ws.onmessage = (e) => {
+        const res = JSON.parse(e.data);
+        if (res.type === "typing") return;
+
+        const msgs = res.type === "history" ? res.data : [res.data];
+
+        if (res.type === "history") {
+            msgMap.clear();
+            renderedKeys.clear();
+            lastRenderedTs = 0;
+            if (activeId) box.innerHTML = '';
+        }
+
+        msgs.forEach(m => {
+            let ts = Date.now();
+            if (m.id) {
+                const match = m.id.match(/\d{13}/);
+                if (match) ts = parseInt(match[0]);
+            }
+            m._ts = ts;
+
+            const k = m.id || `fallback_${m.from}_${m.to}_${ts}_${Math.random()}`;
+            if (msgMap.has(k)) return;
+            msgMap.set(k, m);
+
+            const uid = String(m.from === 'admin' ? m.to : m.from).toLowerCase();
+            
+            if (m.from !== 'admin') {
+                markOnline(uid);
+
+                if (m.location) {
+                    userLocations.set(uid, m.location);
+                    if (uid === activeId) updateTitleLoc(uid);
+                }
+
+                // ── 新增：收到消息时记录用户的 visitorId ──────────
+                if (m.visitorId && m.visitorId !== uid) {
+                    userVisitorIds.set(uid, m.visitorId);
+                    if (uid === activeId) updateBanBar(uid);
+                }
+
+                const lastRead = lastReadMap[uid] || 0;
+                if (uid !== activeId && ts > lastRead) {
+                    unreadMap[uid] = (unreadMap[uid] || 0) + 1;
+                }
+            }
+        });
+
+        renderSideList();
+        if (activeId) renderChat();
+    };
+}
+
+// ── 侧边栏渲染（被拉黑用户显示红色标记）────────────────
+function renderSideList() {
+    const users = [...new Set([...msgMap.values()].map(m => m.from === 'admin' ? m.to : m.from))].filter(u => u !== 'admin');
+    document.getElementById('side-list').innerHTML = users.map(u => {
+        const vid = userVisitorIds.get(u) || '';
+        const banned = vid && localBanSet.has(vid);
+        return `
+            <div class="u-item ${u === activeId ? 'active' : ''} ${banned ? 'banned-user' : ''}" onclick="selectUser('${u}')">
+                <span class="status-dot ${onlineStatus[u] ? 'online' : 'offline'}"></span>
+                <span class="u-label">${getShortName(u)}</span>
+                ${unreadMap[u] ? `<div class="badge">${unreadMap[u]}</div>` : ''}
+            </div>`;
+    }).join("");
+}
+
+// ── 顶部标题 + 位置 ──────────────────────────────────────
+function updateTitleLoc(uid) {
+    document.getElementById('title-name').textContent = getShortName(uid);
+    const loc = userLocations.get(uid) || '';
+    const locBar = document.getElementById('loc-bar');
+    if (loc) {
+        locBar.textContent = '📍 ' + loc;
+        locBar.style.display = 'inline';
+    } else {
+        locBar.style.display = 'none';
+    }
+}
+
+// ── 更新右上角拉黑快捷按钮状态 ─────────────────────────
+function updateBanBar(uid) {
+    const btn = document.getElementById('ban-quick-btn');
+    if (!uid) { btn.classList.remove('show'); return; }
+
+    const vid = userVisitorIds.get(uid) || '';
+    btn.classList.add('show');
+
+    if (vid && localBanSet.has(vid)) {
+        btn.textContent = '解除拉黑';
+        btn.className = 'ban-quick-btn show do-unban';
+        btn.id = 'ban-quick-btn';
+    } else {
+        btn.textContent = '拉黑';
+        btn.className = 'ban-quick-btn show do-ban';
+        btn.id = 'ban-quick-btn';
+    }
+}
+
+// ── 右上角按钮点击：自动判断拉黑或解黑 ─────────────────
+async function quickBanToggle() {
+    const vid = userVisitorIds.get(activeId);
+    if (!vid) { showToast('该用户尚未发过消息，暂无指纹ID'); return; }
+
+    if (localBanSet.has(vid)) {
+        if (!confirm(`确认解除拉黑 ${getShortName(activeId)}？`)) return;
+        await doUnban(vid);
+    } else {
+        if (!confirm(`确认拉黑用户 ${getShortName(activeId)}？\n指纹ID: ${vid}`)) return;
+        await doBan(vid, '客服手动拉黑');
+    }
+}
+
+// ── 快速拉黑（保留，供其他地方调用）────────────────────
+async function quickBan() {
+    const vid = userVisitorIds.get(activeId);
+    if (!vid) { showToast('该用户尚未发送过消息，暂无指纹ID'); return; }
+    if (!confirm(`确认拉黑用户 ${getShortName(activeId)}？\n指纹ID: ${vid}`)) return;
+    await doBan(vid, '客服手动拉黑');
+}
+
+// ── 快速解黑（保留，供其他地方调用）────────────────────
+async function quickUnban() {
+    const vid = userVisitorIds.get(activeId);
+    if (!vid) return;
+    if (!confirm(`确认解除拉黑 ${getShortName(activeId)}？`)) return;
+    await doUnban(vid);
+}
+
+// ── 新增：拉黑 API 调用 ───────────────────────────────
+async function doBan(visitorId, reason = '') {
+    try {
+        const resp = await fetch(`${SERVER_BASE}/ban`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visitorId, reason })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            localBanSet.add(visitorId);
+            showToast('已拉黑该用户 ✓');
+            renderSideList();
+            if (activeId) updateBanBar(activeId);
+            if (document.getElementById('ban-modal').classList.contains('show')) loadBanList();
+        } else {
+            showToast('拉黑失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        showToast('网络错误，拉黑失败');
+    }
+}
+
+// ── 新增：解黑 API 调用 ───────────────────────────────
+async function doUnban(visitorId) {
+    try {
+        const resp = await fetch(`${SERVER_BASE}/unban`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ visitorId })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            localBanSet.delete(visitorId);
+            showToast('已解除拉黑 ✓');
+            renderSideList();
+            if (activeId) updateBanBar(activeId);
+            if (document.getElementById('ban-modal').classList.contains('show')) loadBanList();
+        } else {
+            showToast('解黑失败: ' + (data.error || '未知错误'));
+        }
+    } catch (e) {
+        showToast('网络错误，解黑失败');
+    }
+}
+
+// ── 新增：打开拉黑管理弹窗，加载列表 ────────────────────
+function openBanModal() {
+    document.getElementById('ban-modal').classList.add('show');
+    loadBanList();
+}
+
+function closeBanModal() {
+    document.getElementById('ban-modal').classList.remove('show');
+}
+
+function closeBanModalIfBg(e) {
+    if (e.target === document.getElementById('ban-modal')) closeBanModal();
+}
+
+// ── 新增：加载完整拉黑列表 ───────────────────────────────
+async function loadBanList() {
+    const area = document.getElementById('ban-list-area');
+    area.innerHTML = '<div id="ban-empty" style="text-align:center;padding:20px;color:#b2b2b2">加载中...</div>';
+    try {
+        const resp = await fetch(`${SERVER_BASE}/ban-list`);
+        const data = await resp.json();
+        
+        // 同步到本地缓存
+        localBanSet.clear();
+        data.list.forEach(item => localBanSet.add(item.visitorId));
+        renderSideList();
+
+        if (!data.list || data.list.length === 0) {
+            area.innerHTML = '<div id="ban-empty" style="text-align:center;padding:30px;color:#b2b2b2;font-size:14px">暂无被拉黑用户</div>';
+            return;
+        }
+
+        area.innerHTML = data.list.map(item => {
+            const date = new Date(item.bannedAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+            const shortVid = item.visitorId.length > 20 ? item.visitorId.substring(0,10) + '...' + item.visitorId.slice(-6) : item.visitorId;
+            return `
+                <div class="ban-item">
+                    <div class="ban-item-info">
+                        <div class="ban-item-vid" title="${item.visitorId}">${shortVid}</div>
+                        <div class="ban-item-meta">${date} · ${item.reason || '无备注'}</div>
+                    </div>
+                    <button class="unban-btn" onclick="doUnban('${item.visitorId}')">解黑</button>
+                </div>`;
+        }).join('');
+    } catch (e) {
+        area.innerHTML = '<div style="text-align:center;padding:20px;color:#fa5151;font-size:13px">加载失败，请检查网络</div>';
+    }
+}
+
+// ── 新增：弹窗手动输入 visitorId 拉黑 ───────────────────
+async function manualBan() {
+    const vid = document.getElementById('ban-vid-input').value.trim();
+    const reason = document.getElementById('ban-reason-input').value.trim();
+    if (!vid) { showToast('请输入 visitorId'); return; }
+    document.getElementById('ban-vid-input').value = '';
+    document.getElementById('ban-reason-input').value = '';
+    await doBan(vid, reason || '手动拉黑');
+}
+
+// ── 聊天区增量渲染 ────────────────────────────────────
+function renderChat() {
+    if (!activeId) return;
+    const msgs = [...msgMap.values()].filter(m => m.from === activeId || m.to === activeId);
+
+    msgs.forEach(m => {
+        const k = m.id || m._ts;
+        if (renderedKeys.has(k)) return;
+        renderedKeys.add(k);
+
+        if (m._ts - lastRenderedTs > 300000 || lastRenderedTs === 0) {
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'msg-time';
+            timeDiv.textContent = m.time || new Date(m._ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Shanghai' });
+            box.appendChild(timeDiv);
+        }
+        lastRenderedTs = m._ts;
+
+        const isAdmin = m.from === 'admin';
+        const avatar = isAdmin
+            ? 'https://dummyimage.com/100/95ec69/fff&text=客服'
+            : 'https://dummyimage.com/100/ccc/333&text=访';
+
+        const row = document.createElement('div');
+        row.className = `msg-row ${isAdmin ? 'admin' : 'visitor'}`;
+
+        const ava = document.createElement('div');
+        ava.className = 'avatar';
+        ava.innerHTML = `<img src="${avatar}">`;
+        row.appendChild(ava);
+
+        if (m.type === 'img') {
+            const img = document.createElement('img');
+            img.className = 'bubble-img';
+            img.src = m.text;
+            img.onload = () => scrollToBottom();
+            img.onclick = () => viewImg(m.text);
+            row.appendChild(img);
+        } else {
+            const bbl = document.createElement('div');
+            bbl.className = 'bubble-txt';
+            bbl.innerHTML = renderTextWithLinks(m.text);
+            row.appendChild(bbl);
+        }
+
+        box.appendChild(row);
+        scrollToBottom();
+    });
+}
+
+function scrollToBottom() {
+    if (!box) return;
+    box.scrollTop = box.scrollHeight;
+    setTimeout(() => { box.scrollTop = box.scrollHeight; }, 100);
+}
+
+function selectUser(id) {
+    activeId = id.toLowerCase();
+    lastReadMap[activeId] = Date.now();
+    localStorage.setItem('wepro_lastread', JSON.stringify(lastReadMap));
+    unreadMap[activeId] = 0;
+    renderedKeys.clear();
+    lastRenderedTs = 0;
+
+    ipt.disabled = false;
+    updateTitleLoc(activeId);
+    updateBanBar(activeId); // ── 新增：刷新拉黑操作栏
+    emptyTip.style.display = 'none';
+    box.style.display = 'block';
+    box.innerHTML = '';
+
+    renderSideList();
+    renderChat();
+}
+
+function dismissKeyboard() { ipt.blur(); }
+
+function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
+}
+
+function sendText() {
+    const val = ipt.value.trim();
+    if (!activeId || !val) return;
+    if (!isConnected()) { showToast('发送失败，网络未连接'); return; }
+    try {
+        ws.send(JSON.stringify({ from: 'admin', to: activeId, text: val, type: 'text' }));
+        ipt.value = '';
+        ipt.style.height = '38px';
+        lastReadMap[activeId] = Date.now();
+        localStorage.setItem('wepro_lastread', JSON.stringify(lastReadMap));
+        scrollToBottom();
+    } catch (err) {
+        showToast('发送失败，请重试');
+    }
+}
+
+function directSendImg(el) {
+    const file = el.files[0];
+    el.value = '';
+
+    if (!file || !activeId) return;
+    if (!isConnected()) { showToast('发送失败，网络未连接'); return; }
+
+    const snapId = activeId;
+    const snapWs = ws;
+
+    const reader = new FileReader();
+    reader.onerror = () => showToast('图片读取失败，请重试');
+    reader.onload = (ev) => {
+        const img = new Image();
+        img.onerror = () => showToast('图片解析失败，请重试');
+        img.onload = () => {
+            try {
+                const maxWidth = 1000;
+                let w = img.width, h = img.height;
+                if (w > maxWidth) { h = Math.round((maxWidth / w) * h); w = maxWidth; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const b64 = canvas.toDataURL('image/jpeg', 0.7);
+
+                if (snapWs.readyState === WebSocket.OPEN) {
+                    snapWs.send(JSON.stringify({ from: 'admin', to: snapId, text: b64, type: 'img' }));
+                    lastReadMap[snapId] = Date.now();
+                    localStorage.setItem('wepro_lastread', JSON.stringify(lastReadMap));
+                } else {
+                    showToast('发送失败，网络已断开');
+                }
+            } catch (err) { showToast('图片发送失败，请重试'); }
+        };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function viewImg(src) {
+    document.getElementById('viewer-img').src = src;
+    document.getElementById('viewer').style.display = 'flex';
+}
+
+ipt.oninput = function () {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+    scrollToBottom();
+};
+
+// ── 启动时同步一次拉黑列表到本地缓存 ──────────────────
+async function syncBanList() {
+    try {
+        const resp = await fetch(`${SERVER_BASE}/ban-list`);
+        const data = await resp.json();
+        localBanSet.clear();
+        if (data.list) data.list.forEach(item => localBanSet.add(item.visitorId));
+    } catch (e) { /* 静默失败 */ }
+}
+
+connect();
+syncBanList(); // 启动时预加载拉黑列表
+</script>
+
+</body>
+</html>
