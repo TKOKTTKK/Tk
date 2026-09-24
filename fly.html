@@ -204,6 +204,11 @@ let renderedKeys = new Set();
 let lastRenderedTs = 0;
 const ONLINE_TIMEOUT = 5 * 60 * 1000;
 
+// ── 心跳 / 断线重连相关状态 ────────────────────────────────
+let heartbeatTimer = null;   // 定时发 ping 的 interval
+let heartbeatTimeout = null; // 等待 pong 的超时计时器
+let reconnectTimer = null;   // onclose 里的自动重连计时器
+
 // ── 位置 Map ─────────────────────────────────────────────
 const userLocations = new Map();
 
@@ -264,23 +269,40 @@ function markOnline(uid) {
 
 // ── WebSocket ────────────────────────────────────────────
 function connect() {
+    // 避免重复建立连接（正在连接中/已连接时直接跳过）
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
     ws = new WebSocket('wss://page-c4hm.onrender.com');
 
     ws.onopen = () => {
         const status = document.getElementById('status-bar');
         status.innerText = "已连接";
         status.style.color = "#07c160";
+        startHeartbeat();
     };
 
     ws.onclose = () => {
+        stopHeartbeat();
         const status = document.getElementById('status-bar');
         status.innerText = "重连中...";
         status.style.color = "#fa5151";
-        setTimeout(connect, 3000);
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, 3000);
+    };
+
+    ws.onerror = () => {
+        try { ws.close(); } catch (e) {}
     };
 
     ws.onmessage = (e) => {
         const res = JSON.parse(e.data);
+
+        // ── 心跳应答：收到 pong 说明连接是活的，清掉超时计时器 ──
+        if (res.type === "pong") {
+            if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
+            return;
+        }
+
         if (res.type === "typing") return;
 
         const msgs = res.type === "history" ? res.data : [res.data];
@@ -331,6 +353,63 @@ function connect() {
         if (activeId) renderChat();
     };
 }
+
+// ══════════════════════════════════════════════════════════
+// 应用层心跳 + 强制重连
+//    iOS Safari 后台/锁屏时会冻结 JS 定时器和网络连接，恢复前台后
+//    ws.readyState 可能仍显示 OPEN 但连接其实已经死了（onclose 不会
+//    触发）。所以需要主动发 ping 探测，超时没收到 pong 就强制重连。
+// ══════════════════════════════════════════════════════════
+function startHeartbeat() {
+    stopHeartbeat();
+    heartbeatTimer = setInterval(() => {
+        if (!isConnected()) return;
+        ws.send(JSON.stringify({ type: 'ping' }));
+        if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
+        heartbeatTimeout = setTimeout(() => {
+            // 8 秒内没收到 pong，判定连接已死，强制重连
+            forceReconnect();
+        }, 8000);
+    }, 20000);
+}
+
+function stopHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
+    heartbeatTimer = null;
+    heartbeatTimeout = null;
+}
+
+function forceReconnect() {
+    stopHeartbeat();
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        try { ws.close(); } catch (e) {}
+    }
+    connect();
+}
+
+// ── 页面从后台恢复到前台时，立即探测/重连一次 ──────────────
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!isConnected()) {
+        forceReconnect();
+    } else {
+        ws.send(JSON.stringify({ type: 'ping' }));
+        if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
+        heartbeatTimeout = setTimeout(forceReconnect, 8000);
+    }
+});
+
+// ── iOS 从 bfcache（前进后退缓存）恢复页面时也强制重连一次 ──
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted) forceReconnect();
+});
+
+// ── 网络恢复（比如从飞行模式切回来）时也重连一次 ──────────
+window.addEventListener('online', forceReconnect);
 
 // ── 侧边栏渲染（被拉黑用户显示红色标记）────────────────
 function renderSideList() {
@@ -598,7 +677,7 @@ function handleKeyDown(e) {
 function sendText() {
     const val = ipt.value.trim();
     if (!activeId || !val) return;
-    if (!isConnected()) { showToast('发送失败，网络未连接'); return; }
+    if (!isConnected()) { showToast('发送失败，网络未连接'); forceReconnect(); return; }
     try {
         ws.send(JSON.stringify({ from: 'admin', to: activeId, text: val, type: 'text' }));
         ipt.value = '';
@@ -608,6 +687,7 @@ function sendText() {
         scrollToBottom();
     } catch (err) {
         showToast('发送失败，请重试');
+        forceReconnect();
     }
 }
 
@@ -616,7 +696,7 @@ function directSendImg(el) {
     el.value = '';
 
     if (!file || !activeId) return;
-    if (!isConnected()) { showToast('发送失败，网络未连接'); return; }
+    if (!isConnected()) { showToast('发送失败，网络未连接'); forceReconnect(); return; }
 
     const snapId = activeId;
     const snapWs = ws;
