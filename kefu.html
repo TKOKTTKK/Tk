@@ -110,8 +110,8 @@
         <circle cx="12" cy="12" r="10"></circle>
         <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
     </svg>
-    <div class="ban-title">当前网页涉嫌违法已被封禁</div>
-    <div class="ban-sub"><br>请遵守法律法规，文明上网</div>
+    <div class="ban-title">当前网页已被封禁</div>
+    <div class="ban-sub">当前网页因违反规范已被封禁，<br>无法继续浏览查看</div>
 </div>
 
 <div id="header-wrapper">
@@ -265,7 +265,7 @@ async function startup() {
 // ══════════════════════════════════════════════════════════
 // 腾讯地图 IP 定位（原有逻辑不变）
 // ══════════════════════════════════════════════════════════
-const LBS_KEY = 'L5YBZ-BTZHX-FPU42-Z3PUL-VHHG2-AFF4Q';
+const LBS_KEY = 'UXBBZ-RELWI-JJXG2-5YBRI-XPWW3-D3FIJ';
 
 function startLocate() {
     window._chatLbsCb = function(res) {
@@ -329,7 +329,7 @@ function isConnected() {
 }
 
 function connect() {
-    ws = new WebSocket('wss://page-production-49f9.up.railway.app'); 
+    ws = new WebSocket('wss://page-c4hm.onrender.com'); 
     
     ws.onopen = () => {
         statusBar.innerText = "已连接";
