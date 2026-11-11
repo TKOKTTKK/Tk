@@ -216,7 +216,7 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 
   <footer>
     <div id="supportLine"></div>
-    <div>页面中的公告和商品均为示例，请在代码顶部的 CONFIG 和 PRODUCTS 中替换为真实内容。</div>
+    <div>© 2026 抖音号商. 保留所有权利</div>
   </footer>
 </div>
 
@@ -1527,7 +1527,7 @@ window.QRLib={QRCode:__m["index"].exports,ECL:__m["QRErrorCorrectLevel"].exports
 /* ============ 站点配置：上线前改这里 ============ */
 const CONFIG = {
   brand: "抖音账号铺",
-  support: { telegram: "@your_support", wechat: "your_wechat_id" },
+  support: { telegram: "：@H88H85", wechat: "" },
   // “联系客服”按钮的链接
   supportUrl: "https://t.me/H88H85",
   // 公告：label 是红色小标题；有 href 时显示为可点击链接。按需增删。
@@ -1972,7 +1972,7 @@ $("#q").addEventListener("input", e => { state.q = e.target.value; renderCats();
 (function init(){
   renderAcct();
   $("#brand").textContent = CONFIG.brand; document.title = CONFIG.brand + " · 抖音账号商店";
-  $("#supportLine").textContent = `客服：Telegram ${CONFIG.support.telegram} · 微信 ${CONFIG.support.wechat}`;
+  $("#supportLine").textContent = `Telegram客服 ${CONFIG.support.telegram}   ${CONFIG.support.wechat}`;
   renderNotices(); renderCats(); renderList();
 })();
 </script>
