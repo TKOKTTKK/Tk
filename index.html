@@ -250,12 +250,12 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
   <div class="dlg">
     <div class="dlg-head"><h2 id="guideTitle">使用教程</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <ol style="margin:0;padding-left:20px;display:grid;gap:8px;color:var(--ink-2);font-size:14px">
-      <li>在“选择分类”里点一个分类，下方会列出该分类的商品。</li>
+      <li>选择分类，下方会列出该分类的商品。</li>
       <li>看清商品名称、库存和单价，点“购买”。</li>
-      <li>选择数量，填写联系方式。</li>
+      <li>选择数量，填写联系方式（查询订单用）。</li>
       <li>扫描二维码或复制地址，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
-      <li>粘贴交易哈希并提交订单，核验通过后客服发送账号资料。</li>
-      <li>收到后请尽快修改密码和绑定信息；订单号可在“查询订单”里找到。</li>
+      <li>付款后会自动发货，在“查询订单”里查看卡密</li>
+      <li>收到后建议在90天内修改密码和绑定信息。</li>
     </ol>
     <button class="btn line" type="button" data-close>知道了</button>
   </div>
@@ -1529,11 +1529,11 @@ const CONFIG = {
   brand: "抖音账号铺",
   support: { telegram: "@your_support", wechat: "your_wechat_id" },
   // “联系客服”按钮的链接
-  supportUrl: "https://t.me/your_support",
+  supportUrl: "https://t.me/H88H85",
   // 公告：label 是红色小标题；有 href 时显示为可点击链接。按需增删。
   notices: [
-    { label:"永久域名", text:"example.com" },
-    { label:"补货通知群", text:"https://t.me/your_restock_group", href:"https://t.me/your_restock_group" }
+    { label:"永久域名", text:"cccmmm.cc" },
+    { label:"补货通知群", text:"https://t.me/H88H86", href:"https://t.me/H88H86" }
   ],
   // USDT-TRC20 收款地址（以 T 开头的波场地址）。把“请替换”开头的内容换成你自己的地址。
   // 地址未替换时，页面会禁止用户付款。
@@ -1722,8 +1722,8 @@ function stepConfirm(){
     </div>
     <div class="row"><span style="color:var(--ink-3)">付款方式</span><b>USDT · TRC20（波场）</b></div>
     <div>
-      <label class="lbl" for="contact">联系方式（Telegram / 微信 / 邮箱）</label>
-      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于接收账号资料">
+      <label class="lbl" for="contact">联系方式（ 手机号 / 邮箱 / Telegram ）</label>
+      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于查询订单/接收账号资料">
       <div class="err" id="err"></div>
     </div>
     <div class="total">
