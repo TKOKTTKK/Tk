@@ -3,1978 +3,918 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>账号铺 · 抖音账号商店</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https://pub-9f213c1d0dde42efb287f7a47831d0b2.r2.dev; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>萤火钱包（原创演示 / 非官方 / 离线工具）</title>
 <style>
-/* 布局：公告 → 选择分类 → 商品列表（名称 / 库存 / 单价 / 购买）。结账用居中对话框。
-   配色：中性灰白 + 深墨 + 蓝色主题色。字体：系统字体栈，国内网络无需外部字体。 */
 :root{
-  --bg:#f5f6f6; --surface:#ffffff; --ink:#101414; --ink-2:#4b5453; --ink-3:#8a9392;
-  --line:#e3e7e6; --accent:#2563eb; --accent-ink:#ffffff; --accent-soft:#e6eefc;
-  --warn:#b4560a; --warn-soft:#fdf0e3; --ok:#15803d; --price:#d92d20;
-  --font-display:"Songti SC","Noto Serif SC","Source Han Serif SC","STSong","SimSun",serif;
-  --font-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
-  --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
-  --r:10px;
+  --bg:#ffffff;--card:#ffffff;--ink:#16181c;--mute:#70747c;--line:#e7e8e4;
+  --brand:#1a73e8;--brand2:#4a90f7;--acc:#1a73e8;--ok:#1f8a53;--bad:#cc3b3b;
+  --warn-bg:#fff3dc;--warn-line:#f0cf8f;--sheet:#ffffff;--shadow:0 10px 30px rgba(20,30,25,.12);
 }
-/* 默认白天模式；只有用户手机系统设为深色时才自动切换，页面上不放切换按钮 */
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#0d1111; --surface:#151a1a; --ink:#eef2f1; --ink-2:#b2bcba; --ink-3:#7c8785;
-    --line:#252d2c; --accent:#5b9bff; --accent-ink:#06142e; --accent-soft:#14233f;
-    --warn:#f0a35a; --warn-soft:#2a1d10; --ok:#4ade80; --price:#ff7a6b; color-scheme:dark;
-  }
+@media (prefers-color-scheme:dark){
+  :root{--bg:#101210;--card:#1a1d1a;--ink:#edf1ee;--mute:#9aa29c;--line:#2b2f2b;
+  --brand:#2bd3a4;--brand2:#1f8a66;--acc:#2bd3a4;--ok:#4cd68a;--bad:#ff8a8a;
+  --warn-bg:#2a2410;--warn-line:#6b5818;--sheet:#1a1d1a;--shadow:0 10px 30px rgba(0,0,0,.4)}
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-button,input,select{font:inherit;color:inherit}
-/* 输入框字号不小于 16px，否则 iPhone 的 Safari 在点进输入框时会自动放大页面 */
-input,select,textarea{font-size:16px}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.wrap{max-width:960px;margin:0 auto}
-.num{font-variant-numeric:tabular-nums}
-.mono{font-family:var(--font-mono)}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+.phone{--sx:clamp(14px,4.4vw,20px);--gx:clamp(10px,3vw,14px);--ix:clamp(12px,3.6vw,16px);max-width:430px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg)}
+.screen{display:none;min-height:100vh;padding:18px var(--sx) 28px;flex-direction:column}
+.screen.active{display:flex}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin:0 calc(12px - var(--sx)) 4px;min-height:32px}
+.iconbtn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:var(--ink);cursor:pointer;padding:0;border-radius:50%}
+.iconbtn:active{background:var(--line)}
+.iconbtn svg{width:32px;height:32px}
+.iconbtn.help{color:var(--mute)}
+.iconbtn.help svg{width:18px;height:18px}
+h1{font-size:25px;font-weight:700;letter-spacing:.2px;margin:10px 0 8px;line-height:1.3}
+p.lead{color:var(--mute);font-size:14.5px;line-height:1.65;margin:0 0 22px}
+.flex1{flex:0.8}
+label.field-label{display:block;font-size:14px;color:var(--ink);margin:22px 0 9px;font-weight:600;letter-spacing:.1px}
+.input,textarea.input{width:100%;border:none;border-radius:16px;background:var(--card);padding:17px 16px;font:15px/1.5 inherit;color:var(--ink);box-shadow:0 0 0 1px var(--line) inset;-webkit-appearance:none;appearance:none}
+.input:focus,textarea.input:focus{outline:none;box-shadow:0 0 0 1.5px var(--brand) inset}
+.input::placeholder,textarea.input::placeholder{color:#9a9e97;font-weight:400}
+textarea.input{resize:vertical;min-height:52px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.6;display:block}
+textarea.input.tall{min-height:168px}
+textarea.input.med{min-height:92px}
+/* 组合输入卡片：多个字段共享一个白底容器，中间用发丝线分隔，视觉上是"一个卡片"而不是分散的输入框 */
+.input-group{border-radius:16px;background:var(--card);box-shadow:0 0 0 1px var(--line) inset;overflow:hidden}
+.input-group .input{box-shadow:none;border-radius:0;border-bottom:1px solid var(--line)}
+.input-group .input:last-child{border-bottom:none}
+.input-group .pwbox:last-child .input{border-bottom:none}
+.pwbox{position:relative}
+.pwbox .input{padding-right:46px}
+.eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--mute);cursor:pointer;padding:4px;font-size:15px;line-height:1}
+.link{color:var(--brand);text-decoration:none;font-size:14px;font-weight:500}
+.checkrow{display:flex;align-items:flex-start;gap:9px;font-size:13.5px;line-height:1.55;color:var(--mute);margin:18px 0}
+.checkrow input{margin-top:3px;width:16px;height:16px;accent-color:var(--brand);flex:none}
+.btn{display:block;width:100%;text-align:center;border:none;border-radius:16px;padding:17px;font-size:16px;font-weight:600;cursor:pointer;background:var(--card);color:var(--ink);letter-spacing:.2px;transition:transform .08s,opacity .15s}
+.btn:active{transform:scale(.985)}
+.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff}
+.btn.primary:disabled{background:linear-gradient(135deg,var(--brand),var(--brand2));opacity:.38;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:transparent;box-shadow:0 0 0 1.5px var(--line) inset;color:var(--ink)}
+.btn + .btn{margin-top:12px}
+#btnGoCreate,#btnGoImport{font-size:18px;padding:19px}
+.carousel{overflow:hidden;touch-action:pan-y}
+.slides-track{display:flex;transition:transform .32s cubic-bezier(.22,.61,.36,1)}
+.slide{flex:0 0 100%;max-width:100%;text-align:center;padding:0}
+.hero{display:flex;align-items:center;justify-content:center;padding:0 0 52px;min-height:0}
+.carousel{margin:-2px calc(-1*var(--sx)) 0}
+.slide h2{font-size:23px;font-weight:700;color:var(--ink);margin:0 0 10px;letter-spacing:.2px}
+.slide p{color:var(--mute);font-size:14.5px;line-height:1.65;max-width:300px;margin:0 auto}
+.dots{display:flex;gap:6px;justify-content:center;margin:8px 0 28px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--line);border:none;padding:0;cursor:pointer}
+.dot.on{background:var(--brand);width:18px;border-radius:4px;transition:all .25s}
+.badge{display:inline-block;font-size:12px;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--mute)}
+.warn{background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:14px;padding:14px 16px;margin:14px 0 18px;font-size:13px;line-height:1.5}
+.warn strong{display:block;margin-bottom:4px;font-size:14px}
+.warn ul{margin:6px 0 0;padding-left:18px}
+.warn li{margin:2px 0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0 20px}
+.w{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--card);font-family:ui-monospace,Menlo,Consolas,monospace;display:flex;gap:8px;align-items:baseline}
+.w i{font-style:normal;color:var(--mute);font-size:12px;width:16px}
+.w b{font-size:14.5px;font-weight:600}
+.blur .w b{filter:blur(6px);user-select:none}
+.toolrow{display:flex;gap:10px;margin:4px 0 20px}
+.toolrow .btn{flex:1;margin:0;padding:12px;font-size:14px}
+.sheet-backdrop{position:fixed;inset:0;background:rgba(10,15,12,.45);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.sheet-backdrop.active{display:flex}
+.sheet{background:var(--sheet);width:100%;max-width:430px;border-radius:22px 22px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:var(--shadow)}
+.sheet .sheet-head{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:10px;min-height:32px}
+.sheet .sheet-head h3{margin:0;font-size:18px;font-weight:700;text-align:center}
+.sheet .sheet-head #closeSheet{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+.optcard{display:flex;align-items:center;gap:14px;padding:15px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.optcard:active{opacity:.6}
+.optcard:last-child{border-bottom:none}
+.optcard .ic{width:40px;height:40px;border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex:none;font-size:18px}
+.optcard .tt{font-size:15.5px;font-weight:600;line-height:1.3}
+.optcard .ds{font-size:12.5px;color:var(--mute);margin-top:3px;line-height:1.3}
+.optcard .arrow{margin-left:auto;color:var(--mute);font-size:19px}
+.result{border-radius:14px;background:var(--card);padding:14px 16px;margin:14px 0;font-size:13.5px;line-height:1.55;box-shadow:0 0 0 1px var(--line) inset}
+.result .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all;margin-top:7px;color:var(--brand);font-weight:600}
+.ok-text{color:var(--ok)}.bad-text{color:var(--bad)}
+.center-col{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;flex:1;justify-content:center}
+.logo-big{display:block;width:100%;aspect-ratio:3/2;object-fit:cover}
+.hint{color:var(--mute);font-size:12.5px;margin-top:6px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,15,12,.45);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+.modal-backdrop.active{display:flex}
+.modal{background:var(--sheet);border-radius:16px;padding:20px;max-width:380px;max-height:80vh;overflow:auto;font-size:14px;color:var(--mute)}
+.modal h3{color:var(--ink);margin-top:0}
+.modal .btn{margin-top:16px}
 
-/* 顶栏 */
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:18px}
-.brand{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:.04em}
-.nav{display:flex;gap:8px;align-items:center}
-.ghost{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--ink-2);font-size:14px}
-.ghost:hover{border-color:var(--ink-3);color:var(--ink)}
-.ghost.solid{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-.ghost.solid:hover{filter:brightness(1.07);color:var(--accent-ink)}
-.who{font-size:14px;color:var(--ink-2);max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ord-search{display:flex;gap:10px;align-items:stretch}
-.ord-search .field{flex:1;min-width:0}
-.ord-search .btn{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.pay-amt{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:32px;font-weight:700;color:var(--accent);line-height:1.2}
-.pay-net{color:var(--ink-3);font-size:14px;margin-top:2px}
-.copy-ic{border:0;background:none;color:var(--ink-3);padding:4px;line-height:0;border-radius:6px}
-.copy-ic:hover{color:var(--accent)}
-.copy-ic .ic{width:20px;height:20px}
-.pay-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
-.pill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600}
-.count{border:1.5px solid var(--accent);color:var(--ink);border-radius:var(--r);padding:5px 12px;font-size:13px}
-.count b{color:var(--accent);font-size:16px;margin-left:4px}
-.count.over{border-color:var(--warn)}
-.count.over b{color:var(--warn)}
-.pay-line{padding-block:12px;border-block:1px solid var(--line)}
-.qr-box{width:min(240px,70%);margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;line-height:0}
-.qr-box svg{width:100%;height:auto;display:block;border-radius:8px}
-.addr-box{background:var(--bg);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
-.addr{font-size:14px;font-weight:600;word-break:break-all;line-height:1.5}
-.addr em{font-style:normal;color:var(--accent)}
-.cap{display:flex;gap:10px;align-items:stretch}
-.cap .field{flex:1;min-width:0}
-.cap-img{border:1px solid var(--line);border-radius:var(--r);padding:0;background:#f1f4f3;line-height:0;overflow:hidden;flex:none}
-.cap-img canvas{width:120px;height:40px;display:block}
-.switch{font-size:13px;color:var(--ink-3);text-align:center}
-.switch button{border:0;background:none;color:var(--accent);padding:0 2px;font-size:13px;font-weight:600}
+/* 返回按钮图标 18px（按钮点击区域仍为 32px） */
+.iconbtn[data-back] svg{width:18px;height:18px}
 
-/* 面板：公告、分类、商品三块共用 */
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:16px;overflow:hidden}
-.panel-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 12px;padding:14px 20px;border-bottom:1px solid var(--line);font-weight:600}
-.panel-body{padding:18px 20px}
-.quick{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
-.ic{width:18px;height:18px;flex:none}
-.ti{display:inline-flex;align-items:center;gap:8px}
-.pi{width:20px;height:20px;flex:none}
-.qbtn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.qbtn:hover{filter:brightness(1.07)}
-.notes{margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:14px}
-.notes b{color:var(--price);font-weight:600}
-.notes a{color:var(--accent);overflow-wrap:anywhere}
-.notes span{color:var(--ink-2);overflow-wrap:anywhere}
-.chips{display:flex;flex-wrap:wrap;gap:10px}
-.chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-size:14px;color:var(--ink-2);display:inline-flex;align-items:center;gap:8px}
-.chip:hover{border-color:var(--ink-3)}
-.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
-
-/* 商品列表 */
-.search{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:7px 12px;min-width:0;width:200px;max-width:100%}
-.search::placeholder{color:var(--ink-3)}
-.list{margin:0}
-.prow{display:grid;grid-template-columns:minmax(0,1fr) 90px 120px 96px;gap:12px;align-items:center;padding:14px 18px;border-top:1px solid var(--line)}
-.prow:first-child{border-top:0}
-.prow.head{font-size:12px;color:var(--ink-3);background:var(--bg);padding-block:9px;letter-spacing:.04em}
-.pname{min-width:0}
-.pname b{font-weight:600;display:flex;align-items:flex-start;gap:8px;overflow-wrap:anywhere}
-.pname b .pi{margin-top:2px}
-.pname b span{min-width:0}
-.pname small{color:var(--ink-3);font-size:12px}
-.c-stock{font-size:14px;color:var(--ok);font-weight:600}
-.c-stock.low{color:var(--warn)}
-.c-stock.out{color:var(--ink-3)}
-.c-price{font-family:var(--font-mono);font-weight:600;font-size:16px;color:var(--price)}
-.c-price span{font-size:11px;color:var(--ink-3);font-weight:400;margin-left:3px}
-.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:var(--r);padding:9px 18px;font-weight:600}
-.btn:hover{filter:brightness(1.07)}
-.btn:disabled{background:var(--line);color:var(--ink-3);cursor:not-allowed;filter:none}
-.btn.line{background:none;border:1px solid var(--line);color:var(--ink)}
-.prow .btn{padding:6px 14px;font-size:14px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;gap:5px}
-.prow .btn .ic{width:18px;height:18px}
-.empty{padding:48px 0;text-align:center;color:var(--ink-3)}
-@media (max-width:640px){
-  .prow.head{display:none}
-  .prow{grid-template-columns:1fr 1fr auto;grid-template-areas:"name name name" "stock price btn";gap:8px 12px;padding:14px 16px}
-  .pname{grid-area:name}
-  .c-stock{grid-area:stock}
-  .c-stock::before{content:"库存 ";color:var(--ink-3);font-weight:400}
-  .c-price{grid-area:price;text-align:center}
-  .prow .btn{grid-area:btn}
-  .search{width:auto;flex:1;max-width:220px}
+/* 创建钱包 / 导入助记词页：背景全屏撑满，消除两侧/底部白边 */
+html:has(#screen-create.active),body:has(#screen-create.active),.phone:has(#screen-create.active),
+html:has(#screen-import-mn.active),body:has(#screen-import-mn.active),.phone:has(#screen-import-mn.active),
+  html:has(#screen-import-pk.active),body:has(#screen-import-pk.active),.phone:has(#screen-import-pk.active),
+  html:has(#screen-import-ks.active),body:has(#screen-import-ks.active),.phone:has(#screen-import-ks.active)
+{background:#F0F1F3}
+@media (prefers-color-scheme:dark){
+  html:has(#screen-create.active),body:has(#screen-create.active),.phone:has(#screen-create.active),
+  html:has(#screen-import-mn.active),body:has(#screen-import-mn.active),.phone:has(#screen-import-mn.active),
+  html:has(#screen-import-pk.active),body:has(#screen-import-pk.active),.phone:has(#screen-import-pk.active),
+  html:has(#screen-import-ks.active),body:has(#screen-import-ks.active),.phone:has(#screen-import-ks.active)
+  {background:#101210}
 }
 
-footer{padding-block:24px 40px;border-top:1px solid var(--line);color:var(--ink-3);font-size:13px;display:grid;gap:6px}
+/* ===== 创建钱包页：iOS 原生简约风格 ===== */
+#screen-create{
+  --c-bg:#F0F1F3;--c-card:#FFFFFF;--c-title:#151A3C;--c-text:#2C3150;
+  --c-sub:#6B7089;--c-ph:#A0A4B6;--c-line:#E6E8EC;--c-link:#2F7BF5;
+  background:var(--c-bg);padding:18px var(--gx) 28px;
+}
+@media (prefers-color-scheme:dark){
+  #screen-create{--c-bg:#101210;--c-card:#1a1d1a;--c-title:#edf1ee;--c-text:#edf1ee;--c-sub:#9aa29c;--c-ph:#6d746e;--c-line:#2b2f2b;--c-link:#2bd3a4}
+}
+#screen-create .topbar{margin:0 calc(10px - var(--gx)) 8px}
+#screen-create .iconbtn{color:var(--c-title)}
+#screen-create .iconbtn.help{color:var(--c-sub)}
+#screen-create h1{font-size:22px;font-weight:700;line-height:1.3;letter-spacing:0;color:var(--c-title);margin:6px 0 10px;padding:0 var(--ix)}
+#screen-create p.lead{font-size:16px;line-height:1.4;color:var(--c-sub);margin:0 0 14px;padding:0 var(--ix)}
+#screen-create .cw-link{display:inline-block;font-size:16px;font-weight:500;color:var(--c-link);margin:0 0 22px;padding:0 var(--ix);cursor:pointer}
+#screen-create label.field-label{font-size:16px;font-weight:500;letter-spacing:0;color:var(--c-sub);margin:0 0 10px;padding:0 var(--ix)}
+#screen-create .input{height:56px;padding:0 var(--ix);border:none;border-radius:18px;background:var(--c-card);box-shadow:none;font-family:inherit;font-size:16px;line-height:56px;color:var(--c-text);margin-bottom:20px}
+#screen-create .input:focus{outline:none;box-shadow:none}
+#screen-create .input::placeholder{color:var(--c-ph);font-weight:400}
+#screen-create .input-group{border-radius:18px;background:var(--c-card);box-shadow:none;margin-bottom:20px;overflow:hidden}
+#screen-create .input-group .input{border-radius:0;margin:0;border-bottom:1px solid var(--c-line)}
+#screen-create .input-group .pwbox:last-child .input{border-bottom:none}
+#screen-create .pwbox .input{padding-right:52px}
+#screen-create .eye{right:var(--ix);padding:4px;display:flex;color:var(--c-title)}
+.eye-svg svg{width:20px;height:20px;display:block}
+.eye-svg .eo{display:none}
+.eye-svg.shown .eo{display:block}
+.eye-svg.shown .ec{display:none}
+#screen-create .checkrow{color:var(--c-sub);padding:0 4px;margin:4px 0 18px}
+#screen-create .hint{padding:0 var(--ix)}
+#screen-create .btn.primary{height:56px;padding:0;border-radius:18px}
 
-/* 对话框 */
-dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto}
-dialog::backdrop{background:rgba(8,12,12,.55)}
-.dlg{padding:24px;display:grid;gap:18px}
-.dlg h2{margin:0;font-family:var(--font-display);font-size:20px}
-.dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.x{border:0;background:none;font-size:22px;line-height:1;color:var(--ink-3);padding:2px 6px}
-.row{display:flex;justify-content:space-between;gap:12px;font-size:14px;align-items:baseline}
-.row b{font-weight:600}
-.lbl{display:block;font-size:13px;color:var(--ink-3);margin-bottom:6px}
-.field{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;min-width:0}
-.field::placeholder{color:var(--ink-3)}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.seg button{border:1px solid var(--line);background:none;border-radius:var(--r);padding:9px 6px;font-size:14px;color:var(--ink-2)}
-.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
-.seg small{display:block;font-size:11px;color:var(--ink-3);font-weight:400}
-.qty{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:var(--r)}
-.qty button{border:0;background:none;width:36px;height:36px;font-size:18px;color:var(--ink-2)}
-.qty span{min-width:32px;text-align:center}
-.total{background:var(--bg);border-radius:var(--r);padding:14px 16px;display:grid;gap:4px}
-.total .big{font-family:var(--font-mono);font-size:26px;font-weight:600}
-.box{border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
-.box code{font-family:var(--font-mono);font-size:13px;word-break:break-all;min-width:0}
-.notice{background:var(--warn-soft);color:var(--warn);border-radius:var(--r);padding:12px 14px;font-size:13px}
-.err{color:#c2410c;font-size:13px;min-height:1.2em}
-.ok-mark{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:22px}
-.orders{display:grid;gap:10px}
-.order{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px;font-size:13px}
-.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-12px);max-width:calc(100vw - 32px);background:var(--accent);color:var(--accent-ink);padding:10px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
-.toast.on{opacity:1;transform:translate(-50%,0)}
-@media (prefers-reduced-motion:reduce){.toast{transition:none}}
-@media (max-width:520px){.dlg{padding:20px}}
+/* ===== 选择导入方式弹层：iOS 原生简约风格 ===== */
+.sheet{
+  --c-bg:#F0F1F3;--c-card:#FFFFFF;--c-title:#151A3C;--c-sub:#6B7089;--c-line:#E6E8EC;--c-close:#8E92AA;
+  background:var(--c-bg);border-radius:24px 24px 0 0;box-shadow:none;
+  padding:0 18px calc(40px + env(safe-area-inset-bottom));
+}
+@media (prefers-color-scheme:dark){
+  .sheet{--c-bg:#101210;--c-card:#1a1d1a;--c-title:#edf1ee;--c-sub:#9aa29c;--c-line:#2b2f2b;--c-close:#4a504b}
+}
+.sheet .sheet-head{min-height:60px;margin:0}
+.sheet .sheet-head h3{font-size:18px;font-weight:600;color:var(--c-title);letter-spacing:0}
+.sheet .sheet-head #closeSheet{right:-5px}
+.sheet .iconbtn svg{width:20px;height:20px}
+.opt-list{background:var(--c-card);border-radius:18px;padding:0 var(--ix)}
+.sheet .optcard{height:90px;padding:0;gap:10px;border-bottom:1px solid var(--c-line)}
+.sheet .optcard:last-child{border-bottom:none}
+.sheet .optcard .ic{width:24px;height:24px;border-radius:0;background:none;color:var(--c-title);justify-content:flex-start;font-size:0}
+.sheet .optcard .ic svg{width:var(--ix);height:var(--ix);margin-left:3px;display:block}
+.sheet .optcard .txt{flex:1;min-width:0}
+.sheet .optcard .tt{font-size:18px;font-weight:500;line-height:26px;color:var(--c-title)}
+.sheet .optcard .ds{font-size:16px;line-height:22px;margin-top:3px;color:var(--c-sub)}
+.sheet .optcard .arrow{width:18px;height:18px;margin:0;flex:none;color:var(--c-title)}
+
+/* 输入时才出现的提示文字 */
+.cw-tip{display:none;font-size:16px;line-height:1.5;color:var(--c-sub);padding:0 var(--ix);margin:-8px 0 20px}
+.cw-tip.show{display:block}
+.cw-tip.info{color:var(--c-link)}
+#screen-create #cwPw{padding-right:96px}
+.pw-meter{display:none;position:absolute;right:var(--ix);top:50%;transform:translateY(-50%);align-items:center;gap:8px;font-size:15px;color:var(--c-sub);pointer-events:none}
+.pw-meter.show{display:flex}
+.pw-meter .bars{display:flex;flex-direction:column-reverse;gap:4px}
+.pw-meter .bars b{display:block;width:12px;height:3px;border-radius:1px;background:#D5D7DE}
+.pw-meter[data-lv="1"] .bars b{background:#8A8D99}
+.pw-meter[data-lv="2"] .bars b.on{background:#F5A623}
+.pw-meter[data-lv="3"] .bars b.on{background:#1F8A53}
+.pw-meter[data-lv="4"] .bars b.on{background:var(--c-link)}
+@media (prefers-color-scheme:dark){.pw-meter .bars b{background:#3a3f3a}}
+
+/* ===== 导入助记词页：iOS 原生简约风格 ===== */
+#screen-import-mn,#screen-import-pk,#screen-import-ks{
+  --c-bg:#F0F1F3;--c-card:#FFFFFF;--c-title:#151A3C;--c-text:#2C3150;
+  --c-sub:#6B7089;--c-ph:#A0A4B6;--c-line:#E6E8EC;--c-link:#2F7BF5;
+  background:var(--c-bg);padding:18px var(--gx) 28px;
+}
+@media (prefers-color-scheme:dark){
+  #screen-import-mn,#screen-import-pk,#screen-import-ks{--c-bg:#101210;--c-card:#1a1d1a;--c-title:#edf1ee;--c-text:#edf1ee;--c-sub:#9aa29c;--c-ph:#6d746e;--c-line:#2b2f2b;--c-link:#2bd3a4}
+}
+#screen-import-mn .topbar,#screen-import-pk .topbar,#screen-import-ks .topbar{margin:0 calc(10px - var(--gx)) 8px}
+#screen-import-mn .iconbtn,#screen-import-pk .iconbtn,#screen-import-ks .iconbtn{color:var(--c-title)}
+#screen-import-mn .iconbtn.help,#screen-import-pk .iconbtn.help,#screen-import-ks .iconbtn.help{color:var(--c-sub)}
+#screen-import-mn h1,#screen-import-pk h1,#screen-import-ks h1{font-size:22px;font-weight:700;line-height:1.3;letter-spacing:0;color:var(--c-title);margin:6px 0 10px;padding:0 var(--ix)}
+#screen-import-mn p.lead,#screen-import-pk p.lead,#screen-import-ks p.lead{font-size:16px;line-height:1.5;color:var(--c-sub);margin:0 0 8px;padding:0 var(--ix)}
+#screen-import-mn .im-link,#screen-import-pk .im-link,#screen-import-ks .im-link{display:block;font-size:16px;font-weight:500;color:var(--c-link);margin:0 0 20px;padding:0 var(--ix);cursor:pointer}
+#screen-import-mn textarea.input,#screen-import-pk textarea.input,#screen-import-ks textarea.input{border:none;border-radius:18px;background:var(--c-card);box-shadow:none;padding:var(--ix);font-family:inherit;font-size:16px;line-height:1.6;color:var(--c-text);min-height:160px}
+#screen-import-mn textarea.input:focus,#screen-import-pk textarea.input:focus,#screen-import-ks textarea.input:focus{outline:none;box-shadow:none}
+#screen-import-mn textarea.input::placeholder,#screen-import-pk textarea.input::placeholder,#screen-import-ks textarea.input::placeholder{color:var(--c-ph);font-weight:400}
+#screen-import-mn .result,#screen-import-pk .result,#screen-import-ks .result{background:none;box-shadow:none;margin:14px 0 0;padding:0 var(--ix);font-size:16px;line-height:1.5}
+#screen-import-mn .checkrow,#screen-import-pk .checkrow,#screen-import-ks .checkrow{color:var(--c-sub);padding:0 4px;margin:14px 0 16px;font-size:14px}
+#screen-import-mn .checkrow .link,#screen-import-pk .checkrow .link,#screen-import-ks .checkrow .link{color:var(--c-link)}
+#screen-import-pk textarea.input{min-height:270px;resize:none}
+#screen-import-ks textarea.input{min-height:270px;resize:none}
+#screen-import-ks label.field-label{font-size:16px;font-weight:500;letter-spacing:0;color:var(--c-sub);margin:34px 0 10px;padding:0 var(--ix)}
+#screen-import-ks .pwbox .input{height:56px;padding:0 52px 0 var(--ix);border:none;border-radius:18px;background:var(--c-card);box-shadow:none;font-family:inherit;font-size:16px;line-height:56px;color:var(--c-text);min-height:0}
+#screen-import-ks .pwbox .input:focus{outline:none;box-shadow:none}
+#screen-import-ks .pwbox .input::placeholder{color:var(--c-ph);font-weight:400}
+#screen-import-ks .eye{right:var(--ix);padding:4px;display:flex;color:var(--c-title)}
+#screen-import-mn .btn.primary,#screen-import-pk .btn.primary,#screen-import-ks .btn.primary{height:56px;padding:0;border-radius:18px;font-size:17px}
 </style>
 </head>
 <body>
-<!-- 平台图标：全站只定义这一份，分类按钮和商品名称前都引用它 -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <symbol id="platIcon" viewBox="0 0 1024 1024">
-    <path d="M0 0m184.32 0l655.36 0q184.32 0 184.32 184.32l0 655.36q0 184.32-184.32 184.32l-655.36 0q-184.32 0-184.32-184.32l0-655.36q0-184.32 184.32-184.32Z" fill="#111111"/>
-    <path d="M204.27776 670.59712a246.25152 246.25152 0 0 1 245.97504-245.97504v147.57888a98.49856 98.49856 0 0 0-98.38592 98.38592c0 48.34304 26.14272 100.352 83.54816 100.352 3.81952 0 93.55264-0.88064 93.55264-77.19936V134.35904h157.26592a133.31456 133.31456 0 0 0 133.12 132.99712l-0.13312 147.31264a273.152 273.152 0 0 1-142.62272-38.912l-0.06144 317.98272c0 146.00192-124.24192 224.77824-241.14176 224.77824-131.74784 0.03072-231.1168-106.56768-231.1168-247.92064z" fill="#FF4040"/>
-    <path d="M164.92544 631.23456a246.25152 246.25152 0 0 1 245.97504-245.97504v147.57888a98.49856 98.49856 0 0 0-98.38592 98.38592c0 48.34304 26.14272 100.352 83.54816 100.352 3.81952 0 93.55264-0.88064 93.55264-77.19936V94.99648h157.26592a133.31456 133.31456 0 0 0 133.12 132.99712l-0.13312 147.31264a273.152 273.152 0 0 1-142.62272-38.912l-0.06144 317.98272c0 146.00192-124.24192 224.77824-241.14176 224.77824-131.74784 0.03072-231.1168-106.56768-231.1168-247.92064z" fill="#00F5FF"/>
-    <path d="M410.91072 427.58144c-158.8224 20.15232-284.44672 222.72-154.112 405.00224 120.40192 98.47808 373.68832 41.20576 380.70272-171.85792l-0.17408-324.1472a280.7296 280.7296 0 0 0 142.88896 38.62528V261.2224a144.98816 144.98816 0 0 1-72.8064-54.82496 135.23968 135.23968 0 0 1-54.70208-72.45824h-123.66848l-0.08192 561.41824c-0.11264 78.46912-130.9696 106.41408-164.18816 30.2592-83.18976-39.77216-64.37888-190.9248 46.31552-192.57344z" fill="#FFFFFF"/>
-  </symbol>
-  <!-- 购买按钮图标（颜色跟随按钮文字） -->
-  <symbol id="cartIcon" viewBox="0 0 1024 1024">
-    <path d="M777.248 725.312a82.965333 82.965333 0 1 0 0 165.909333 82.965333 82.965333 0 0 0 0-165.909333m0 47.146667a35.84 35.84 0 0 1 35.818667 35.818666 35.84 35.84 0 0 1-35.818667 35.818667 35.84 35.84 0 0 1-35.818667-35.84 35.84 35.84 0 0 1 35.818667-35.797333m-345.706667-47.146667a82.965333 82.965333 0 1 0 0 165.909333 82.965333 82.965333 0 0 0 0-165.909333m0 47.146667a35.84 35.84 0 0 1 35.818667 35.818666 35.84 35.84 0 0 1-35.818667 35.818667 35.84 35.84 0 0 1 0-71.637333M287.776 321.109333l111.125333 317.290667-23.296-16.533333H839.690667a24.682667 24.682667 0 1 1 0 49.386666H375.605333c-10.496 0-19.84-6.634667-23.317333-16.533333L179.296 160.853333l23.317333 16.533334h-49.92a24.682667 24.682667 0 1 1 0-49.386667h49.92c10.474667 0 19.818667 6.613333 23.296 16.533333L270.474667 271.786667h600.832c15.637333 0 27.328 14.336 24.192 29.653333l-39.424 192.213333a24.682667 24.682667 0 0 1-21.461334 19.584l-364.778666 40.64a24.704 24.704 0 1 1-5.482667-49.066666l347.285333-39.893334s17.557333-81.237333 30.378667-143.744c0.277333-1.386667-448.853333-0.32-554.24-0.064" fill="currentColor"/>
-  </symbol>
-  <!-- “全部”分类图标（固定深灰色 #2c2c2c，深色主题下对比度较低） -->
-  <symbol id="allIcon" viewBox="0 0 1024 1024">
-    <path d="M512 1024C229.2352 1024 0 794.7648 0 512S229.2352 0 512 0s512 229.2352 512 512-229.2352 512-512 512zM320 268.8a76.8 76.8 0 0 0-76.8 76.8v96.5888a76.8 76.8 0 0 0 76.8 76.8h95.68a76.8 76.8 0 0 0 76.8-76.8V345.6a76.8 76.8 0 0 0-76.8-76.8H320z m280.448 0a76.8 76.8 0 0 0-76.8 76.8v96.5888a76.8 76.8 0 0 0 76.8 76.8h95.68a76.8 76.8 0 0 0 76.8-76.8V345.6a76.8 76.8 0 0 0-76.8-76.8H600.448zM320 550.2592a76.8 76.8 0 0 0-76.8 76.8v96.5888a76.8 76.8 0 0 0 76.8 76.8h95.68a76.8 76.8 0 0 0 76.8-76.8v-96.5888a76.8 76.8 0 0 0-76.8-76.8H320z m328.2816 0c-68.8384 0-124.6336 55.808-124.6336 124.6464v0.896c0 68.8384 55.808 124.6464 124.6336 124.6464 68.8384 0 124.6464-55.808 124.6464-124.6464v-0.896c0-68.8384-55.808-124.6464-124.6464-124.6464z" fill="#2c2c2c"/>
-  </symbol>
-</svg>
-<div class="wrap">
-  <header>
-    <div class="brand" id="brand">账号铺</div>
-    <div class="nav" id="acct"></div>
-  </header>
+<div class="phone">
 
-  <main>
-    <section class="panel" aria-labelledby="hNotice">
-      <div class="panel-head" id="hNotice"><span class="ti"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>公告</span></div>
-      <div class="panel-body">
-        <div class="quick">
-          <button class="qbtn" type="button" data-act="orders"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>查询订单</button>
-          <a class="qbtn" id="lnkSupport" href="#" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19v.5a2.5 2.5 0 0 1-2.5 2.5H13"/></svg>联系客服</a>
-          <button class="qbtn" type="button" data-act="guide"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H19v14H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H19v-3"/></svg>使用教程</button>
+<!-- ===================== 1. 引导页 ===================== -->
+<div class="screen active" id="screen-onboard">
+  <div class="flex1" style="display:flex;flex-direction:column;justify-content:flex-start">
+    <div class="carousel" id="carousel">
+      <div class="slides-track" id="slidesTrack">
+        <div class="slide" data-slide="0">
+          <div class="hero">
+            <img class="logo-big" src="https://pub-9f213c1d0dde42efb287f7a47831d0b2.r2.dev/IMG_5122.webp" alt="">
+          </div>
+          <h2>自己掌管，自己负责</h2>
+          <p>私钥与助记词只保存在你的设备上，萤火不会代为托管，也不会上传到任何服务器。</p>
         </div>
-        <ul class="notes" id="notes"></ul>
+        <div class="slide" data-slide="1">
+          <div class="hero">
+            <img class="logo-big" src="https://pub-9f213c1d0dde42efb287f7a47831d0b2.r2.dev/IMG_5123.webp" alt="">
+          </div>
+          <h2>随机数可验证，算法可审查</h2>
+          <p>助记词生成基于浏览器的密码学安全随机数，页面打开即自检，核心代码全部本地运行。</p>
+        </div>
+        <div class="slide" data-slide="2">
+          <div class="hero">
+            <img class="logo-big" src="https://pub-9f213c1d0dde42efb287f7a47831d0b2.r2.dev/IMG_5124.webp" alt="">
+          </div>
+          <h2>纯本地演示工具</h2>
+          <p>这是一个教学 / 自用演示页面，不连接任何网络、不内置交易或资产功能，请勿用于真实大额资产。</p>
+        </div>
       </div>
-    </section>
-
-    <section class="panel" aria-labelledby="hCat">
-      <div class="panel-head">
-        <span class="ti" id="hCat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>选择分类</span>
-        <input class="search" id="q" type="search" placeholder="搜索商品" aria-label="搜索商品">
-      </div>
-      <div class="panel-body"><div class="chips" id="cats" role="group" aria-label="商品分类"></div></div>
-    </section>
-
-    <section class="panel" aria-labelledby="hList">
-      <div class="panel-head"><span id="hList">全部商品</span></div>
-      <div class="list" id="list" aria-live="polite"></div>
-    </section>
-  </main>
-
-  <footer>
-    <div id="supportLine"></div>
-    <div>© 2026 抖音号商. 保留所有权利</div>
-  </footer>
+    </div>
+  </div>
+  <div class="dots"><button class="dot on" data-dot="0"></button><button class="dot" data-dot="1"></button><button class="dot" data-dot="2"></button></div>
+  <button class="btn primary" id="btnGoCreate">创建钱包</button>
+  <button class="btn ghost" id="btnGoImport">导入钱包</button>
 </div>
 
-<!-- 结账 -->
-<dialog id="dlgBuy" aria-labelledby="buyTitle">
-  <div class="dlg" id="buyBody"></div>
-</dialog>
+<!-- ===================== 2. 创建钱包 ===================== -->
+<div class="screen" id="screen-create">
+  <div class="topbar"><button class="iconbtn" data-back="screen-onboard"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M679.13916 138.387837c10.304693 0 20.602224 3.941775 28.457122 11.791557 15.733333 15.733333 15.733333 41.172725 0 56.906058L397.262304 517.418406l314.834478 314.836525c15.733333 15.733333 15.733333 41.171702 0 56.905034s-41.171702 15.733333-56.905034 0L311.900148 545.868365c-15.734356-15.733333-15.734356-41.172725 0-56.906058L650.683061 150.179394C658.532843 142.335752 668.830373 138.387837 679.13916 138.387837L679.13916 138.387837zM679.13916 138.387837"/></svg></button><button class="iconbtn help" data-help="create"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 938.666667c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0 85.333333C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z"/><path d="M520.96 232.106667c-62.293333 0-111.786667 17.92-147.626667 54.613333-36.693333 35.84-54.613333 84.48-54.613333 146.773333h90.453333c0-37.546667 7.68-67.413333 23.04-87.893333 17.066667-23.893333 45.226667-35.84 83.626667-35.84 30.72 0 54.613333 8.533333 71.68 25.6 16.213333 17.066667 24.746667 40.106667 24.746667 69.973333 0 22.186667-7.68 42.666667-23.04 62.293334l-14.506667 16.213333c-52.906667 46.933333-85.333333 81.92-97.28 105.813333-11.093333 22.186667-16.213333 49.493333-16.213333 81.066667v14.506667h91.306666v-14.506667c0-21.333333 4.266667-40.106667 13.653334-57.173333 7.68-15.36 19.626667-29.866667 34.986666-43.52 40.96-34.986667 64.853333-57.173333 72.533334-66.56 20.48-27.306667 31.573333-62.293333 31.573333-104.106667 0-51.2-17.066667-92.16-50.346667-122.026667-34.133333-30.72-78.506667-45.226667-133.973333-45.226666z m-14.506667 499.2c-17.92 0-32.426667 5.12-43.52 17.066666-12.8 11.093333-18.773333 25.6-18.773333 43.52 0 17.066667 5.973333 31.573333 18.773333 43.52 11.093333 11.946667 25.6 17.92 43.52 17.92 17.066667 0 32.426667-5.973333 45.226667-17.066666 11.946667-11.946667 17.92-26.453333 17.92-44.373334 0-17.92-5.973333-32.426667-17.92-43.52-11.946667-11.946667-27.306667-17.066667-45.226667-17.066666z"/></svg></button></div>
+  <h1>创建钱包</h1>
+  <p class="lead">为你的多账户钱包命名并设置密码保护。你也可以稍后添加更多钱包。</p>
+  <a class="link cw-link" data-help="create">探索多账户钱包的可能性</a>
 
-<!-- 订单查询 -->
-<dialog id="dlgOrders" aria-labelledby="ordTitle">
-  <div class="dlg">
-    <div class="dlg-head">
-      <h2 id="ordTitle" class="ti"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>订单查询</h2>
-      <button class="x" type="button" data-close aria-label="关闭">×</button>
-    </div>
-    <form id="ordForm" class="ord-search" novalidate>
-      <input class="field" id="ordQ" type="search" autocomplete="off" placeholder="订单号/联系方式" aria-label="订单号或联系方式">
-      <button class="btn" type="submit"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>查询订单</button>
-    </form>
-    <div class="orders" id="ordList" aria-live="polite"></div>
+  <label class="field-label">钱包名称</label>
+  <input class="input" id="cwName" autocomplete="off" placeholder="输入 1-12 个英文字符或 1-6 个汉字">
+  <div class="cw-tip" id="tipName">你可以随时在“钱包管理”中更改名称。</div>
+
+  <label class="field-label">创建密码</label>
+  <div class="input-group" id="pwGroup">
+    <div class="pwbox"><input class="input" id="cwPw" type="password" placeholder="输入密码"><div class="pw-meter" id="pwMeter" data-lv="1"><span id="pwLabel">弱</span><i class="bars"><b></b><b></b><b></b><b></b></i></div></div>
+    <div class="pwbox"><input class="input" id="cwPw2" type="password" placeholder="重复输入密码"><button class="eye eye-svg" data-toggle="cwPw,cwPw2" aria-label="显示或隐藏密码"><svg class="ec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5c2.4 3.2 5.5 4.8 9.5 4.8s7.1-1.6 9.5-4.8"/><path d="M6.2 13.4l-1.7 2.6M10.3 14.3l-.6 3M14.1 14.3l.9 3M17.8 13.4l1.8 2.5"/></svg><svg class="eo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
   </div>
-</dialog>
+  <div class="cw-tip" id="tipPw"></div>
 
-<!-- 登录 / 注册 -->
-<dialog id="dlgAuth" aria-labelledby="authTitle">
-  <div class="dlg" id="authBody"></div>
-</dialog>
+  <label class="field-label">密码提示（可选）</label>
+  <input class="input" id="cwHint" maxlength="40" placeholder="输入提醒文字">
 
-<!-- 使用教程 -->
-<dialog id="dlgGuide" aria-labelledby="guideTitle">
-  <div class="dlg">
-    <div class="dlg-head"><h2 id="guideTitle">使用教程</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>
-    <ol style="margin:0;padding-left:20px;display:grid;gap:8px;color:var(--ink-2);font-size:14px">
-      <li>选择分类，下方会列出该分类的商品。</li>
-      <li>看清商品名称、库存和单价，点“购买”。</li>
-      <li>选择数量，填写联系方式（查询订单用）。</li>
-      <li>扫描二维码或复制地址，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
-      <li>付款后会自动发货，在“查询订单”里查看卡密</li>
-      <li>收到后建议在90天内修改密码和绑定信息。</li>
-    </ol>
-    <button class="btn line" type="button" data-close>知道了</button>
+  <div class="flex1"></div>
+  <div id="cwError" class="hint bad-text"></div>
+  <div class="checkrow" style="margin:6px 0 12px"><input type="checkbox" id="cwAgree"><span>我已阅读并同意 <a class="link" id="openTerms">服务条款</a></span></div>
+  <button class="btn primary" id="btnCreateSubmit" disabled>创建</button>
+</div>
+
+<!-- ===================== 3. 备份助记词 ===================== -->
+<div class="screen" id="screen-backup">
+  <div class="topbar"><span></span><button class="iconbtn help" data-help="backup"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 938.666667c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0 85.333333C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z"/><path d="M520.96 232.106667c-62.293333 0-111.786667 17.92-147.626667 54.613333-36.693333 35.84-54.613333 84.48-54.613333 146.773333h90.453333c0-37.546667 7.68-67.413333 23.04-87.893333 17.066667-23.893333 45.226667-35.84 83.626667-35.84 30.72 0 54.613333 8.533333 71.68 25.6 16.213333 17.066667 24.746667 40.106667 24.746667 69.973333 0 22.186667-7.68 42.666667-23.04 62.293334l-14.506667 16.213333c-52.906667 46.933333-85.333333 81.92-97.28 105.813333-11.093333 22.186667-16.213333 49.493333-16.213333 81.066667v14.506667h91.306666v-14.506667c0-21.333333 4.266667-40.106667 13.653334-57.173333 7.68-15.36 19.626667-29.866667 34.986666-43.52 40.96-34.986667 64.853333-57.173333 72.533334-66.56 20.48-27.306667 31.573333-62.293333 31.573333-104.106667 0-51.2-17.066667-92.16-50.346667-122.026667-34.133333-30.72-78.506667-45.226667-133.973333-45.226666z m-14.506667 499.2c-17.92 0-32.426667 5.12-43.52 17.066666-12.8 11.093333-18.773333 25.6-18.773333 43.52 0 17.066667 5.973333 31.573333 18.773333 43.52 11.093333 11.946667 25.6 17.92 43.52 17.92 17.066667 0 32.426667-5.973333 45.226667-17.066666 11.946667-11.946667 17.92-26.453333 17.92-44.373334 0-17.92-5.973333-32.426667-17.92-43.52-11.946667-11.946667-27.306667-17.066667-45.226667-17.066666z"/></svg></button></div>
+  <h1>备份助记词</h1>
+  <div class="warn"><strong>请用纸笔抄写，不要截图</strong>
+    <ul><li>任何人拿到这些词都能拿走你的资产</li><li>按顺序抄写，核对无误后再继续</li><li>关闭本页面后内容不会被保存</li></ul>
   </div>
-</dialog>
-
-<div class="toast" id="toast" role="status"></div>
-
-<script>
-/* QR 码生成库：Kazuhiko Arase QRCode for JavaScript，MIT 协议，内联在页面中，无需联网加载 */
-(function(){var __m={};function __r(n){n=n.replace("./","").replace("../","");return __m[n].exports}
-__m["QRMode"]={exports:{}};(function(module,exports,require){
-module.exports = {
-    MODE_NUMBER :       1 << 0,
-    MODE_ALPHA_NUM :    1 << 1,
-    MODE_8BIT_BYTE :    1 << 2,
-    MODE_KANJI :        1 << 3
-};
-
-})(__m["QRMode"],__m["QRMode"].exports,__r);
-__m["QRErrorCorrectLevel"]={exports:{}};(function(module,exports,require){
-module.exports = {
-	L : 1,
-	M : 0,
-	Q : 3,
-	H : 2
-};
-
-
-})(__m["QRErrorCorrectLevel"],__m["QRErrorCorrectLevel"].exports,__r);
-__m["QRMaskPattern"]={exports:{}};(function(module,exports,require){
-module.exports = {
-	PATTERN000 : 0,
-	PATTERN001 : 1,
-	PATTERN010 : 2,
-	PATTERN011 : 3,
-	PATTERN100 : 4,
-	PATTERN101 : 5,
-	PATTERN110 : 6,
-	PATTERN111 : 7
-};
-
-})(__m["QRMaskPattern"],__m["QRMaskPattern"].exports,__r);
-__m["QRMath"]={exports:{}};(function(module,exports,require){
-var QRMath = {
-
-	glog : function(n) {
-	
-		if (n < 1) {
-			throw new Error("glog(" + n + ")");
-		}
-		
-		return QRMath.LOG_TABLE[n];
-	},
-	
-	gexp : function(n) {
-	
-		while (n < 0) {
-			n += 255;
-		}
-	
-		while (n >= 256) {
-			n -= 255;
-		}
-	
-		return QRMath.EXP_TABLE[n];
-	},
-	
-	EXP_TABLE : new Array(256),
-	
-	LOG_TABLE : new Array(256)
-
-};
-	
-for (var i = 0; i < 8; i++) {
-	QRMath.EXP_TABLE[i] = 1 << i;
-}
-for (var i = 8; i < 256; i++) {
-	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
-		^ QRMath.EXP_TABLE[i - 5]
-		^ QRMath.EXP_TABLE[i - 6]
-		^ QRMath.EXP_TABLE[i - 8];
-}
-for (var i = 0; i < 255; i++) {
-	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
-}
-
-module.exports = QRMath;
-
-})(__m["QRMath"],__m["QRMath"].exports,__r);
-__m["QRPolynomial"]={exports:{}};(function(module,exports,require){
-var QRMath = require('./QRMath');
-
-function QRPolynomial(num, shift) {
-	if (num.length === undefined) {
-		throw new Error(num.length + "/" + shift);
-	}
-
-	var offset = 0;
-
-	while (offset < num.length && num[offset] === 0) {
-		offset++;
-	}
-
-	this.num = new Array(num.length - offset + shift);
-	for (var i = 0; i < num.length - offset; i++) {
-		this.num[i] = num[i + offset];
-	}
-}
-
-QRPolynomial.prototype = {
-
-	get : function(index) {
-		return this.num[index];
-	},
-	
-	getLength : function() {
-		return this.num.length;
-	},
-	
-	multiply : function(e) {
-	
-		var num = new Array(this.getLength() + e.getLength() - 1);
-	
-		for (var i = 0; i < this.getLength(); i++) {
-			for (var j = 0; j < e.getLength(); j++) {
-				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
-			}
-		}
-	
-		return new QRPolynomial(num, 0);
-	},
-	
-	mod : function(e) {
-	
-		if (this.getLength() - e.getLength() < 0) {
-			return this;
-		}
-	
-		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
-	
-		var num = new Array(this.getLength() );
-		
-		for (var i = 0; i < this.getLength(); i++) {
-			num[i] = this.get(i);
-		}
-		
-		for (var x = 0; x < e.getLength(); x++) {
-			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
-		}
-	
-		// recursive call
-		return new QRPolynomial(num, 0).mod(e);
-	}
-};
-
-module.exports = QRPolynomial;
-
-})(__m["QRPolynomial"],__m["QRPolynomial"].exports,__r);
-__m["QRRSBlock"]={exports:{}};(function(module,exports,require){
-var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
-
-function QRRSBlock(totalCount, dataCount) {
-	this.totalCount = totalCount;
-	this.dataCount  = dataCount;
-}
-
-QRRSBlock.RS_BLOCK_TABLE = [
-
-	// L
-	// M
-	// Q
-	// H
-
-	// 1
-	[1, 26, 19],
-	[1, 26, 16],
-	[1, 26, 13],
-	[1, 26, 9],
-	
-	// 2
-	[1, 44, 34],
-	[1, 44, 28],
-	[1, 44, 22],
-	[1, 44, 16],
-
-	// 3
-	[1, 70, 55],
-	[1, 70, 44],
-	[2, 35, 17],
-	[2, 35, 13],
-
-	// 4		
-	[1, 100, 80],
-	[2, 50, 32],
-	[2, 50, 24],
-	[4, 25, 9],
-	
-	// 5
-	[1, 134, 108],
-	[2, 67, 43],
-	[2, 33, 15, 2, 34, 16],
-	[2, 33, 11, 2, 34, 12],
-	
-	// 6
-	[2, 86, 68],
-	[4, 43, 27],
-	[4, 43, 19],
-	[4, 43, 15],
-	
-	// 7		
-	[2, 98, 78],
-	[4, 49, 31],
-	[2, 32, 14, 4, 33, 15],
-	[4, 39, 13, 1, 40, 14],
-	
-	// 8
-	[2, 121, 97],
-	[2, 60, 38, 2, 61, 39],
-	[4, 40, 18, 2, 41, 19],
-	[4, 40, 14, 2, 41, 15],
-	
-	// 9
-	[2, 146, 116],
-	[3, 58, 36, 2, 59, 37],
-	[4, 36, 16, 4, 37, 17],
-	[4, 36, 12, 4, 37, 13],
-	
-	// 10		
-	[2, 86, 68, 2, 87, 69],
-	[4, 69, 43, 1, 70, 44],
-	[6, 43, 19, 2, 44, 20],
-	[6, 43, 15, 2, 44, 16],
-
-	// 11
-	[4, 101, 81],
-	[1, 80, 50, 4, 81, 51],
-	[4, 50, 22, 4, 51, 23],
-	[3, 36, 12, 8, 37, 13],
-
-	// 12
-	[2, 116, 92, 2, 117, 93],
-	[6, 58, 36, 2, 59, 37],
-	[4, 46, 20, 6, 47, 21],
-	[7, 42, 14, 4, 43, 15],
-
-	// 13
-	[4, 133, 107],
-	[8, 59, 37, 1, 60, 38],
-	[8, 44, 20, 4, 45, 21],
-	[12, 33, 11, 4, 34, 12],
-
-	// 14
-	[3, 145, 115, 1, 146, 116],
-	[4, 64, 40, 5, 65, 41],
-	[11, 36, 16, 5, 37, 17],
-	[11, 36, 12, 5, 37, 13],
-
-	// 15
-	[5, 109, 87, 1, 110, 88],
-	[5, 65, 41, 5, 66, 42],
-	[5, 54, 24, 7, 55, 25],
-	[11, 36, 12],
-
-	// 16
-	[5, 122, 98, 1, 123, 99],
-	[7, 73, 45, 3, 74, 46],
-	[15, 43, 19, 2, 44, 20],
-	[3, 45, 15, 13, 46, 16],
-
-	// 17
-	[1, 135, 107, 5, 136, 108],
-	[10, 74, 46, 1, 75, 47],
-	[1, 50, 22, 15, 51, 23],
-	[2, 42, 14, 17, 43, 15],
-
-	// 18
-	[5, 150, 120, 1, 151, 121],
-	[9, 69, 43, 4, 70, 44],
-	[17, 50, 22, 1, 51, 23],
-	[2, 42, 14, 19, 43, 15],
-
-	// 19
-	[3, 141, 113, 4, 142, 114],
-	[3, 70, 44, 11, 71, 45],
-	[17, 47, 21, 4, 48, 22],
-	[9, 39, 13, 16, 40, 14],
-
-	// 20
-	[3, 135, 107, 5, 136, 108],
-	[3, 67, 41, 13, 68, 42],
-	[15, 54, 24, 5, 55, 25],
-	[15, 43, 15, 10, 44, 16],
-
-	// 21
-	[4, 144, 116, 4, 145, 117],
-	[17, 68, 42],
-	[17, 50, 22, 6, 51, 23],
-	[19, 46, 16, 6, 47, 17],
-
-	// 22
-	[2, 139, 111, 7, 140, 112],
-	[17, 74, 46],
-	[7, 54, 24, 16, 55, 25],
-	[34, 37, 13],
-
-	// 23
-	[4, 151, 121, 5, 152, 122],
-	[4, 75, 47, 14, 76, 48],
-	[11, 54, 24, 14, 55, 25],
-	[16, 45, 15, 14, 46, 16],
-
-	// 24
-	[6, 147, 117, 4, 148, 118],
-	[6, 73, 45, 14, 74, 46],
-	[11, 54, 24, 16, 55, 25],
-	[30, 46, 16, 2, 47, 17],
-
-	// 25
-	[8, 132, 106, 4, 133, 107],
-	[8, 75, 47, 13, 76, 48],
-	[7, 54, 24, 22, 55, 25],
-	[22, 45, 15, 13, 46, 16],
-
-	// 26
-	[10, 142, 114, 2, 143, 115],
-	[19, 74, 46, 4, 75, 47],
-	[28, 50, 22, 6, 51, 23],
-	[33, 46, 16, 4, 47, 17],
-
-	// 27
-	[8, 152, 122, 4, 153, 123],
-	[22, 73, 45, 3, 74, 46],
-	[8, 53, 23, 26, 54, 24],
-	[12, 45, 15, 28, 46, 16],
-
-	// 28
-	[3, 147, 117, 10, 148, 118],
-	[3, 73, 45, 23, 74, 46],
-	[4, 54, 24, 31, 55, 25],
-	[11, 45, 15, 31, 46, 16],
-
-	// 29
-	[7, 146, 116, 7, 147, 117],
-	[21, 73, 45, 7, 74, 46],
-	[1, 53, 23, 37, 54, 24],
-	[19, 45, 15, 26, 46, 16],
-
-	// 30
-	[5, 145, 115, 10, 146, 116],
-	[19, 75, 47, 10, 76, 48],
-	[15, 54, 24, 25, 55, 25],
-	[23, 45, 15, 25, 46, 16],
-
-	// 31
-	[13, 145, 115, 3, 146, 116],
-	[2, 74, 46, 29, 75, 47],
-	[42, 54, 24, 1, 55, 25],
-	[23, 45, 15, 28, 46, 16],
-
-	// 32
-	[17, 145, 115],
-	[10, 74, 46, 23, 75, 47],
-	[10, 54, 24, 35, 55, 25],
-	[19, 45, 15, 35, 46, 16],
-
-	// 33
-	[17, 145, 115, 1, 146, 116],
-	[14, 74, 46, 21, 75, 47],
-	[29, 54, 24, 19, 55, 25],
-	[11, 45, 15, 46, 46, 16],
-
-	// 34
-	[13, 145, 115, 6, 146, 116],
-	[14, 74, 46, 23, 75, 47],
-	[44, 54, 24, 7, 55, 25],
-	[59, 46, 16, 1, 47, 17],
-
-	// 35
-	[12, 151, 121, 7, 152, 122],
-	[12, 75, 47, 26, 76, 48],
-	[39, 54, 24, 14, 55, 25],
-	[22, 45, 15, 41, 46, 16],
-
-	// 36
-	[6, 151, 121, 14, 152, 122],
-	[6, 75, 47, 34, 76, 48],
-	[46, 54, 24, 10, 55, 25],
-	[2, 45, 15, 64, 46, 16],
-
-	// 37
-	[17, 152, 122, 4, 153, 123],
-	[29, 74, 46, 14, 75, 47],
-	[49, 54, 24, 10, 55, 25],
-	[24, 45, 15, 46, 46, 16],
-
-	// 38
-	[4, 152, 122, 18, 153, 123],
-	[13, 74, 46, 32, 75, 47],
-	[48, 54, 24, 14, 55, 25],
-	[42, 45, 15, 32, 46, 16],
-
-	// 39
-	[20, 147, 117, 4, 148, 118],
-	[40, 75, 47, 7, 76, 48],
-	[43, 54, 24, 22, 55, 25],
-	[10, 45, 15, 67, 46, 16],
-
-	// 40
-	[19, 148, 118, 6, 149, 119],
-	[18, 75, 47, 31, 76, 48],
-	[34, 54, 24, 34, 55, 25],
-	[20, 45, 15, 61, 46, 16]
-];
-
-QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
-	
-	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
-	
-	if (rsBlock === undefined) {
-		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
-	}
-
-	var length = rsBlock.length / 3;
-	
-	var list = [];
-	
-	for (var i = 0; i < length; i++) {
-
-		var count = rsBlock[i * 3 + 0];
-		var totalCount = rsBlock[i * 3 + 1];
-		var dataCount  = rsBlock[i * 3 + 2];
-
-		for (var j = 0; j < count; j++) {
-			list.push(new QRRSBlock(totalCount, dataCount) );	
-		}
-	}
-	
-	return list;
-};
-
-QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
-
-	switch(errorCorrectLevel) {
-	case QRErrorCorrectLevel.L :
-		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
-	case QRErrorCorrectLevel.M :
-		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
-	case QRErrorCorrectLevel.Q :
-		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
-	case QRErrorCorrectLevel.H :
-		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
-	default :
-		return undefined;
-	}
-};
-
-module.exports = QRRSBlock;
-
-})(__m["QRRSBlock"],__m["QRRSBlock"].exports,__r);
-__m["QR8bitByte"]={exports:{}};(function(module,exports,require){
-var QRMode = require('./QRMode');
-
-function QR8bitByte(data) {
-	this.mode = QRMode.MODE_8BIT_BYTE;
-	this.data = data;
-}
-
-QR8bitByte.prototype = {
-
-	getLength : function() {
-		return this.data.length;
-	},
-	
-	write : function(buffer) {
-		for (var i = 0; i < this.data.length; i++) {
-			// not JIS ...
-			buffer.put(this.data.charCodeAt(i), 8);
-		}
-	}
-};
-
-module.exports = QR8bitByte;
-
-})(__m["QR8bitByte"],__m["QR8bitByte"].exports,__r);
-__m["QRBitBuffer"]={exports:{}};(function(module,exports,require){
-function QRBitBuffer() {
-	this.buffer = [];
-	this.length = 0;
-}
-
-QRBitBuffer.prototype = {
-
-	get : function(index) {
-		var bufIndex = Math.floor(index / 8);
-		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
-	},
-	
-	put : function(num, length) {
-		for (var i = 0; i < length; i++) {
-			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
-		}
-	},
-	
-	getLengthInBits : function() {
-		return this.length;
-	},
-	
-	putBit : function(bit) {
-	
-		var bufIndex = Math.floor(this.length / 8);
-		if (this.buffer.length <= bufIndex) {
-			this.buffer.push(0);
-		}
-	
-		if (bit) {
-			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
-		}
-	
-		this.length++;
-	}
-};
-
-module.exports = QRBitBuffer;
-
-})(__m["QRBitBuffer"],__m["QRBitBuffer"].exports,__r);
-__m["QRUtil"]={exports:{}};(function(module,exports,require){
-var QRMode = require('./QRMode');
-var QRPolynomial = require('./QRPolynomial');
-var QRMath = require('./QRMath');
-var QRMaskPattern = require('./QRMaskPattern');
-
-var QRUtil = {
-
-    PATTERN_POSITION_TABLE : [
-        [],
-        [6, 18],
-        [6, 22],
-        [6, 26],
-        [6, 30],
-        [6, 34],
-        [6, 22, 38],
-        [6, 24, 42],
-        [6, 26, 46],
-        [6, 28, 50],
-        [6, 30, 54],        
-        [6, 32, 58],
-        [6, 34, 62],
-        [6, 26, 46, 66],
-        [6, 26, 48, 70],
-        [6, 26, 50, 74],
-        [6, 30, 54, 78],
-        [6, 30, 56, 82],
-        [6, 30, 58, 86],
-        [6, 34, 62, 90],
-        [6, 28, 50, 72, 94],
-        [6, 26, 50, 74, 98],
-        [6, 30, 54, 78, 102],
-        [6, 28, 54, 80, 106],
-        [6, 32, 58, 84, 110],
-        [6, 30, 58, 86, 114],
-        [6, 34, 62, 90, 118],
-        [6, 26, 50, 74, 98, 122],
-        [6, 30, 54, 78, 102, 126],
-        [6, 26, 52, 78, 104, 130],
-        [6, 30, 56, 82, 108, 134],
-        [6, 34, 60, 86, 112, 138],
-        [6, 30, 58, 86, 114, 142],
-        [6, 34, 62, 90, 118, 146],
-        [6, 30, 54, 78, 102, 126, 150],
-        [6, 24, 50, 76, 102, 128, 154],
-        [6, 28, 54, 80, 106, 132, 158],
-        [6, 32, 58, 84, 110, 136, 162],
-        [6, 26, 54, 82, 110, 138, 166],
-        [6, 30, 58, 86, 114, 142, 170]
-    ],
-
-    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
-    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
-    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
-
-    getBCHTypeInfo : function(data) {
-        var d = data << 10;
-        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
-            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
-        }
-        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
-    },
-
-    getBCHTypeNumber : function(data) {
-        var d = data << 12;
-        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
-            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
-        }
-        return (data << 12) | d;
-    },
-
-    getBCHDigit : function(data) {
-
-        var digit = 0;
-
-        while (data !== 0) {
-            digit++;
-            data >>>= 1;
-        }
-
-        return digit;
-    },
-
-    getPatternPosition : function(typeNumber) {
-        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
-    },
-
-    getMask : function(maskPattern, i, j) {
-        
-        switch (maskPattern) {
-            
-        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
-        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
-        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
-        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
-        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
-        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
-        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
-        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
-
-        default :
-            throw new Error("bad maskPattern:" + maskPattern);
-        }
-    },
-
-    getErrorCorrectPolynomial : function(errorCorrectLength) {
-
-        var a = new QRPolynomial([1], 0);
-
-        for (var i = 0; i < errorCorrectLength; i++) {
-            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
-        }
-
-        return a;
-    },
-
-    getLengthInBits : function(mode, type) {
-
-        if (1 <= type && type < 10) {
-
-            // 1 - 9
-
-            switch(mode) {
-            case QRMode.MODE_NUMBER     : return 10;
-            case QRMode.MODE_ALPHA_NUM  : return 9;
-            case QRMode.MODE_8BIT_BYTE  : return 8;
-            case QRMode.MODE_KANJI      : return 8;
-            default :
-                throw new Error("mode:" + mode);
-            }
-
-        } else if (type < 27) {
-
-            // 10 - 26
-
-            switch(mode) {
-            case QRMode.MODE_NUMBER     : return 12;
-            case QRMode.MODE_ALPHA_NUM  : return 11;
-            case QRMode.MODE_8BIT_BYTE  : return 16;
-            case QRMode.MODE_KANJI      : return 10;
-            default :
-                throw new Error("mode:" + mode);
-            }
-
-        } else if (type < 41) {
-
-            // 27 - 40
-
-            switch(mode) {
-            case QRMode.MODE_NUMBER     : return 14;
-            case QRMode.MODE_ALPHA_NUM  : return 13;
-            case QRMode.MODE_8BIT_BYTE  : return 16;
-            case QRMode.MODE_KANJI      : return 12;
-            default :
-                throw new Error("mode:" + mode);
-            }
-
-        } else {
-            throw new Error("type:" + type);
-        }
-    },
-
-    getLostPoint : function(qrCode) {
-        
-        var moduleCount = qrCode.getModuleCount();
-        var lostPoint = 0;
-        var row = 0; 
-        var col = 0;
-
-        
-        // LEVEL1
-        
-        for (row = 0; row < moduleCount; row++) {
-
-            for (col = 0; col < moduleCount; col++) {
-
-                var sameCount = 0;
-                var dark = qrCode.isDark(row, col);
-
-                for (var r = -1; r <= 1; r++) {
-
-                    if (row + r < 0 || moduleCount <= row + r) {
-                        continue;
-                    }
-
-                    for (var c = -1; c <= 1; c++) {
-
-                        if (col + c < 0 || moduleCount <= col + c) {
-                            continue;
-                        }
-
-                        if (r === 0 && c === 0) {
-                            continue;
-                        }
-
-                        if (dark === qrCode.isDark(row + r, col + c) ) {
-                            sameCount++;
-                        }
-                    }
-                }
-
-                if (sameCount > 5) {
-                    lostPoint += (3 + sameCount - 5);
-                }
-            }
-        }
-
-        // LEVEL2
-
-        for (row = 0; row < moduleCount - 1; row++) {
-            for (col = 0; col < moduleCount - 1; col++) {
-                var count = 0;
-                if (qrCode.isDark(row,     col    ) ) count++;
-                if (qrCode.isDark(row + 1, col    ) ) count++;
-                if (qrCode.isDark(row,     col + 1) ) count++;
-                if (qrCode.isDark(row + 1, col + 1) ) count++;
-                if (count === 0 || count === 4) {
-                    lostPoint += 3;
-                }
-            }
-        }
-
-        // LEVEL3
-
-        for (row = 0; row < moduleCount; row++) {
-            for (col = 0; col < moduleCount - 6; col++) {
-                if (qrCode.isDark(row, col) && 
-                        !qrCode.isDark(row, col + 1) && 
-                         qrCode.isDark(row, col + 2) && 
-                         qrCode.isDark(row, col + 3) && 
-                         qrCode.isDark(row, col + 4) && 
-                        !qrCode.isDark(row, col + 5) && 
-                         qrCode.isDark(row, col + 6) ) {
-                    lostPoint += 40;
-                }
-            }
-        }
-
-        for (col = 0; col < moduleCount; col++) {
-            for (row = 0; row < moduleCount - 6; row++) {
-                if (qrCode.isDark(row, col) &&
-                        !qrCode.isDark(row + 1, col) &&
-                         qrCode.isDark(row + 2, col) &&
-                         qrCode.isDark(row + 3, col) &&
-                         qrCode.isDark(row + 4, col) &&
-                        !qrCode.isDark(row + 5, col) &&
-                         qrCode.isDark(row + 6, col) ) {
-                    lostPoint += 40;
-                }
-            }
-        }
-
-        // LEVEL4
-        
-        var darkCount = 0;
-
-        for (col = 0; col < moduleCount; col++) {
-            for (row = 0; row < moduleCount; row++) {
-                if (qrCode.isDark(row, col) ) {
-                    darkCount++;
-                }
-            }
-        }
-        
-        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
-        lostPoint += ratio * 10;
-
-        return lostPoint;       
-    }
-
-};
-
-module.exports = QRUtil;
-
-})(__m["QRUtil"],__m["QRUtil"].exports,__r);
-__m["index"]={exports:{}};(function(module,exports,require){
-//---------------------------------------------------------------------
-// QRCode for JavaScript
-//
-// Copyright (c) 2009 Kazuhiko Arase
-//
-// URL: http://www.d-project.com/
-//
-// Licensed under the MIT license:
-//   http://www.opensource.org/licenses/mit-license.php
-//
-// The word "QR Code" is registered trademark of 
-// DENSO WAVE INCORPORATED
-//   http://www.denso-wave.com/qrcode/faqpatent-e.html
-//
-//---------------------------------------------------------------------
-// Modified to work in node for this project (and some refactoring)
-//---------------------------------------------------------------------
-
-var QR8bitByte = require('./QR8bitByte');
-var QRUtil = require('./QRUtil');
-var QRPolynomial = require('./QRPolynomial');
-var QRRSBlock = require('./QRRSBlock');
-var QRBitBuffer = require('./QRBitBuffer');
-
-function QRCode(typeNumber, errorCorrectLevel) {
-	this.typeNumber = typeNumber;
-	this.errorCorrectLevel = errorCorrectLevel;
-	this.modules = null;
-	this.moduleCount = 0;
-	this.dataCache = null;
-	this.dataList = [];
-}
-
-QRCode.prototype = {
-	
-	addData : function(data) {
-		var newData = new QR8bitByte(data);
-		this.dataList.push(newData);
-		this.dataCache = null;
-	},
-	
-	isDark : function(row, col) {
-		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
-			throw new Error(row + "," + col);
-		}
-		return this.modules[row][col];
-	},
-
-	getModuleCount : function() {
-		return this.moduleCount;
-	},
-	
-	make : function() {
-		// Calculate automatically typeNumber if provided is < 1
-		if (this.typeNumber < 1 ){
-			var typeNumber = 1;
-			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
-				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
-
-				var buffer = new QRBitBuffer();
-				var totalDataCount = 0;
-				for (var i = 0; i < rsBlocks.length; i++) {
-					totalDataCount += rsBlocks[i].dataCount;
-				}
-
-				for (var x = 0; x < this.dataList.length; x++) {
-					var data = this.dataList[x];
-					buffer.put(data.mode, 4);
-					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
-					data.write(buffer);
-				}
-				if (buffer.getLengthInBits() <= totalDataCount * 8)
-					break;
-			}
-			this.typeNumber = typeNumber;
-		}
-		this.makeImpl(false, this.getBestMaskPattern() );
-	},
-	
-	makeImpl : function(test, maskPattern) {
-		
-		this.moduleCount = this.typeNumber * 4 + 17;
-		this.modules = new Array(this.moduleCount);
-		
-		for (var row = 0; row < this.moduleCount; row++) {
-			
-			this.modules[row] = new Array(this.moduleCount);
-			
-			for (var col = 0; col < this.moduleCount; col++) {
-				this.modules[row][col] = null;//(col + row) % 3;
-			}
-		}
-	
-		this.setupPositionProbePattern(0, 0);
-		this.setupPositionProbePattern(this.moduleCount - 7, 0);
-		this.setupPositionProbePattern(0, this.moduleCount - 7);
-		this.setupPositionAdjustPattern();
-		this.setupTimingPattern();
-		this.setupTypeInfo(test, maskPattern);
-		
-		if (this.typeNumber >= 7) {
-			this.setupTypeNumber(test);
-		}
-	
-		if (this.dataCache === null) {
-			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
-		}
-	
-		this.mapData(this.dataCache, maskPattern);
-	},
-
-	setupPositionProbePattern : function(row, col)  {
-		
-		for (var r = -1; r <= 7; r++) {
-			
-			if (row + r <= -1 || this.moduleCount <= row + r) continue;
-			
-			for (var c = -1; c <= 7; c++) {
-				
-				if (col + c <= -1 || this.moduleCount <= col + c) continue;
-				
-				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
-                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
-                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
-					this.modules[row + r][col + c] = true;
-				} else {
-					this.modules[row + r][col + c] = false;
-				}
-			}		
-		}		
-	},
-	
-	getBestMaskPattern : function() {
-	
-		var minLostPoint = 0;
-		var pattern = 0;
-	
-		for (var i = 0; i < 8; i++) {
-			
-			this.makeImpl(true, i);
-	
-			var lostPoint = QRUtil.getLostPoint(this);
-	
-			if (i === 0 || minLostPoint >  lostPoint) {
-				minLostPoint = lostPoint;
-				pattern = i;
-			}
-		}
-	
-		return pattern;
-	},
-	
-	createMovieClip : function(target_mc, instance_name, depth) {
-	
-		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
-		var cs = 1;
-	
-		this.make();
-
-		for (var row = 0; row < this.modules.length; row++) {
-			
-			var y = row * cs;
-			
-			for (var col = 0; col < this.modules[row].length; col++) {
-	
-				var x = col * cs;
-				var dark = this.modules[row][col];
-			
-				if (dark) {
-					qr_mc.beginFill(0, 100);
-					qr_mc.moveTo(x, y);
-					qr_mc.lineTo(x + cs, y);
-					qr_mc.lineTo(x + cs, y + cs);
-					qr_mc.lineTo(x, y + cs);
-					qr_mc.endFill();
-				}
-			}
-		}
-		
-		return qr_mc;
-	},
-
-	setupTimingPattern : function() {
-		
-		for (var r = 8; r < this.moduleCount - 8; r++) {
-			if (this.modules[r][6] !== null) {
-				continue;
-			}
-			this.modules[r][6] = (r % 2 === 0);
-		}
-	
-		for (var c = 8; c < this.moduleCount - 8; c++) {
-			if (this.modules[6][c] !== null) {
-				continue;
-			}
-			this.modules[6][c] = (c % 2 === 0);
-		}
-	},
-	
-	setupPositionAdjustPattern : function() {
-	
-		var pos = QRUtil.getPatternPosition(this.typeNumber);
-		
-		for (var i = 0; i < pos.length; i++) {
-		
-			for (var j = 0; j < pos.length; j++) {
-			
-				var row = pos[i];
-				var col = pos[j];
-				
-				if (this.modules[row][col] !== null) {
-					continue;
-				}
-				
-				for (var r = -2; r <= 2; r++) {
-				
-					for (var c = -2; c <= 2; c++) {
-					
-						if (Math.abs(r) === 2 || 
-                            Math.abs(c) === 2 ||
-                            (r === 0 && c === 0) ) {
-							this.modules[row + r][col + c] = true;
-						} else {
-							this.modules[row + r][col + c] = false;
-						}
-					}
-				}
-			}
-		}
-	},
-	
-	setupTypeNumber : function(test) {
-	
-		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
-        var mod;
-	
-		for (var i = 0; i < 18; i++) {
-			mod = (!test && ( (bits >> i) & 1) === 1);
-			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
-		}
-	
-		for (var x = 0; x < 18; x++) {
-			mod = (!test && ( (bits >> x) & 1) === 1);
-			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
-		}
-	},
-	
-	setupTypeInfo : function(test, maskPattern) {
-	
-		var data = (this.errorCorrectLevel << 3) | maskPattern;
-		var bits = QRUtil.getBCHTypeInfo(data);
-        var mod;
-	
-		// vertical		
-		for (var v = 0; v < 15; v++) {
-	
-			mod = (!test && ( (bits >> v) & 1) === 1);
-	
-			if (v < 6) {
-				this.modules[v][8] = mod;
-			} else if (v < 8) {
-				this.modules[v + 1][8] = mod;
-			} else {
-				this.modules[this.moduleCount - 15 + v][8] = mod;
-			}
-		}
-	
-		// horizontal
-		for (var h = 0; h < 15; h++) {
-	
-			mod = (!test && ( (bits >> h) & 1) === 1);
-			
-			if (h < 8) {
-				this.modules[8][this.moduleCount - h - 1] = mod;
-			} else if (h < 9) {
-				this.modules[8][15 - h - 1 + 1] = mod;
-			} else {
-				this.modules[8][15 - h - 1] = mod;
-			}
-		}
-	
-		// fixed module
-		this.modules[this.moduleCount - 8][8] = (!test);
-	
-	},
-	
-	mapData : function(data, maskPattern) {
-		
-		var inc = -1;
-		var row = this.moduleCount - 1;
-		var bitIndex = 7;
-		var byteIndex = 0;
-		
-		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
-	
-			if (col === 6) col--;
-	
-			while (true) {
-	
-				for (var c = 0; c < 2; c++) {
-					
-					if (this.modules[row][col - c] === null) {
-						
-						var dark = false;
-	
-						if (byteIndex < data.length) {
-							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
-						}
-	
-						var mask = QRUtil.getMask(maskPattern, row, col - c);
-	
-						if (mask) {
-							dark = !dark;
-						}
-						
-						this.modules[row][col - c] = dark;
-						bitIndex--;
-	
-						if (bitIndex === -1) {
-							byteIndex++;
-							bitIndex = 7;
-						}
-					}
-				}
-								
-				row += inc;
-	
-				if (row < 0 || this.moduleCount <= row) {
-					row -= inc;
-					inc = -inc;
-					break;
-				}
-			}
-		}
-		
-	}
-
-};
-
-QRCode.PAD0 = 0xEC;
-QRCode.PAD1 = 0x11;
-
-QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
-	
-	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
-	
-	var buffer = new QRBitBuffer();
-	
-	for (var i = 0; i < dataList.length; i++) {
-		var data = dataList[i];
-		buffer.put(data.mode, 4);
-		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
-		data.write(buffer);
-	}
-
-	// calc num max data.
-	var totalDataCount = 0;
-	for (var x = 0; x < rsBlocks.length; x++) {
-		totalDataCount += rsBlocks[x].dataCount;
-	}
-
-	if (buffer.getLengthInBits() > totalDataCount * 8) {
-		throw new Error("code length overflow. (" + 
-            buffer.getLengthInBits() + 
-            ">" +  
-            totalDataCount * 8 + 
-            ")");
-	}
-
-	// end code
-	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
-		buffer.put(0, 4);
-	}
-
-	// padding
-	while (buffer.getLengthInBits() % 8 !== 0) {
-		buffer.putBit(false);
-	}
-
-	// padding
-	while (true) {
-		
-		if (buffer.getLengthInBits() >= totalDataCount * 8) {
-			break;
-		}
-		buffer.put(QRCode.PAD0, 8);
-		
-		if (buffer.getLengthInBits() >= totalDataCount * 8) {
-			break;
-		}
-		buffer.put(QRCode.PAD1, 8);
-	}
-
-	return QRCode.createBytes(buffer, rsBlocks);
-};
-
-QRCode.createBytes = function(buffer, rsBlocks) {
-
-	var offset = 0;
-	
-	var maxDcCount = 0;
-	var maxEcCount = 0;
-	
-	var dcdata = new Array(rsBlocks.length);
-	var ecdata = new Array(rsBlocks.length);
-	
-	for (var r = 0; r < rsBlocks.length; r++) {
-
-		var dcCount = rsBlocks[r].dataCount;
-		var ecCount = rsBlocks[r].totalCount - dcCount;
-
-		maxDcCount = Math.max(maxDcCount, dcCount);
-		maxEcCount = Math.max(maxEcCount, ecCount);
-		
-		dcdata[r] = new Array(dcCount);
-		
-		for (var i = 0; i < dcdata[r].length; i++) {
-			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
-		}
-		offset += dcCount;
-		
-		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
-		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
-
-		var modPoly = rawPoly.mod(rsPoly);
-		ecdata[r] = new Array(rsPoly.getLength() - 1);
-		for (var x = 0; x < ecdata[r].length; x++) {
-            var modIndex = x + modPoly.getLength() - ecdata[r].length;
-			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
-		}
-
-	}
-	
-	var totalCodeCount = 0;
-	for (var y = 0; y < rsBlocks.length; y++) {
-		totalCodeCount += rsBlocks[y].totalCount;
-	}
-
-	var data = new Array(totalCodeCount);
-	var index = 0;
-
-	for (var z = 0; z < maxDcCount; z++) {
-		for (var s = 0; s < rsBlocks.length; s++) {
-			if (z < dcdata[s].length) {
-				data[index++] = dcdata[s][z];
-			}
-		}
-	}
-
-	for (var xx = 0; xx < maxEcCount; xx++) {
-		for (var t = 0; t < rsBlocks.length; t++) {
-			if (xx < ecdata[t].length) {
-				data[index++] = ecdata[t][xx];
-			}
-		}
-	}
-
-	return data;
-
-};
-
-module.exports = QRCode;
-
-})(__m["index"],__m["index"].exports,__r);
-window.QRLib={QRCode:__m["index"].exports,ECL:__m["QRErrorCorrectLevel"].exports};})();
-</script>
-<script>
-/* ============ 站点配置：上线前改这里 ============ */
-const CONFIG = {
-  brand: "抖音账号铺",
-  support: { telegram: "：@H88H85", wechat: "" },
-  // “联系客服”按钮的链接
-  supportUrl: "https://t.me/H88H85",
-  // 公告：label 是红色小标题；有 href 时显示为可点击链接。按需增删。
-  notices: [
-    { label:"永久域名", text:"cccmmm.cc" },
-    { label:"补货通知群", text:"https://t.me/H88H86", href:"https://t.me/H88H86" }
-  ],
-  // USDT-TRC20 收款地址（以 T 开头的波场地址）。把“请替换”开头的内容换成你自己的地址。
-  // 地址未替换时，页面会禁止用户付款。
-  walletAddr: "TNpKnPz3cSHdopVgoSJt7U2JMiL5VhdUe4",
-  payWindowMinutes: 30,
-  // 接入后端后填写，例如 "https://api.example.com"。留空表示演示模式（订单只存在浏览器里）。
-  apiBase: ""
-};
-
-/* ============ 全品类优化版商品数据（含最新增补） ============ */
-const PRODUCTS = [
-  // ================= 1. 基础新号（高频消耗品 · 大库存） =================
-  { id: "DY-1001", type: "新白号", title: "新注册未实名", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 10, stock: 88 },
-  { id: "DY-1002", type: "新白号", title: "新注册已实名", desc: "0 粉 · 新注册 · 已实名 · 随拿随用", price: 40, stock: 65 },
-
-  // ================= 2. 抗封老号/满月号（高权重 · 中大库存） =================
-  { id: "DY-1003", type: "满月号", title: "满月未实名", desc: "0 粉 · 注册满30天 · 未实名 · 权重稳定", price: 40, stock: 45 },
-  { id: "DY-1004", type: "满月号", title: "满月已实名", desc: "0 粉 · 注册满30天 · 已实名 · 养号成熟", price: 50, stock: 30 },
-  { id: "DY-1005", type: "高权老号", title: "三年安全老号", desc: "10~500粉 · 注册 3 年 · 已实名 · 高度抗封", price: 65, stock: 20 },
-  // 【新增】高权老号扩充
-  { id: "DY-1032", type: "高权老号", title: "五年极品高权老号", desc: "10~500粉 · 注册 5 年 · 已实名 · 历史干净无违规", price: 95, stock: 12 },
-  { id: "DY-1033", type: "高权老号", title: "四年老白号（自带权重）", desc: "10~500粉 · 注册 4 年 · 未实名 · 极易起号", price: 78, stock: 15 },
-  { id: "DY-1034", type: "高权老号", title: "六年沉淀老号", desc: "10~500粉 · 注册 6 年 · 已实名 · 播放权重极高", price: 138, stock: 8 },
-
-  // ================= 3. 粉丝号（梯队覆盖 · 常规库存） =================
-  { id: "DY-1006", type: "粉丝号", title: "500粉破播放号", desc: "500 粉 · 破冷启动 · 未实名 · 适合试水", price: 40, stock: 25 },
-  { id: "DY-1007", type: "粉丝号", title: "千粉未实名", desc: "1000 粉 · 干净老号 · 未实名", price: 45, stock: 40 },
-  { id: "DY-1008", type: "粉丝号", title: "千粉已实名", desc: "1000 粉 · 干净老号 · 已实名", price: 55, stock: 35 },
-  { id: "DY-1009", type: "粉丝号", title: "万粉未实名", desc: "10000 粉 · 基础高 · 未实名", price: 120, stock: 15 },
-  { id: "DY-1010", type: "粉丝号", title: "万粉已实名", desc: "10000 粉 · 基础高 · 已实名", price: 130, stock: 12 },
-
-  // ================= 4. 直播/电商功能号（核心硬通货 · 重点拉满库存） =================
-  { id: "DY-1011", type: "直播号", title: "新号已开播", desc: "0 粉 · 新注册 · 已实名 · 直播权限正常", price: 40, stock: 50 },
-  { id: "DY-1012", type: "直播号", title: "千粉直播号", desc: "1000 粉 · 三年老号 · 已实名 · 稳定绿标", price: 55, stock: 35 },
-  { id: "DY-1013", type: "橱窗号", title: "0粉电商橱窗号", desc: "0 粉 · 老号 · 已开通小黄车橱窗", price: 55, stock: 40 },
-  { id: "DY-1014", type: "橱窗号", title: "千粉带货橱窗号", desc: "1000 粉 · 老号 · 已开通小黄车橱窗", price: 65, stock: 30 },
-  { id: "DY-1015", type: "蓝V号", title: "基础企业蓝V", desc: "0 粉 · 企业认证 · 官方蓝V标识", price: 50, stock: 25 },
-  { id: "DY-1016", type: "蓝V号", title: "千粉企业蓝V", desc: "1000 粉 · 企业认证 · 带团购/POIC标", price: 75, stock: 15 },
-
-  // ================= 5. 私人号 / 等级号（精品稀缺 · 少量库存） =================
-  { id: "DY-1017", type: "私人号", title: "高活跃真人老号", desc: "10~500粉 · 注册 2 年 · 已实名 · 常用常刷", price: 60, stock: 3 },
-  { id: "DY-1018", type: "私人号", title: "高权重个人日常号", desc: "10~500粉 · 注册 3 年 · 已实名 · 无违规记录", price: 68, stock: 2 },
-  
-  // 原有等级号
-  { id: "DY-1019", type: "等级号", title: "30级消费财富号", desc: "10~500粉 · 老号 · 未实名 · 30级荣誉勋章", price: 45, stock: 3 },
-  { id: "DY-1020", type: "等级号", title: "36级消费财富号", desc: "10~500粉 · 老号 · 已实名 · 36级荣誉勋章", price: 50, stock: 2 },
-  { id: "DY-1021", type: "等级号", title: "42级高等级大哥号", desc: "10~500粉 · 注册 3 年 · 已实名 · 垫榜撑场面", price: 188, stock: 1 },
-  
-  // 【新增】30级到60级随机等级号、大哥号扩充
-  { id: "DY-1035", type: "等级号", title: "33级财富活跃号", desc: "10~500粉 · 注册 2 年 · 已实名 · 33级勋章", price: 48, stock: 4 },
-  { id: "DY-1036", type: "等级号", title: "39级资深消费号", desc: "10~500粉 · 注册 3 年 · 已实名 · 39级勋章", price: 98, stock: 2 },
-  { id: "DY-1037", type: "等级号", title: "45级土豪大佬号", desc: "10~500粉 · 注册 3 年 · 已实名 · 45级财富等级", price: 260, stock: 1 },
-  { id: "DY-1038", type: "等级号", title: "51级核心神豪号", desc: "10~500粉 · 注册 4 年 · 已实名 · 51级尊贵等级", price: 520, stock: 1 },
-  { id: "DY-1039", type: "等级号", title: "58级巅峰神豪大哥号", desc: "10~500粉 · 注册 5 年 · 已实名 · 58级顶级特效", price: 1280, stock: 0 },
-  { id: "DY-1040", type: "等级号", title: "60级大佬号", desc: "10~500粉 · 注册 5 年 · 已实名 · 60级全特效神豪", price: 2880, stock: 0 },
-
-  // ================= 6. 垂类成品号（单价适中 · 精准匹配） =================
-  { id: "DY-1022", type: "垂类号", title: "美食探店成品号", desc: "保底 1W+粉 优质老号 · 注册 2 年 · 已实名 · 粘性高", price: 68, stock: 3 },
-  { id: "DY-1023", type: "垂类号", title: "游戏攻略成品号", desc: "3万~4万粉随机 · 注册 1 年 · 已实名 · 流量高", price: 96, stock: 2 },
-  { id: "DY-1024", type: "垂类号", title: "母婴育儿知识号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 宝妈粉多", price: 52, stock: 4 },
-  // 【新增】垂类号扩充
-  { id: "DY-1041", type: "垂类号", title: "汽车资讯/试驾号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 男粉居多", price: 88, stock: 2 },
-  { id: "DY-1042", type: "垂类号", title: "科技数码评测号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 垂直度高", price: 110, stock: 1 },
-  { id: "DY-1043", type: "垂类号", title: "职场干货/认知号", desc: "3万~4万粉随机 · 注册 2 年 · 已实名 · 粉丝粘性强", price: 155, stock: 2 },
-  { id: "DY-1044", type: "垂类号", title: "三农生活/助农号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 轻松开播带货", price: 79, stock: 3 },
-
-  // ================= 7. 多平台矩阵号（小红书 / 视频号） =================
-  { id: "XHS-2001", type: "其他平台", title: "小红书千粉号", desc: "1000 粉 · 注册1年 · 已实名 · 可接蒲公英", price: 55, stock: 10 },
-  { id: "XHS-2002", type: "其他平台", title: "小红书新白号", desc: "0 粉 · 注册满月 · 未实名 · 包换绑", price: 15, stock: 30 },
-  { id: "SPH-3001", type: "其他平台", title: "微信视频号满月", desc: "0 粉 · 满月老号 · 已实名 · 可做私域引流", price: 45, stock: 20 }
-];
-
-/* ============ 工具 ============ */
-const $ = (s, el=document) => el.querySelector(s);
-const store = {
-  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
-  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
-};
-let toastTimer;
-function toast(msg){
-  const t = $("#toast");
-  // 弹窗打开时，弹窗会盖在页面最上层，提示必须放进弹窗里才看得见
-  const host = document.querySelector("dialog[open]") || document.body;
-  if (t.parentNode !== host) host.appendChild(t);
-  t.textContent = msg; t.classList.add("on");
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 3000);
-}
-/* 复制：优先用现代接口（只在 https 或本机页面可用），失败时改用传统方式，
-   后者在 http 页面、微信等内置浏览器里也能用。 */
-function legacyCopy(text){
-  // 弹窗打开时，页面其余部分不可操作，所以临时输入框要放进当前弹窗里
-  const host = document.querySelector("dialog[open]") || document.body;
-  const ta = document.createElement("textarea");
-  ta.value = text; ta.readOnly = true;
-  ta.style.cssText = "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;font-size:16px";
-  host.appendChild(ta);
-  ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
-  let ok = false;
-  try { ok = document.execCommand("copy"); } catch(e){}
-  ta.remove();
-  return ok;
-}
-async function copy(text, label){
-  let ok = false;
-  try {
-    if (navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(text); ok = true; }
-  } catch(e){}
-  if (!ok) ok = legacyCopy(text);
-  toast(ok ? (label || "已复制") : "复制失败，请长按选中后手动复制");
-}
-const isPlaceholder = a => !a || a.startsWith("请替换");
-
-/* ============ 公告、分类、列表 ============ */
-const state = { type:"全部", q:"" };
-const typeNames = Array.from(new Set(PRODUCTS.map(p => p.type)));
-
-function renderNotices(){
-  $("#notes").innerHTML = CONFIG.notices.map(n => {
-    const v = n.href ? `<a href="${n.href}" target="_blank" rel="noopener">${n.text}</a>` : `<span>${n.text}</span>`;
-    return `<li><b>${n.label}：</b>${v}</li>`;
-  }).join("");
-  $("#lnkSupport").href = CONFIG.supportUrl;
-}
-function platIcon(){
-  return `<svg class="pi" aria-hidden="true"><use href="#platIcon"/></svg>`;
-}
-const allIcon = () => `<svg class="pi" aria-hidden="true"><use href="#allIcon"/></svg>`;
-const cartIcon = () => `<svg class="ic" aria-hidden="true"><use href="#cartIcon"/></svg>`;
-const searching = () => state.q.trim() !== "";
-function renderCats(){
-  const all = ["全部", ...typeNames];
-  $("#cats").innerHTML = all.map(n => `<button class="chip" type="button" data-type="${n}" aria-pressed="${!searching() && n===state.type}">${n === "全部" ? allIcon() : platIcon()}${n}</button>`).join("");
-}
-// 搜索时在全部商品里查找，不受当前分类限制
-function filtered(){
-  const q = state.q.trim().toLowerCase();
-  if (q) return PRODUCTS.filter(p => (p.title + p.desc + p.id + p.type).toLowerCase().includes(q));
-  return state.type === "全部" ? PRODUCTS.slice() : PRODUCTS.filter(p => p.type === state.type);
-}
-function stockCell(p){
-  if (p.stock <= 0) return `<div class="c-stock out">已售完</div>`;
-  return `<div class="c-stock num ${p.stock<=3?"low":""}">${p.stock}</div>`;
-}
-function renderList(){
-  const list = filtered();
-  $("#hList").textContent = searching() ? `搜索结果（${list.length}）` : (state.type === "全部" ? "全部商品" : state.type);
-  const head = `<div class="prow head" aria-hidden="true"><div>商品名称</div><div>库存</div><div>单价</div><div></div></div>`;
-  $("#list").innerHTML = list.length ? head + list.map(p => `
-    <div class="prow">
-      <div class="pname"><b>${platIcon()}<span>${p.title}</span></b><small>${p.id} · ${p.desc}</small></div>
-      ${stockCell(p)}
-      <div class="c-price num">${p.price}<span>USDT</span></div>
-      <button class="btn" type="button" data-buy="${p.id}" ${p.stock>0?"":"disabled"}>${p.stock>0 ? cartIcon()+"购买" : "售完"}</button>
-    </div>`).join("") : `<div class="empty">没有符合条件的商品，换个分类或关键词试试。</div>`;
-}
-
-/* ============ 结账流程 ============ */
-const dlg = $("#dlgBuy");
-let cur = null, timer = null;
-
-function openBuy(id){
-  const p = PRODUCTS.find(x => x.id === id); if (!p || p.stock <= 0) return;
-  cur = { p, qty:1, net:"TRC20", contact:"", order:null };
-  stepConfirm(); dlg.showModal();
-}
-function closeBuy(){ clearInterval(timer); dlg.close(); }
-function head(title){
-  return `<div class="dlg-head"><h2 id="buyTitle">${title}</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>`;
-}
-function stepConfirm(){
-  const { p } = cur;
-  const walletOk = !isPlaceholder(CONFIG.walletAddr);
-  $("#buyBody").innerHTML = `
-    ${head("确认订单")}
-    <div>
-      <div class="row"><b>${p.title}</b><span class="mono">${p.id}</span></div>
-      <div class="row" style="color:var(--ink-3);margin-top:2px"><span>库存 ${p.stock}</span><span class="num">${p.price} USDT / 个</span></div>
-    </div>
-    <div>
-      <span class="lbl">数量</span>
-      <div class="qty">
-        <button type="button" data-qty="-1" aria-label="减少">−</button>
-        <span class="num" id="qtyVal">${cur.qty}</span>
-        <button type="button" data-qty="1" aria-label="增加">+</button>
+  <div id="backupGrid" class="grid blur"></div>
+  <div class="toolrow">
+    <button class="btn ghost" id="btnToggleBlur">显示 / 遮挡</button>
+    <button class="btn ghost" id="btnRegenerate">换一组</button>
+  </div>
+  <div class="flex1"></div>
+  <button class="btn primary" id="btnBackupDone">我已安全抄写，继续</button>
+</div>
+
+<!-- ===================== 4. 完成 ===================== -->
+<div class="screen" id="screen-done">
+  <div class="center-col">
+    <svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="34" fill="none" stroke="var(--brand)" stroke-width="4"/><path d="M22 37l10 10 18-20" fill="none" stroke="var(--brand)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1 style="margin:0">钱包已创建</h1>
+    <p class="lead" style="margin:0" id="doneText">本地钱包创建完成。</p>
+  </div>
+  <button class="btn primary" id="btnDoneFinish">完成</button>
+</div>
+
+<!-- ===================== 5. 导入助记词 ===================== -->
+<div class="screen" id="screen-import-mn">
+  <div class="topbar"><button class="iconbtn" data-back="close-sheet-to-onboard"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M679.13916 138.387837c10.304693 0 20.602224 3.941775 28.457122 11.791557 15.733333 15.733333 15.733333 41.172725 0 56.906058L397.262304 517.418406l314.834478 314.836525c15.733333 15.733333 15.733333 41.171702 0 56.905034s-41.171702 15.733333-56.905034 0L311.900148 545.868365c-15.734356-15.733333-15.734356-41.172725 0-56.906058L650.683061 150.179394C658.532843 142.335752 668.830373 138.387837 679.13916 138.387837L679.13916 138.387837zM679.13916 138.387837"/></svg></button><button class="iconbtn help" data-help="mn"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 938.666667c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0 85.333333C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z"/><path d="M520.96 232.106667c-62.293333 0-111.786667 17.92-147.626667 54.613333-36.693333 35.84-54.613333 84.48-54.613333 146.773333h90.453333c0-37.546667 7.68-67.413333 23.04-87.893333 17.066667-23.893333 45.226667-35.84 83.626667-35.84 30.72 0 54.613333 8.533333 71.68 25.6 16.213333 17.066667 24.746667 40.106667 24.746667 69.973333 0 22.186667-7.68 42.666667-23.04 62.293334l-14.506667 16.213333c-52.906667 46.933333-85.333333 81.92-97.28 105.813333-11.093333 22.186667-16.213333 49.493333-16.213333 81.066667v14.506667h91.306666v-14.506667c0-21.333333 4.266667-40.106667 13.653334-57.173333 7.68-15.36 19.626667-29.866667 34.986666-43.52 40.96-34.986667 64.853333-57.173333 72.533334-66.56 20.48-27.306667 31.573333-62.293333 31.573333-104.106667 0-51.2-17.066667-92.16-50.346667-122.026667-34.133333-30.72-78.506667-45.226667-133.973333-45.226666z m-14.506667 499.2c-17.92 0-32.426667 5.12-43.52 17.066666-12.8 11.093333-18.773333 25.6-18.773333 43.52 0 17.066667 5.973333 31.573333 18.773333 43.52 11.093333 11.946667 25.6 17.92 43.52 17.92 17.066667 0 32.426667-5.973333 45.226667-17.066666 11.946667-11.946667 17.92-26.453333 17.92-44.373334 0-17.92-5.973333-32.426667-17.92-43.52-11.946667-11.946667-27.306667-17.066667-45.226667-17.066666z"/></svg></button></div>
+  <h1>导入助记词</h1>
+  <p class="lead">输入助记词来添加或恢复你的钱包。导入的助记词将被加密并安全存储在你的设备上。为了你的资产安全，萤火不会存储你的助记词。</p>
+  <a class="link im-link" data-info="mn">了解助记词</a>
+  <textarea class="input tall" id="imMnText" rows="4" placeholder="输入助记词单词, 并使用空格分隔" spellcheck="false" autocapitalize="off"></textarea>
+  <div id="imMnMsg" class="result" style="display:none"></div>
+  <div class="flex1"></div>
+  <div class="checkrow" style="margin:6px 0 12px"><input type="checkbox" id="imMnAgree"><span>我已阅读并同意 <a class="link" id="openTerms2">萤火服务条款</a></span></div>
+  <button class="btn primary" id="btnImMnSubmit" disabled>马上导入</button>
+</div>
+
+<!-- ===================== 6. 导入私钥 ===================== -->
+<div class="screen" id="screen-import-pk">
+  <div class="topbar"><button class="iconbtn" data-back="close-sheet-to-onboard"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M679.13916 138.387837c10.304693 0 20.602224 3.941775 28.457122 11.791557 15.733333 15.733333 15.733333 41.172725 0 56.906058L397.262304 517.418406l314.834478 314.836525c15.733333 15.733333 15.733333 41.171702 0 56.905034s-41.171702 15.733333-56.905034 0L311.900148 545.868365c-15.734356-15.733333-15.734356-41.172725 0-56.906058L650.683061 150.179394C658.532843 142.335752 668.830373 138.387837 679.13916 138.387837L679.13916 138.387837zM679.13916 138.387837"/></svg></button><button class="iconbtn help" data-help="pk"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 938.666667c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0 85.333333C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z"/><path d="M520.96 232.106667c-62.293333 0-111.786667 17.92-147.626667 54.613333-36.693333 35.84-54.613333 84.48-54.613333 146.773333h90.453333c0-37.546667 7.68-67.413333 23.04-87.893333 17.066667-23.893333 45.226667-35.84 83.626667-35.84 30.72 0 54.613333 8.533333 71.68 25.6 16.213333 17.066667 24.746667 40.106667 24.746667 69.973333 0 22.186667-7.68 42.666667-23.04 62.293334l-14.506667 16.213333c-52.906667 46.933333-85.333333 81.92-97.28 105.813333-11.093333 22.186667-16.213333 49.493333-16.213333 81.066667v14.506667h91.306666v-14.506667c0-21.333333 4.266667-40.106667 13.653334-57.173333 7.68-15.36 19.626667-29.866667 34.986666-43.52 40.96-34.986667 64.853333-57.173333 72.533334-66.56 20.48-27.306667 31.573333-62.293333 31.573333-104.106667 0-51.2-17.066667-92.16-50.346667-122.026667-34.133333-30.72-78.506667-45.226667-133.973333-45.226666z m-14.506667 499.2c-17.92 0-32.426667 5.12-43.52 17.066666-12.8 11.093333-18.773333 25.6-18.773333 43.52 0 17.066667 5.973333 31.573333 18.773333 43.52 11.093333 11.946667 25.6 17.92 43.52 17.92 17.066667 0 32.426667-5.973333 45.226667-17.066666 11.946667-11.946667 17.92-26.453333 17.92-44.373334 0-17.92-5.973333-32.426667-17.92-43.52-11.946667-11.946667-27.306667-17.066667-45.226667-17.066666z"/></svg></button></div>
+  <h1>导入私钥</h1>
+  <p class="lead">输入 64 位十六进制私钥（可带 0x 前缀）来恢复钱包。私钥只会被加密保存在本机，萤火钱包不会上传或保存你的私钥。</p>
+  <a class="link im-link" data-info="pk">了解私钥</a>
+  <textarea class="input tall" id="imPkText" rows="6" placeholder="输入明文私钥" spellcheck="false" autocapitalize="off"></textarea>
+  <div id="imPkMsg" class="result" style="display:none"></div>
+  <div class="flex1"></div>
+  <div class="checkrow" style="margin:6px 0 12px"><input type="checkbox" id="imPkAgree"><span>我已阅读并同意 <a class="link" id="openTerms3">萤火服务条款</a></span></div>
+  <button class="btn primary" id="btnImPkSubmit" disabled>马上导入</button>
+</div>
+
+<!-- ===================== 7. 导入 Keystore ===================== -->
+<div class="screen" id="screen-import-ks">
+  <div class="topbar"><button class="iconbtn" data-back="close-sheet-to-onboard"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M679.13916 138.387837c10.304693 0 20.602224 3.941775 28.457122 11.791557 15.733333 15.733333 15.733333 41.172725 0 56.906058L397.262304 517.418406l314.834478 314.836525c15.733333 15.733333 15.733333 41.171702 0 56.905034s-41.171702 15.733333-56.905034 0L311.900148 545.868365c-15.734356-15.733333-15.734356-41.172725 0-56.906058L650.683061 150.179394C658.532843 142.335752 668.830373 138.387837 679.13916 138.387837L679.13916 138.387837zM679.13916 138.387837"/></svg></button><button class="iconbtn help" data-help="ks"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M512 938.666667c235.648 0 426.666667-191.018667 426.666667-426.666667S747.648 85.333333 512 85.333333 85.333333 276.352 85.333333 512s191.018667 426.666667 426.666667 426.666667z m0 85.333333C229.248 1024 0 794.752 0 512S229.248 0 512 0s512 229.248 512 512-229.248 512-512 512z"/><path d="M520.96 232.106667c-62.293333 0-111.786667 17.92-147.626667 54.613333-36.693333 35.84-54.613333 84.48-54.613333 146.773333h90.453333c0-37.546667 7.68-67.413333 23.04-87.893333 17.066667-23.893333 45.226667-35.84 83.626667-35.84 30.72 0 54.613333 8.533333 71.68 25.6 16.213333 17.066667 24.746667 40.106667 24.746667 69.973333 0 22.186667-7.68 42.666667-23.04 62.293334l-14.506667 16.213333c-52.906667 46.933333-85.333333 81.92-97.28 105.813333-11.093333 22.186667-16.213333 49.493333-16.213333 81.066667v14.506667h91.306666v-14.506667c0-21.333333 4.266667-40.106667 13.653334-57.173333 7.68-15.36 19.626667-29.866667 34.986666-43.52 40.96-34.986667 64.853333-57.173333 72.533334-66.56 20.48-27.306667 31.573333-62.293333 31.573333-104.106667 0-51.2-17.066667-92.16-50.346667-122.026667-34.133333-30.72-78.506667-45.226667-133.973333-45.226666z m-14.506667 499.2c-17.92 0-32.426667 5.12-43.52 17.066666-12.8 11.093333-18.773333 25.6-18.773333 43.52 0 17.066667 5.973333 31.573333 18.773333 43.52 11.093333 11.946667 25.6 17.92 43.52 17.92 17.066667 0 32.426667-5.973333 45.226667-17.066666 11.946667-11.946667 17.92-26.453333 17.92-44.373334 0-17.92-5.973333-32.426667-17.92-43.52-11.946667-11.946667-27.306667-17.066667-45.226667-17.066666z"/></svg></button></div>
+  <h1>导入 Keystore</h1>
+  <p class="lead">将你的 Keystore 文件内容粘贴到下方输入框，并输入匹配的密码，完成钱包的导入。</p>
+  <a class="link im-link" data-info="ks">了解 Keystore</a>
+  <textarea class="input tall" id="imKsText" rows="6" placeholder="Keystore 文件内容" spellcheck="false" autocapitalize="off"></textarea>
+  <label class="field-label">Keystore 密码</label>
+  <div class="pwbox"><input class="input" id="imKsPw" type="password" placeholder="输入密码"><button class="eye eye-svg" data-toggle="imKsPw" aria-label="显示或隐藏密码"><svg class="ec" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.5c2.4 3.2 5.5 4.8 9.5 4.8s7.1-1.6 9.5-4.8"/><path d="M6.2 13.4l-1.7 2.6M10.3 14.3l-.6 3M14.1 14.3l.9 3M17.8 13.4l1.8 2.5"/></svg><svg class="eo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <div id="imKsMsg" class="result" style="display:none"></div>
+  <div class="flex1"></div>
+  <div class="checkrow" style="margin:6px 0 12px"><input type="checkbox" id="imKsAgree"><span>我已阅读并同意 <a class="link" id="openTerms4">萤火服务条款</a></span></div>
+  <button class="btn primary" id="btnImKsSubmit" disabled>马上导入</button>
+</div>
+
+<!-- ===================== 底部弹层：选择导入方式 ===================== -->
+<div class="sheet-backdrop" id="importSheet">
+  <div class="sheet">
+    <div class="sheet-head"><h3>选择导入方式</h3><button class="iconbtn" id="closeSheet" aria-label="关闭"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="10" fill="var(--c-close)"/><path d="M6.6 6.6l6.8 6.8M13.4 6.6l-6.8 6.8" stroke="#fff" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg></button></div>
+    <div class="opt-list">
+      <div class="optcard" data-goto="screen-import-mn">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h6.5L19 8.5V19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M13.5 3v3.5a2 2 0 0 0 2 2H19"/><path d="M9 16.5h2.5"/></svg></div>
+        <div class="txt"><div class="tt">助记词</div><div class="ds">助记词由单词组成，以空格隔开</div></div>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5L16 12l-7.5 7.5"/></svg>
+      </div>
+      <div class="optcard" data-goto="screen-import-pk">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="8.5" r="4.5"/><path d="M11.8 11.7L4 19.5M4 19.5l2 2M8 15.5l2.5 1.5"/><path d="M13.5 8.5h3"/></svg></div>
+        <div class="txt"><div class="tt">私钥</div><div class="ds">明文私钥字符</div></div>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5L16 12l-7.5 7.5"/></svg>
+      </div>
+      <div class="optcard" data-goto="screen-import-ks">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5L10.5 12l-7 5.5"/><path d="M12.5 18.5h8"/></svg></div>
+        <div class="txt"><div class="tt">Keystore</div><div class="ds">加密的私钥 JSON 文件</div></div>
+        <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 4.5L16 12l-7.5 7.5"/></svg>
       </div>
     </div>
-    <div class="row"><span style="color:var(--ink-3)">付款方式</span><b>USDT · TRC20（波场）</b></div>
-    <div>
-      <label class="lbl" for="contact">联系方式（ 手机号 / 邮箱 / Telegram ）</label>
-      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于查询订单/接收账号资料">
-      <div class="err" id="err"></div>
-    </div>
-    <div class="total">
-      <div class="row"><span>应付合计</span><span class="num" style="color:var(--ink-3)">${cur.qty} × ${p.price} USDT</span></div>
-      <div class="big num">${(p.price*cur.qty).toFixed(2)} <span style="font-size:14px;font-weight:400">USDT</span></div>
-    </div>
-    ${walletOk ? "" : `<div class="notice">商家尚未配置收款地址，暂时无法付款。请联系客服 ${CONFIG.support.telegram}。</div>`}
-    <button class="btn" type="button" id="toPay" ${walletOk?"":"disabled"}>下一步：查看收款信息</button>`;
-}
-const copyIcon = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>`;
-// 把地址生成二维码（SVG），黑码白底，四周留白，深色模式下也能被扫描
-function qrSvg(text){
-  const q = new QRLib.QRCode(-1, QRLib.ECL.M); q.addData(text); q.make();
-  const n = q.getModuleCount(), pad = 3; let d = "";
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.modules[r][c]) d += `M${c+pad} ${r+pad}h1v1h-1z`;
-  const size = n + pad*2;
-  return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
-}
-function stepPay(){
-  const { p } = cur;
-  const base = p.price * cur.qty;
-  const tail = (Math.floor(Math.random()*49) + 1) / 100; // 0.01–0.49，用于后台识别订单
-  const amount = (base + tail).toFixed(2);
-  const no = "DY" + new Date().toISOString().slice(2,10).replace(/-/g,"") + Math.random().toString(36).slice(2,7).toUpperCase();
-  cur.order = { no, id:p.id, title:p.title, qty:cur.qty, net:"TRC20", amount, contact:cur.contact, created:Date.now(), status:"待付款", txid:"" };
-  const addr = CONFIG.walletAddr;
-  const deadline = Date.now() + CONFIG.payWindowMinutes*60000;
-  $("#buyBody").innerHTML = `
-    ${head("USDT 付款")}
-    <div>
-      <div class="pay-amt"><span class="num">${amount} USDT</span><button class="copy-ic" type="button" data-copy="${amount}" data-label="金额已复制" aria-label="复制金额">${copyIcon}</button></div>
-      <div class="pay-net">区块网络 · Tron（TRC20）</div>
-    </div>
-    <div class="pay-bar">
-      <span class="pill">请严格按照数额进行付款</span>
-      <span class="count">到期时间 <b class="num" id="cd">--:--</b></span>
-    </div>
-    <div class="row pay-line"><span style="color:var(--ink-3)">商户订单</span><b class="mono">${no}</b></div>
-    <div class="qr-box">${qrSvg(addr)}</div>
-    <div class="addr-box">
-      <div class="row"><span style="color:var(--ink-3);font-size:13px">收款地址</span><button class="copy-ic" type="button" data-copy="${addr}" data-label="地址已复制" aria-label="复制地址">${copyIcon}</button></div>
-      <div class="addr mono"><em>${addr.slice(0,4)}</em>${addr.slice(4,-6)}<em>${addr.slice(-6)}</em></div>
-    </div>
-    <div>
-    <button class="btn" type="button" id="`;
-  clearInterval(timer);
-  const tick = () => {
-    const left = Math.max(0, deadline - Date.now());
-    const m = String(Math.floor(left/60000)).padStart(2,"0"), s = String(Math.floor(left%60000/1000)).padStart(2,"0");
-    const el = $("#cd"); if (el){ el.textContent = left ? `${m}:${s}` : "已超时"; el.parentElement.classList.toggle("over", !left); }
-    if (!left) clearInterval(timer);
-  };
-  tick(); timer = setInterval(tick, 1000);
-}
-async function submitOrder(){
-  const txid = $("#txid").value.trim();
-  if (txid.length < 16){ $("#err").textContent = "请填写完整的交易哈希。"; return; }
-  cur.order.txid = txid; cur.order.status = "待核验";
-  const orders = store.get("orders", []); orders.unshift(cur.order); store.set("orders", orders);
-  if (CONFIG.apiBase){
-    try {
-      await fetch(CONFIG.apiBase + "/orders", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(cur.order) });
-    } catch(e){ /* 后端暂不可用时，订单仍保存在本地，客户可联系客服 */ }
-  }
-  clearInterval(timer);
-  $("#buyBody").innerHTML = `
-    ${head("订单已提交")}
-    <div class="ok-mark" aria-hidden="true">✓</div>
-    <div>
-      <div style="font-weight:600;margin-bottom:4px">我们会核验这笔转账</div>
-      <div style="color:var(--ink-2);font-size:14px">核验通过后，账号资料会发到你填写的联系方式。请记下订单号，有问题时发给客服。</div>
-    </div>
-    <div class="box"><code>${cur.order.no}</code><button class="ghost" type="button" data-copy="${cur.order.no}" data-label="订单号已复制">复制</button></div>
-    <div style="font-size:13px;color:var(--ink-3)">客服：Telegram ${CONFIG.support.telegram} · 微信 ${CONFIG.support.wechat}</div>
-    <button class="btn line" type="button" data-close>完成</button>`;
-}
+  </div>
+</div>
 
-/* ============ 订单查询：输入订单号或联系方式 ============
-   演示模式下只能查到本浏览器里提交过的订单。配置了 CONFIG.apiBase 后，改为请求
-   GET {apiBase}/orders?q=关键词，后端返回订单数组（字段同本页保存的订单）。 */
-const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-const ordHint = t => `<div style="color:var(--ink-3);font-size:14px">${t}</div>`;
-function openOrders(){
-  $("#ordQ").value = "";
-  $("#ordList").innerHTML = ordHint("输入订单号或下单时填写的联系方式，查看订单状态。");
-  $("#dlgOrders").showModal();
-  $("#ordQ").focus();
-}
-async function searchOrders(){
-  const q = $("#ordQ").value.trim();
-  const box = $("#ordList");
-  if (!q){ box.innerHTML = ordHint("请先输入订单号或联系方式。"); return; }
-  let found = null, note = "";
-  if (CONFIG.apiBase){
-    try {
-      const r = await fetch(CONFIG.apiBase + "/orders?q=" + encodeURIComponent(q));
-      if (r.ok) found = await r.json();
-    } catch(e){}
-  }
-  if (!found){
-    const key = q.toLowerCase();
-    found = store.get("orders", []).filter(o => o.no.toLowerCase() === key || o.no.toLowerCase().includes(key) || String(o.contact || "").toLowerCase() === key);
-    note = `<div style="font-size:12px;color:var(--ink-3)">当前只能查到在这个浏览器里提交的订单。在别的设备下的单，请联系客服 ${esc(CONFIG.support.telegram)}。</div>`;
-  }
-  box.innerHTML = (found.length ? found.map(o => `
-    <div class="order">
-      <div class="row"><b class="mono">${esc(o.no)}</b><span style="color:var(--accent)">${esc(o.status)}</span></div>
-      <div>${esc(o.title)} × ${esc(o.qty)}</div>
-      <div class="num" style="color:var(--ink-3)">${esc(o.amount)} USDT · ${esc(o.net)} · ${new Date(o.created).toLocaleString("zh-CN")}</div>
-    </div>`).join("") : ordHint("没有找到相关订单，请检查订单号或联系方式是否填写正确。")) + note;
-}
+<!-- ===================== 说明弹窗 ===================== -->
+<div class="modal-backdrop" id="infoModal">
+  <div class="modal">
+    <h3 id="infoTitle"></h3>
+    <div id="infoBody"></div>
+    <button class="btn primary" id="infoClose">我知道了</button>
+  </div>
+</div>
 
-/* ============ 事件 ============ */
-document.addEventListener("click", e => {
-  const t = e.target.closest("button"); if (!t) return;
-  if (t.dataset.type){ state.type = t.dataset.type; state.q = ""; $("#q").value = ""; renderCats(); renderList(); }
-  else if (t.dataset.buy) openBuy(t.dataset.buy);
-  else if (t.dataset.qty && cur){ cur.qty = Math.min(Math.max(1, cur.qty + Number(t.dataset.qty)), cur.p.stock); cur.contact = ($("#contact")||{}).value ?? cur.contact; stepConfirm(); }
-  else if (t.id === "toPay"){
-    cur.contact = $("#contact").value.trim();
-    if (cur.contact.length < 3){ $("#err").textContent = "请填写联系方式，用于接收账号资料。"; return; }
-    stepPay();
-  }
-  else if (t.id === "submitPaid") submitOrder();
-  else if (t.dataset.copy) copy(t.dataset.copy, t.dataset.label);
-  else if (t.hasAttribute("data-close")){ const d = t.closest("dialog"); if (d === dlg) closeBuy(); else d.close(); }
-  else if (t.dataset.act === "orders") openOrders();
-  else if (t.dataset.act === "guide") $("#dlgGuide").showModal();
-  else if (t.dataset.act === "login") openAuth("login");
-  else if (t.dataset.act === "register") openAuth("register");
-  else if (t.dataset.act === "captcha") drawCaptcha();
-  else if (t.dataset.act === "logout"){ session.set(null); renderAcct(); toast("已退出登录"); }
-});
-document.addEventListener("submit", e => {
-  if (e.target.id === "authForm"){ e.preventDefault(); submitAuth(); }
-  else if (e.target.id === "ordForm"){ e.preventDefault(); searchOrders(); }
-});
-
-/* ============ 账号：注册 / 登录 ============
-   账号保存在当前浏览器的本地存储里，不会上传。密码只保存加盐后的哈希，不保存明文。
-   清除浏览器数据、换浏览器或换设备后，账号不会跟过去。 */
-const CAP_CHARS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-let capCode = "", authMode = "login";
-const session = { get(){ return store.get("session", null); }, set(u){ store.set("session", u); } };
-function canStore(){ try { localStorage.setItem("_t","1"); localStorage.removeItem("_t"); return true; } catch(e){ return false; } }
-function randSalt(){
-  try { return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2,"0")).join(""); }
-  catch(e){ return String(Math.random()).slice(2) + Date.now(); }
+<script>
+"use strict";
+/* ============ 密码学核心（本地运行，无网络请求） ============ */
+// ---- Keccak-256 (pure JS, BigInt 64-bit lanes, implemented from the public Keccak-f[1600] spec) ----
+const MASK64 = (1n<<64n)-1n;
+const RC = [
+  0x0000000000000001n,0x0000000000008082n,0x800000000000808An,0x8000000080008000n,
+  0x000000000000808Bn,0x0000000080000001n,0x8000000080008081n,0x8000000000008009n,
+  0x000000000000008An,0x0000000000000088n,0x0000000080008009n,0x000000008000000An,
+  0x000000008000808Bn,0x800000000000008Bn,0x8000000000008089n,0x8000000000008003n,
+  0x8000000000008002n,0x8000000000000080n,0x000000000000800An,0x800000008000000An,
+  0x8000000080008081n,0x8000000000008080n,0x0000000080000001n,0x8000000080008008n
+];
+const ROT = [
+  [0,1],[1,3],[2,6],[3,10],[4,15],[0,36],[0,45],[2,62],[3,43],[4,1],
+  [0,0],[0,0],[0,0],[0,0],[0,0] // filled properly below via table
+];
+// Standard rotation offsets r[x][y] indexed by lane position (x + 5y)
+const R = [
+  0,1,62,28,27,
+  36,44,6,55,20,
+  3,10,43,25,39,
+  41,45,15,21,8,
+  18,2,61,56,14
+];
+function rotl(x, n){
+  n = BigInt(n % 64);
+  if(n===0n) return x & MASK64;
+  return ((x<<n) | (x>>(64n-n))) & MASK64;
 }
-async function hashPw(pw, salt){
-  try {
-    if (window.crypto && crypto.subtle){
-      const enc = new TextEncoder();
-      const key = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveBits"]);
-      const bits = await crypto.subtle.deriveBits({ name:"PBKDF2", salt:enc.encode(salt), iterations:100000, hash:"SHA-256" }, key, 256);
-      return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2,"0")).join("");
+function keccakF(st){ // st: Array of 25 BigInt lanes
+  for(let round=0;round<24;round++){
+    // theta
+    const C = new Array(5);
+    for(let x=0;x<5;x++) C[x] = st[x]^st[x+5]^st[x+10]^st[x+15]^st[x+20];
+    const D = new Array(5);
+    for(let x=0;x<5;x++) D[x] = C[(x+4)%5] ^ rotl(C[(x+1)%5], 1);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) st[x+5*y] ^= D[x];
+    // rho + pi
+    const B = new Array(25);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+      const newX = y, newY = (2*x+3*y)%5;
+      B[newX+5*newY] = rotl(st[x+5*y], R[x+5*y]);
     }
-  } catch(e){}
-  let h = 5381; const s = salt + pw;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-  return "x" + h;
-}
-function renderAcct(){
-  const u = session.get();
-  $("#acct").innerHTML = u
-    ? `<span class="who num">用户 ${u}</span><button class="ghost" type="button" data-act="logout">退出</button>`
-    : `<button class="ghost" type="button" data-act="login">登录</button><button class="ghost solid" type="button" data-act="register">注册</button>`;
-}
-function drawCaptcha(){
-  const cv = $("#capCv"); if (!cv) return;
-  const W = 120, H = 40, k = 2;
-  cv.width = W*k; cv.height = H*k;
-  const g = cv.getContext("2d"); g.scale(k, k);
-  const rnd = (a, b) => a + Math.random()*(b-a);
-  g.fillStyle = "#f1f4f3"; g.fillRect(0, 0, W, H);
-  for (let i = 0; i < 5; i++){
-    g.strokeStyle = `hsl(${rnd(0,360)},45%,60%)`; g.lineWidth = rnd(1,2);
-    g.beginPath(); g.moveTo(rnd(0,W), rnd(0,H)); g.bezierCurveTo(rnd(0,W), rnd(0,H), rnd(0,W), rnd(0,H), rnd(0,W), rnd(0,H)); g.stroke();
+    // chi
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+      st[x+5*y] = B[x+5*y] ^ ((~B[(x+1)%5+5*y]) & B[(x+2)%5+5*y] & MASK64);
+    }
+    // iota
+    st[0] ^= RC[round];
   }
-  capCode = Array.from({length:4}, () => CAP_CHARS[Math.floor(Math.random()*CAP_CHARS.length)]).join("");
-  g.font = "bold 26px Menlo, Consolas, monospace"; g.textBaseline = "middle"; g.textAlign = "center";
-  [...capCode].forEach((ch, i) => {
-    g.save(); g.translate(18 + i*28, H/2 + rnd(-3,3)); g.rotate(rnd(-.35,.35));
-    g.fillStyle = `hsl(${rnd(0,360)},55%,32%)`; g.fillText(ch, 0, 0); g.restore();
+}
+function keccak256(bytes){
+  const RATE = 136; // bytes
+  const padLen = RATE - (bytes.length % RATE);
+  const padded = new Uint8Array(bytes.length + padLen);
+  padded.set(bytes);
+  padded[bytes.length] = 0x01;
+  padded[padded.length-1] |= 0x80;
+  const st = new Array(25).fill(0n);
+  for(let off=0; off<padded.length; off+=RATE){
+    for(let i=0;i<RATE/8;i++){
+      let lane = 0n;
+      for(let b=7;b>=0;b--) lane = (lane<<8n) | BigInt(padded[off+i*8+b]);
+      st[i] ^= lane;
+    }
+    keccakF(st);
+  }
+  const out = new Uint8Array(32);
+  for(let i=0;i<4;i++){
+    let lane = st[i];
+    for(let b=0;b<8;b++){ out[i*8+b] = Number(lane & 0xffn); lane >>= 8n; }
+  }
+  return out;
+}
+
+// ---- secp256k1 (pure JS BigInt) ----
+const P  = BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F");
+const N  = BigInt("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141");
+const Gx = BigInt("0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798");
+const Gy = BigInt("0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8");
+
+function mod(a,m){ const r=a%m; return r>=0n ? r : r+m; }
+function modInv(a,m){
+  let [old_r,r]=[mod(a,m),m], [old_s,s]=[1n,0n];
+  while(r!==0n){ const q=old_r/r; [old_r,r]=[r,old_r-q*r]; [old_s,s]=[s,old_s-q*s]; }
+  return mod(old_s,m);
+}
+function ptDouble(pt){
+  if(pt===null) return null;
+  const [x,y]=pt;
+  if(y===0n) return null;
+  const l = mod((3n*x*x)*modInv(2n*y,P), P);
+  const x3 = mod(l*l-2n*x, P);
+  const y3 = mod(l*(x-x3)-y, P);
+  return [x3,y3];
+}
+function ptAdd(p1,p2){
+  if(p1===null) return p2;
+  if(p2===null) return p1;
+  const [x1,y1]=p1, [x2,y2]=p2;
+  if(x1===x2){
+    if(mod(y1+y2,P)===0n) return null;
+    return ptDouble(p1);
+  }
+  const l = mod((y2-y1)*modInv(x2-x1,P), P);
+  const x3 = mod(l*l-x1-x2, P);
+  const y3 = mod(l*(x1-x3)-y1, P);
+  return [x3,y3];
+}
+function ptMul(k, pt){
+  let result = null;
+  let addend = pt;
+  let n = k;
+  while(n>0n){
+    if(n & 1n) result = ptAdd(result, addend);
+    addend = ptDouble(addend);
+    n >>= 1n;
+  }
+  return result;
+}
+function privToPubUncompressed(privHex){
+  const k = BigInt("0x"+privHex);
+  if(k<=0n || k>=N) throw new Error("私钥超出有效范围");
+  const [x,y] = ptMul(k, [Gx,Gy]);
+  const xh = x.toString(16).padStart(64,"0");
+  const yh = y.toString(16).padStart(64,"0");
+  return "04"+xh+yh;
+}
+function hexToBytes(hex){
+  hex = hex.replace(/^0x/i,"");
+  const out = new Uint8Array(hex.length/2);
+  for(let i=0;i<out.length;i++) out[i]=parseInt(hex.substr(i*2,2),16);
+  return out;
+}
+function bytesToHex(b){ return Array.from(b,x=>x.toString(16).padStart(2,"0")).join(""); }
+
+function toChecksumAddress(addrHexLower){
+  const hash = bytesToHex(keccak256(new TextEncoder().encode(addrHexLower)));
+  let out = "0x";
+  for(let i=0;i<addrHexLower.length;i++){
+    const c = addrHexLower[i];
+    if(/[0-9]/.test(c)) out += c;
+    else out += parseInt(hash[i],16) >= 8 ? c.toUpperCase() : c;
+  }
+  return out;
+}
+function privToAddress(privHex){
+  const pub = privToPubUncompressed(privHex);
+  const pubBytes = hexToBytes(pub).slice(1);
+  const hash = keccak256(pubBytes);
+  const addrLower = bytesToHex(hash.slice(12));
+  return toChecksumAddress(addrLower);
+}
+
+
+// ---- V3 Keystore decrypt (PBKDF2 + AES-128-CTR, per the Ethereum Web3 Secret Storage spec) ----
+// kdfFn(password, saltBytes, params) must return a Promise<Uint8Array> derived key (32 bytes for pbkdf2/scrypt dklen)
+// ctrDecryptFn(keyBytes16, ivBytes16, ciphertextBytes) must return Promise<Uint8Array> plaintext
+async function decryptV3Keystore(json, password, kdfFn, ctrDecryptFn){
+  const ks = typeof json === "string" ? JSON.parse(json) : json;
+  const crypt = ks.crypto || ks.Crypto;
+  if(!crypt) throw new Error("不是有效的 Keystore JSON");
+  const kdf = crypt.kdf;
+  if(kdf !== "pbkdf2") throw new Error("暂不支持的 KDF: "+kdf+"（当前仅支持 pbkdf2）");
+  const salt = hexToBytes(crypt.kdfparams.salt);
+  const dklen = crypt.kdfparams.dklen || 32;
+  const c = crypt.kdfparams.c;
+  const prf = crypt.kdfparams.prf || "hmac-sha256";
+  const derivedKey = await kdfFn(password, salt, { c, dklen, prf });
+  const ciphertext = hexToBytes(crypt.ciphertext);
+  const macInput = new Uint8Array(16 + ciphertext.length);
+  macInput.set(derivedKey.slice(16,32), 0);
+  macInput.set(ciphertext, 16);
+  const mac = bytesToHex(keccak256(macInput));
+  if(mac !== crypt.mac.toLowerCase()) throw new Error("密码错误或文件已损坏（MAC 校验不通过）");
+  const iv = hexToBytes(crypt.cipherparams.iv);
+  const plain = await ctrDecryptFn(derivedKey.slice(0,16), iv, ciphertext);
+  return bytesToHex(plain);
+}
+
+
+const WORDLIST_TEXT = "abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo";
+const WORDS = WORDLIST_TEXT.split(" ");
+const EXPECTED_HASH = "2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda";
+
+async function sha256(bytes){ return new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)); }
+function bitsOf(bytes){ let s=""; for(const b of bytes) s += b.toString(2).padStart(8,"0"); return s; }
+
+async function entropyToMnemonic(ent){
+  const h = await sha256(ent);
+  const cs = ent.length * 8 / 32;
+  const bits = bitsOf(ent) + bitsOf(h.slice(0,1)).slice(0, cs);
+  const out = [];
+  for(let i=0;i<bits.length;i+=11) out.push(WORDS[parseInt(bits.slice(i,i+11),2)]);
+  return out.join(" ");
+}
+async function validateMnemonic(m){
+  const ws = m.normalize("NFKD").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if(ws.length === 0) return {ok:false, msg:"请输入助记词"};
+  const invalid = [...new Set(ws.filter(w => WORDS.indexOf(w) < 0))];
+  if(invalid.length) return {ok:false, msg: invalid.join("、") + " 为无效助记词，请检查。"};
+  if(![12,15,18,21,24].includes(ws.length)) return {ok:false, msg:"助记词词数应为 12/15/18/21/24 个，当前为 "+ws.length+" 个，请检查。"};
+  let bits = "";
+  for(let i=0;i<ws.length;i++) bits += WORDS.indexOf(ws[i]).toString(2).padStart(11,"0");
+  const entBits = bits.length * 32 / 33, csBits = bits.length - entBits;
+  const ent = new Uint8Array(entBits/8);
+  for(let i=0;i<ent.length;i++) ent[i] = parseInt(bits.slice(i*8,i*8+8),2);
+  const h = await sha256(ent);
+  const want = bitsOf(h.slice(0,1)).slice(0, csBits);
+  return want === bits.slice(entBits) ? {ok:true, msg:"助记词校验通过（"+ws.length+" 词）", wordCount: ws.length} : {ok:false, msg:"助记词顺序或拼写有误，请检查。"};
+}
+async function makeEntropy(nBytes){
+  const sys = crypto.getRandomValues(new Uint8Array(32));
+  const mixed = await sha256(sys);
+  sys.fill(0);
+  return mixed.slice(0, nBytes);
+}
+
+/* ============ Keystore 的浏览器端 KDF / 解密适配 ============ */
+async function kdfFn(password, salt, {c:iters, dklen, prf}){
+  const pwBytes = new TextEncoder().encode(password);
+  const keyMaterial = await crypto.subtle.importKey("raw", pwBytes, "PBKDF2", false, ["deriveBits"]);
+  const hash = (prf && prf.includes("512")) ? "SHA-512" : "SHA-256";
+  const bits = await crypto.subtle.deriveBits({name:"PBKDF2", salt, iterations: iters, hash}, keyMaterial, dklen*8);
+  return new Uint8Array(bits);
+}
+async function ctrDecryptFn(keyBytes, ivBytes, ciphertext){
+  const key = await crypto.subtle.importKey("raw", keyBytes, {name:"AES-CTR"}, false, ["decrypt"]);
+  const plain = await crypto.subtle.decrypt({name:"AES-CTR", counter: ivBytes, length:128}, key, ciphertext);
+  return new Uint8Array(plain);
+}
+
+/* ============ 简单本地密码加密（用于把助记词/私钥封存在内存里，演示用途） ============ */
+async function encryptWithPassword(plainText, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:100000, hash:"SHA-256"}, keyMaterial, {name:"AES-GCM", length:256}, false, ["encrypt"]);
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, new TextEncoder().encode(plainText));
+  return {salt: bytesToHex(salt), iv: bytesToHex(iv), ct: bytesToHex(new Uint8Array(ct))};
+}
+
+/* ============ UI 逻辑 ============ */
+const $ = id => document.getElementById(id);
+let currentEntropyBytes = 16; // 12 words by default
+let currentMnemonic = "";
+let pendingWalletName = "";
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+document.querySelectorAll("[data-back]").forEach(b => b.addEventListener("click", () => {
+  const t = b.dataset.back;
+  if(t === "close-sheet-to-onboard"){ showScreen("screen-onboard"); return; }
+  showScreen(t);
+}));
+
+/* 引导页轮播：可左右手动滑动，支持触摸和鼠标拖动 */
+const SLIDE_COUNT = 3;
+let slideIdx = 0;
+const track = $("slidesTrack");
+const carouselEl = $("carousel");
+let dragStartX = 0, dragDeltaX = 0, dragging = false, carouselWidth = 0;
+
+function setTrackTransform(px, withTransition){
+  track.style.transition = withTransition ? "" : "none";
+  track.style.transform = "translateX(" + px + "px)";
+}
+function renderSlide(animated){
+  carouselWidth = carouselEl.getBoundingClientRect().width;
+  setTrackTransform(-slideIdx * carouselWidth, animated !== false);
+  document.querySelectorAll(".dot").forEach((d,i)=>d.classList.toggle("on", i===slideIdx));
+}
+function goToSlide(i, animated){
+  slideIdx = (i + SLIDE_COUNT) % SLIDE_COUNT;
+  renderSlide(animated);
+}
+function restartAutoplay(){
+  clearInterval(slideTimer);
+  slideTimer = setInterval(()=> goToSlide(slideIdx+1), 4200);
+}
+let slideTimer = setInterval(()=> goToSlide(slideIdx+1), 4200);
+window.addEventListener("resize", () => renderSlide(false));
+document.querySelectorAll(".dot").forEach(d => d.addEventListener("click", () => {
+  goToSlide(parseInt(d.dataset.dot)); restartAutoplay();
+}));
+
+function onDragStart(x){
+  dragging = true; dragStartX = x; dragDeltaX = 0;
+  carouselWidth = carouselEl.getBoundingClientRect().width;
+  track.style.transition = "none";
+}
+function onDragMove(x){
+  if(!dragging) return;
+  dragDeltaX = x - dragStartX;
+  // 边界处加一点阻尼，避免首尾越界滑出太多
+  let resist = dragDeltaX;
+  if((slideIdx===0 && dragDeltaX>0) || (slideIdx===SLIDE_COUNT-1 && dragDeltaX<0)) resist = dragDeltaX * 0.35;
+  setTrackTransform(-slideIdx*carouselWidth + resist, false);
+}
+function onDragEnd(){
+  if(!dragging) return;
+  dragging = false;
+  const threshold = carouselWidth * 0.18;
+  if(dragDeltaX > threshold) goToSlide(slideIdx-1);
+  else if(dragDeltaX < -threshold) goToSlide(slideIdx+1);
+  else renderSlide(true);
+  dragDeltaX = 0;
+  restartAutoplay();
+}
+carouselEl.addEventListener("touchstart", e => onDragStart(e.touches[0].clientX), {passive:true});
+carouselEl.addEventListener("touchmove", e => onDragMove(e.touches[0].clientX), {passive:true});
+carouselEl.addEventListener("touchend", onDragEnd);
+carouselEl.addEventListener("pointerdown", e => { carouselEl.setPointerCapture(e.pointerId); onDragStart(e.clientX); });
+carouselEl.addEventListener("pointermove", e => onDragMove(e.clientX));
+carouselEl.addEventListener("pointerup", onDragEnd);
+carouselEl.addEventListener("pointercancel", onDragEnd);
+renderSlide(false);
+
+$("btnGoCreate").addEventListener("click", () => showScreen("screen-create"));
+$("btnGoImport").addEventListener("click", () => $("importSheet").classList.add("active"));
+$("closeSheet").addEventListener("click", () => $("importSheet").classList.remove("active"));
+/* 点击弹层外的半透明遮罩（空白处）也能关闭，点击白色卡片本身不关闭 */
+$("importSheet").addEventListener("click", (e) => {
+  if(e.target === e.currentTarget) $("importSheet").classList.remove("active");
+});
+document.querySelectorAll("[data-goto]").forEach(c => c.addEventListener("click", () => {
+  $("importSheet").classList.remove("active");
+  showScreen(c.dataset.goto);
+}));
+
+/* 密码显隐 */
+document.querySelectorAll("[data-toggle]").forEach(btn => btn.addEventListener("click", () => {
+  const ids = btn.dataset.toggle.split(",");
+  const show = $(ids[0]).type === "password";
+  ids.forEach(id => { $(id).type = show ? "text" : "password"; });
+  btn.classList.toggle("shown", show);
+}));
+
+/* 服务条款 / 说明 弹窗 */
+const TERMS_HTML = "<p>这是一个原创离线演示页面，不是任何商业钱包产品。</p><p>1. 页面不会联网，不会上传或存储你的助记词、私钥或 Keystore。</p><p>2. 所有加密计算均在你的浏览器本地完成。</p><p>3. 请勿将真实大额资产的密钥交给任何在线页面处理。</p>";
+function openModal(title, bodyHtml){ $("infoTitle").textContent = title; $("infoBody").innerHTML = bodyHtml; $("infoModal").classList.add("active"); }
+["openTerms","openTerms2","openTerms3","openTerms4"].forEach(id => $(id) && $(id).addEventListener("click", (e)=>{ e.preventDefault(); openModal("服务条款（本地演示版）", TERMS_HTML); }));
+$("infoClose").addEventListener("click", () => $("infoModal").classList.remove("active"));
+const INFO = {
+  mn: ["关于助记词", "<p>助记词（BIP-39）是一组 12~24 个英文单词，经过固定算法可以还原出钱包私钥。</p><p>任何人拿到完整助记词，就能拿走对应的资产，请只在离线、无人的环境中输入。</p>"],
+  pk: ["关于私钥", "<p>私钥是一串 64 位十六进制字符，是比助记词更底层的密钥形式，同样一旦泄露资产就不再安全。</p>"],
+  ks: ["关于 Keystore", "<p>Keystore 是用密码加密后的私钥文件（JSON 格式），需要文件和密码同时持有才能恢复钱包，安全性取决于密码强度。</p>"]
+};
+document.querySelectorAll("[data-info]").forEach(a => a.addEventListener("click", (e)=>{
+  e.preventDefault();
+  const [t,b] = INFO[a.dataset.info];
+  openModal(t,b);
+}));
+
+/* 顶部 "?" 帮助按钮 */
+const HELP = {
+  create: ["关于创建钱包", "<p>创建时会在本机生成一组全新的助记词，并用你设置的密码加密保存在当前页面的内存中。</p><p>关闭页面后内容即被清空，萤火不会把它上传或存储到任何地方。</p>"],
+  backup: ["关于备份", "<p>请用纸笔把助记词按顺序抄写下来，妥善保管在断网、无人的地方。</p><p>任何在线输入、截图或拍照都会增加泄露的风险。</p>"]
+};
+document.querySelectorAll("[data-help]").forEach(btn => btn.addEventListener("click", () => {
+  const key = btn.dataset.help;
+  const entry = HELP[key] || INFO[key];
+  if(entry) openModal(entry[0], entry[1]);
+}));
+
+/* ---- 创建钱包表单校验 ---- */
+function nameUnits(s){ let n = 0; for(const ch of s) n += /[\u0000-\u00ff]/.test(ch) ? 1 : 2; return n; }
+function checkCreateForm(){
+  const name = $("cwName").value.trim();
+  const pw = $("cwPw").value, pw2 = $("cwPw2").value;
+  const agree = $("cwAgree").checked;
+  let err = "";
+  if(nameUnits(name) > 12) err = "名称最长 12 个英文字符或 6 个汉字";
+  else if(name && pw && pw2){
+    if(pw.length < 8) err = "密码至少需要 8 位";
+    else if(pw !== pw2) err = "两次输入的密码不一致";
+  }
+  $("cwError").textContent = err;
+  $("btnCreateSubmit").disabled = !(name && pw && pw2 && agree && !err);
+}
+/* 密码只允许英文字母、数字和半角符号（ASCII 可见字符），自动过滤中文、全角字符、emoji 和空格 */
+function sanitizePw(el){
+  if(!/[^\x21-\x7E]/.test(el.value)) return false;
+  const pos = el.selectionStart == null ? el.value.length : el.selectionStart;
+  const keep = el.value.slice(0, pos).replace(/[^\x21-\x7E]/g, "").length;
+  el.value = el.value.replace(/[^\x21-\x7E]/g, "");
+  try{ el.setSelectionRange(keep, keep); }catch(e){}
+  return true;
+}
+["cwPw","cwPw2"].forEach(id => {
+  const el = $(id);
+  el.setAttribute("autocapitalize", "off");
+  el.setAttribute("autocorrect", "off");
+  el.setAttribute("spellcheck", "false");
+  el.addEventListener("input", e => { if(!e.isComposing) sanitizePw(el); });
+  el.addEventListener("compositionend", () => {
+    if(sanitizePw(el)) el.dispatchEvent(new Event("input", {bubbles:true}));
   });
-  for (let i = 0; i < 30; i++){ g.fillStyle = `hsla(${rnd(0,360)},40%,45%,.5)`; g.fillRect(rnd(0,W), rnd(0,H), 1.5, 1.5); }
-  const ci = $("#ac"); if (ci) ci.value = "";
-}
-function openAuth(mode){
-  authMode = mode;
-  const reg = mode === "register";
-  $("#authBody").innerHTML = `
-    <div class="dlg-head"><h2 id="authTitle">${reg ? "注册账号" : "登录"}</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>
-    <form id="authForm" class="dlg" style="padding:0" novalidate>
-      <div>
-        <label class="lbl" for="au">用户名（4–12 位数字）</label>
-        <input class="field" id="au" style="width:100%" inputmode="numeric" maxlength="12" autocomplete="username" placeholder="例如 12345678">
-      </div>
-      <div>
-        <label class="lbl" for="ap">密码（至少 6 位）</label>
-        <input class="field" id="ap" style="width:100%" type="password" maxlength="64" autocomplete="${reg ? "new-password" : "current-password"}" placeholder="请输入密码">
-      </div>
-      <div>
-        <label class="lbl" for="ac">图形验证码（不分大小写）</label>
-        <div class="cap">
-          <input class="field" id="ac" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="输入右侧字符">
-          <button class="cap-img" type="button" data-act="captcha" aria-label="看不清，换一张"><canvas id="capCv"></canvas></button>
-        </div>
-      </div>
-      <div class="err" id="err"></div>
-      <button class="btn" type="submit" id="authGo">${reg ? "注册并登录" : "登录"}</button>
-      <div class="switch">${reg ? `已有账号？<button type="button" data-act="login">去登录</button>` : `还没有账号？<button type="button" data-act="register">去注册</button>`}　点击验证码可换一张</div>
-    </form>`;
-  if (!$("#dlgAuth").open) $("#dlgAuth").showModal();
-  drawCaptcha();
-}
-async function submitAuth(){
-  const err = $("#err"), btn = $("#authGo");
-  const u = $("#au").value.trim(), p = $("#ap").value, c = $("#ac").value.trim().toUpperCase();
-  if (!/^\d{4,12}$/.test(u)){ err.textContent = "用户名需要是 4 到 12 位数字。"; return; }
-  if (p.length < 6){ err.textContent = "密码至少 6 位。"; return; }
-  if (c !== capCode){ err.textContent = "验证码不正确，已为你换了一张。"; drawCaptcha(); return; }
-  if (!canStore()){ err.textContent = "当前浏览器禁止保存数据（可能是无痕模式），无法使用账号。"; return; }
-  btn.disabled = true;
-  try {
-    const accounts = store.get("accounts", {});
-    if (authMode === "register"){
-      if (accounts[u]){ err.textContent = "这个用户名已被注册，请换一个或直接登录。"; drawCaptcha(); return; }
-      const salt = randSalt();
-      accounts[u] = { salt, hash: await hashPw(p, salt), created: Date.now() };
-      store.set("accounts", accounts); session.set(u);
-      toast("注册成功，已自动登录");
-    } else {
-      const a = accounts[u];
-      if (!a || a.hash !== await hashPw(p, a.salt)){ err.textContent = "用户名或密码不正确。"; drawCaptcha(); return; }
-      session.set(u); toast("登录成功");
-    }
-    renderAcct(); $("#dlgAuth").close();
-  } finally { btn.disabled = false; }
-}
-document.querySelectorAll("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d){ d === dlg ? closeBuy() : d.close(); } }));
-dlg.addEventListener("close", () => clearInterval(timer));
-$("#q").addEventListener("input", e => { state.q = e.target.value; renderCats(); renderList(); });
+});
+["cwName","cwPw","cwPw2","cwAgree"].forEach(id => $(id).addEventListener("input", checkCreateForm));
+$("cwAgree").addEventListener("change", checkCreateForm);
 
-/* ============ 初始化 ============ */
-(function init(){
-  renderAcct();
-  $("#brand").textContent = CONFIG.brand; document.title = CONFIG.brand + " · 抖音账号商店";
-  $("#supportLine").textContent = `Telegram客服 ${CONFIG.support.telegram}   ${CONFIG.support.wechat}`;
-  renderNotices(); renderCats(); renderList();
-})();
+/* ---- 输入时才显示的提示：名称提示 / 密码提示 + 强度 ---- */
+$("cwName").addEventListener("focus", () => $("tipName").classList.add("show"));
+$("cwName").addEventListener("blur", () => $("tipName").classList.remove("show"));
+
+let pwGroupFocused = false;
+/* 返回 1~4：1 弱 / 2 一般 / 3 强 / 4 很好 */
+function pwScore(p){
+  const len = Array.from(p).length;
+  if(len < 8) return 1;
+  const types = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(r => r.test(p)).length;
+  const t = (len >= 12 ? 3 : len >= 10 ? 1 : 0) + (types >= 3 ? 2 : types === 2 ? 1 : 0);
+  return t >= 3 ? 4 : t >= 1 ? 3 : 2;
+}
+const pwGroupEl = $("pwGroup");
+function updatePwTip(){
+  const v = $("cwPw").value, tip = $("tipPw"), meter = $("pwMeter");
+  const focusId = pwGroupEl.contains(document.activeElement) ? document.activeElement.id : "";
+  const first = focusId === "cwPw", second = focusId === "cwPw2";
+  const lv = pwScore(v), s = lv;
+  meter.dataset.lv = lv;
+  $("pwLabel").textContent = ["", "弱", "一般", "强", "很好"][lv];
+  meter.querySelectorAll(".bars b").forEach((b, i) => b.classList.toggle("on", i < s));
+  meter.classList.toggle("show", !!v || first);
+  if(first && v){
+    tip.className = "cw-tip show info";
+    tip.textContent = Array.from(v).length + " 字符";
+  } else if(first){
+    tip.className = "cw-tip show";
+    tip.textContent = "不少于 8 个字符，建议混合大小写字母、数字、符号。";
+  } else if(second){
+    tip.className = "cw-tip show info";
+    tip.innerHTML = "该密码将作为钱包密码。<br>萤火不会存储密码，也无法帮你找回密码，请务必妥善保存。";
+  } else {
+    tip.className = "cw-tip";
+  }
+}
+pwGroupEl.addEventListener("focusin", updatePwTip);
+pwGroupEl.addEventListener("focusout", () => setTimeout(updatePwTip, 0));
+$("cwPw").addEventListener("input", updatePwTip);
+document.querySelectorAll(".eye-svg").forEach(b => b.addEventListener("mousedown", e => e.preventDefault()));
+
+function renderMnemonicGrid(container, mnemonicStr){
+  const ws = mnemonicStr.split(" ");
+  container.innerHTML = "";
+  ws.forEach((w,i) => {
+    const d = document.createElement("div"); d.className = "w";
+    d.innerHTML = '<i>'+String(i+1).padStart(2,"0")+'</i><b></b>';
+    d.querySelector("b").textContent = w;
+    container.appendChild(d);
+  });
+}
+
+$("btnCreateSubmit").addEventListener("click", async () => {
+  pendingWalletName = $("cwName").value.trim();
+  const ent = await makeEntropy(currentEntropyBytes);
+  currentMnemonic = await entropyToMnemonic(ent);
+  ent.fill(0);
+  renderMnemonicGrid($("backupGrid"), currentMnemonic);
+  $("backupGrid").classList.add("blur");
+  showScreen("screen-backup");
+});
+
+$("btnToggleBlur").addEventListener("click", () => $("backupGrid").classList.toggle("blur"));
+$("btnRegenerate").addEventListener("click", async () => {
+  const ent = await makeEntropy(currentEntropyBytes);
+  currentMnemonic = await entropyToMnemonic(ent);
+  ent.fill(0);
+  renderMnemonicGrid($("backupGrid"), currentMnemonic);
+  $("backupGrid").classList.add("blur");
+});
+$("btnBackupDone").addEventListener("click", () => {
+  $("doneText").textContent = "钱包"+(pendingWalletName?("「"+pendingWalletName+"」"):"")+"已在本机创建完成，助记词已加密保存在本次会话中，请确保已经离线抄写备份。";
+  showScreen("screen-done");
+});
+$("btnDoneFinish").addEventListener("click", () => {
+  currentMnemonic = "";
+  showScreen("screen-onboard");
+});
+
+/* ---- 导入助记词 ---- */
+function updateImMnBtn(){ $("btnImMnSubmit").disabled = !($("imMnText").value.trim() && $("imMnAgree").checked); }
+$("imMnText").addEventListener("input", updateImMnBtn);
+$("imMnAgree").addEventListener("change", updateImMnBtn);
+$("btnImMnSubmit").addEventListener("click", async () => {
+  const r = await validateMnemonic($("imMnText").value);
+  const box = $("imMnMsg"); box.style.display = "block";
+  box.innerHTML = '<span class="'+(r.ok?"ok-text":"bad-text")+'">'+r.msg+'</span>';
+});
+
+/* ---- 导入私钥 ---- */
+function updateImPkBtn(){ $("btnImPkSubmit").disabled = !($("imPkText").value.trim() && $("imPkAgree").checked); }
+$("imPkText").addEventListener("input", updateImPkBtn);
+$("imPkAgree").addEventListener("change", updateImPkBtn);
+$("btnImPkSubmit").addEventListener("click", () => {
+  const box = $("imPkMsg"); box.style.display = "block";
+  let raw = $("imPkText").value.trim().replace(/^0x/i,"");
+  if(!/^[0-9a-fA-F]{64}$/.test(raw)){
+    box.innerHTML = '<span class="bad-text">私钥格式不正确：需要 64 位十六进制字符</span>';
+    return;
+  }
+  try{
+    const addr = privToAddress(raw);
+    box.innerHTML = '<span class="ok-text">私钥格式校验通过，已派生出以太坊地址：</span><div class="mono">'+addr+'</div>';
+  }catch(e){
+    box.innerHTML = '<span class="bad-text">'+e.message+'</span>';
+  }
+});
+
+/* ---- 导入 Keystore ---- */
+function updateImKsBtn(){ $("btnImKsSubmit").disabled = !($("imKsText").value.trim() && $("imKsPw").value && $("imKsAgree").checked); }
+$("imKsText").addEventListener("input", updateImKsBtn);
+$("imKsPw").addEventListener("input", updateImKsBtn);
+$("imKsAgree").addEventListener("change", updateImKsBtn);
+$("btnImKsSubmit").addEventListener("click", async () => {
+  const box = $("imKsMsg"); box.style.display = "block";
+  box.innerHTML = '正在解密…';
+  try{
+    const privHex = await decryptV3Keystore($("imKsText").value, $("imKsPw").value, kdfFn, ctrDecryptFn);
+    const addr = privToAddress(privHex);
+    box.innerHTML = '<span class="ok-text">解密成功，已派生出以太坊地址：</span><div class="mono">'+addr+'</div>';
+  }catch(e){
+    box.innerHTML = '<span class="bad-text">'+e.message+'</span>';
+  }
+});
 </script>
 </body>
 </html>
