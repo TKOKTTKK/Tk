@@ -149,6 +149,9 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 .qty button{border:0;background:none;width:36px;height:36px;font-size:18px;color:var(--ink-2)}
 .qty span{min-width:32px;text-align:center}
 .total{background:var(--bg);border-radius:var(--r);padding:14px 16px;display:grid;gap:4px}
+/* 金额行右侧不换行，左侧长文案可收缩 */
+.total .row b,.pk .row b{white-space:nowrap}
+.total .row>span,.pk .row>span{min-width:0}
 .total .big{font-family:var(--font-mono);font-size:26px;font-weight:600}
 .box{border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
 .box code{font-family:var(--font-mono);font-size:13px;word-break:break-all;min-width:0}
@@ -296,12 +299,14 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
     <ol style="margin:0;padding-left:20px;display:grid;gap:8px;color:var(--ink-2);font-size:14px">
       <li>选择分类，下方会列出该分类的商品。</li>
       <li>看清商品名称、库存和单价。想先验证再决定，点“先试后付”；确定要买，点“立即购买”。</li>
-      <li>先试后付：付 5% 押金（最低 1U）→ 拿到账号试 2 小时 → 满意补尾款；不满意可以换号，最多 3 次，也可以申请全额退还押金。</li>
-      <li>押金和尾款都在本页用 TronLink 支付，只支持 TronLink 钱包：手机上点按钮直接拉起 App，电脑上会用二维码让你在手机钱包里扫。</li>
-      <li>试号期间不要修改密码、不要绑定手机，一旦修改即视为购买，押金不退。</li>
+      <li><b>所有账号都支持先上号测试</b>：点“先试后付”，付 1U 测试服务费，就拿到 2 小时测试时间。</li>
+      <li>付完 1U 会给你一个订单号，<b>把订单号发给客服，客服就给你上号</b>。2 小时从付款那一刻开始计时，越早联系客服，能测的时间越多。</li>
+      <li>测试满意 → 按号价付款，账号归你；不满意 → 可以找客服换号，最多 3 次，每次换号重新计时。</li>
+      <li>1U 是 2 小时测试的服务费，<b>不抵扣号价、不退还</b>；不想要了直接结束订单就行。</li>
+      <li>测试期间不要修改密码、不要绑定手机、不要发作品，一旦修改即视为购买，需要付清号价。</li>
+      <li>1U、号款都用 TronLink 支付，只支持 TronLink 钱包：手机上点按钮直接拉起 App，电脑上会用二维码让你在手机钱包里扫。</li>
       <li>直接购买：选择数量，填写联系方式（查询订单用）。</li>
-      <li>扫描二维码或复制地址，按页面显示的精确金额转入 USDT-TRC20，填上交易哈希提交核验。</li>
-      <li>在“查询订单”里输入订单号或联系方式，随时查看进度、继续试号或补尾款。</li>
+      <li>在“查询订单”里输入订单号或联系方式，随时查看进度、继续测试或付号款。</li>
       <li>拿到账号后，请尽快修改密码并绑定你自己的手机。</li>
     </ol>
     <button class="btn line" type="button" data-close>知道了</button>
@@ -1574,11 +1579,12 @@ window.QRLib={QRCode:__m["index"].exports,ECL:__m["QRErrorCorrectLevel"].exports
 /* ============ 站点配置：上线前改这里 ============ */
 const CONFIG = {
   brand: "抖音账号铺",
-  support: { telegram: "：@H88H85", wechat: "" },
+  support: { telegram: "@H88H85", wechat: "" },
   // “联系客服”按钮的链接
   supportUrl: "https://t.me/H88H85",
   // 公告：label 是红色小标题；有 href 时显示为可点击链接。按需增删。
   notices: [
+    { label:"1U 试号", text:"全部账号支持先上号测试：1U 换 2 小时，满意再付款" },
     { label:"永久域名", text:"cccmmm.cc" },
     { label:"补货通知群", text:"https://t.me/H88H86", href:"https://t.me/H88H86" }
   ],
@@ -1588,8 +1594,9 @@ const CONFIG = {
   payWindowMinutes: 30,
   // TronLink 收款页：点“打开 TronLink”后跳到这里（只支持 TronLink 钱包）
   payApp: "https://02.tktktk.workers.dev",
-  // 先试后付：押金 = 号价 × depositRate，最低 minDeposit；试号时长 hours 小时；可换号 maxSwap 次
-  trial: { depositRate: 0.05, minDeposit: 1, hours: 2, maxSwap: 3 },
+  // 先试后付（统一 1U 测试服务费）：所有账号都能先上号测试，付 fee USDT 换 hours 小时测试时间，
+  // 1U 是测试服务费，不抵扣号价、不退还；测试满意后再付号价全额。可换号 maxSwap 次。
+  trial: { fee: 1, hours: 2, maxSwap: 3 },
   // 接入后端后填写，例如 "https://api.example.com"。留空表示演示模式（订单只存在浏览器里）。
   apiBase: ""
 };
@@ -1736,7 +1743,7 @@ function renderList(){
     <div class="prow">
       <div class="pname"><b>${platIcon()}<span>${p.title}</span></b><small>${p.id} · ${p.desc}</small></div>
       ${stockCell(p)}
-      <div class="c-price num">${p.price}<span>USDT</span></div>
+      <div class="c-price num">${p.price}<span>USDT</span>${p.stock>0?'<small style="display:block;font-size:11px;font-weight:500;color:var(--ink-3);letter-spacing:0">1U 可试</small>':""}</div>
       <div class="acts">
         <button class="btn trial" type="button" data-trial="${p.id}" ${p.stock>0?"":"disabled"}>先试后付</button>
         <button class="btn" type="button" data-buy="${p.id}" ${p.stock>0?"":"disabled"}>${p.stock>0 ? "立即购买" : "售完"}</button>
@@ -1751,12 +1758,10 @@ let cur = null, timer = null;
 const money = n => (Math.round(Number(n) * 100) / 100).toFixed(2);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 
-/* 押金 = 号价 × 5%，最低 1 USDT；尾款 = 号价 − 押金 */
-function depositOf(price){
-  const d = price * CONFIG.trial.depositRate;
-  return Math.max(CONFIG.trial.minDeposit, Math.round(d * 100) / 100);
-}
-function tailOf(price){ return Math.round((price - depositOf(price)) * 100) / 100; }
+/* 测试服务费：所有账号统一 CONFIG.trial.fee（1 USDT），换 2 小时测试时间。
+   1U 是服务费，不抵扣号价、不退还；测试满意后按号价全额付款。 */
+function depositOf(){ return CONFIG.trial.fee; }
+function tailOf(price){ return Math.round(Number(price) * 100) / 100; }
 function trialMs(){ return CONFIG.trial.hours * 3600 * 1000; }
 
 /* ---- 账号池（本地演示用） ----
@@ -1874,7 +1879,7 @@ async function submitPay(){
   const online = !!CONFIG.apiBase;
   if (o.payFor === "deposit"){
     o.txid = txid;
-    o.status = online ? "待核验押金" : "试号中";
+    o.status = online ? "待核验测试费" : "测试中";
     if (!online) trialStart(o); else saveOrder(o);
     if (online) payPending(o); else stepTrialAcc();
   } else if (o.payFor === "tail"){
@@ -1959,53 +1964,55 @@ function payPending(o){
     <button class="btn line" type="button" data-close>关闭</button>`;
 }
 
-/* ============ 先试后付 ============ */
+/* ============ 先试后付（统一 1U 测试服务费） ============ */
 function openTrial(id){
   const p = PRODUCTS.find(x => x.id === id); if (!p || p.stock <= 0) return;
-  const dep = depositOf(p.price), tail = tailOf(p.price);
+  const fee = depositOf(), tail = tailOf(p.price);
   cur = { p, contact:"", order:null };
   $("#buyBody").innerHTML = `
-    ${head("先试后付")}
-    <div class="steps"><i class="on">1 付押金</i><i>2 拿号试</i><i>3 补尾款</i></div>
+    ${head("1U 试号")}
+    <div class="steps"><i class="on">1 付 1U 测试费</i><i>2 找客服上号</i><i>3 满意再付款</i></div>
     <div>
       <div class="row"><b>${p.title}</b><span class="mono">${p.id}</span></div>
       <div style="color:var(--ink-3);font-size:13px;margin-top:2px">${p.desc}</div>
     </div>
     <div class="total">
       <div class="row"><span>账号价格</span><b class="num">${money(p.price)} USDT</b></div>
-      <div class="row"><span>先付押金（5%，最低 ${CONFIG.trial.minDeposit}U）</span><b class="num" style="color:var(--accent)">${money(dep)} USDT</b></div>
-      <div class="row"><span>满意后补尾款</span><b class="num">${money(tail)} USDT</b></div>
+      <div class="row"><span>测试服务费（${CONFIG.trial.hours} 小时测试时间）</span><b class="num" style="color:var(--accent)">${money(fee)} USDT</b></div>
+      <div class="row"><span>测试满意后付款</span><b class="num">${money(tail)} USDT</b></div>
     </div>
     <div class="fee">
-      <div class="row"><span>试号时长</span><b>${CONFIG.trial.hours} 小时</b></div>
+      <div class="row"><span>测试时间</span><b>${CONFIG.trial.hours} 小时</b></div>
       <div class="row"><span>可换号</span><b>${CONFIG.trial.maxSwap} 次</b></div>
-      <div class="row"><span>不满意</span><b>换号，或全额退押金</b></div>
+      <div class="row"><span>1U 用途</span><b>测试服务费</b></div>
     </div>
     <div class="rule">
-      <b>试号规则</b><br>
-      · 试号期间<b>请勿修改密码、绑定手机、改动任何资料</b>，一经修改即视为购买，押金不退。<br>
-      · 不满意可以换号，最多 ${CONFIG.trial.maxSwap} 次；也可以直接申请退款，押金全额原路退回。<br>
-      · 每个账号只提供一次试号，试过的号会进入人工核验，不会再发给别人。<br>
-      · 试号记录自动存档，售后以记录为准。
+      <b>试号说明</b><br>
+      · <b>所有账号都能先上号测试</b>：付 ${money(fee)} USDT 换 ${CONFIG.trial.hours} 小时测试时间。<br>
+      · 付完把<b>订单号发给客服</b>，客服看到就给你上号；${CONFIG.trial.hours} 小时从付款那一刻开始计时，越早联系客服测的时间越多。<br>
+      · 测试满意 → 按号价 ${money(p.price)} USDT 付款，账号归你。<br>
+      · <b>这 1U 是测试服务费</b>，不抵扣号价、不退还；不满意不用买，直接结束订单即可。<br>
+      · 测试期间<b>请勿修改密码、绑定手机、发布作品</b>，一经修改即视为购买，需立即付清号价。<br>
+      · 不满意可以换号，最多 ${CONFIG.trial.maxSwap} 次，每次换号重新计时；试过的号一律进人工核验，不会再发给别人。
     </div>
     <div>
       <label class="lbl" for="contact">联系方式（手机号 / 邮箱 / Telegram）</label>
-      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于联系你、查询订单">
+      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于客服给你上号、查询订单">
       <div class="err" id="err"></div>
     </div>
-    <label class="chk"><input type="checkbox" id="agree"><span>我已阅读并同意试号规则，试号期间不改密码、不绑定手机</span></label>
+    <label class="chk"><input type="checkbox" id="agree"><span>我已阅读试号说明，测试期间不改密码、不绑定手机</span></label>
     <div id="walletHint" style="font-size:12px;color:var(--ink-3);text-align:center;margin-top:-6px">下一步在本页付款，点按钮才跳到 TronLink，仅支持 TronLink 钱包</div>
-    <button class="btn" type="button" id="toTrialPay" disabled>付押金 ${money(dep)} USDT，开始试号</button>`;
+    <button class="btn" type="button" id="toTrialPay" disabled>付 ${money(fee)} USDT，开始 ${CONFIG.trial.hours} 小时测试</button>`;
   dlg.showModal();
   clearInterval(timer);
 }
 function stepTrialPay(){
   const p = cur.p, dep = depositOf(p.price);
   const o = {
-    no: newNo("TS"), type:"trial", payFor:"deposit", status:"待付押金",
+    no: newNo("TS"), type:"trial", payFor:"deposit", status:"待付测试费",
     id:p.id, title:p.title, price:p.price, deposit:dep, tail:tailOf(p.price), amount:dep,
     contact:cur.contact, created:Date.now(), txid:"", acc:"", pwd:"",
-    swapLeft:CONFIG.trial.maxSwap, swapped:0, trialStart:0, trialExpire:0
+    swapLeft:CONFIG.trial.maxSwap, swapped:0, trialStart:0, trialExpire:0, waitService:true
   };
   cur.order = o; saveOrder(o);
   gotoPay(o, "deposit");
@@ -2058,8 +2065,8 @@ function stepWalletPay(o, kind){
   const p = (cur && cur.p) || PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, desc:"" };
   const jumped = !!readPayJump(o.no);
   $("#buyBody").innerHTML = `
-    ${head(isTail ? "补尾款 · TronLink" : "付押金 · TronLink")}
-    <div class="steps"><i class="${isTail ? "" : "on"}">1 付押金</i><i>2 拿号试</i><i class="${isTail ? "on" : ""}">3 补尾款</i></div>
+    ${head(isTail ? "付号款 · TronLink" : "付 1U 测试费 · TronLink")}
+    <div class="steps"><i class="${isTail ? "" : "on"}">1 付测试费</i><i>2 找客服上号</i><i class="${isTail ? "on" : ""}">3 付号款</i></div>
     <div>
       <div class="row"><b>${esc(p.title)}</b><span class="mono">${esc(o.id)}</span></div>
       <div style="color:var(--ink-3);font-size:13px;margin-top:2px">${esc(p.desc || "")}</div>
@@ -2069,16 +2076,16 @@ function stepWalletPay(o, kind){
       <div style="margin-top:6px"><span class="wallet-badge">${tronBadge} 仅支持 TronLink 钱包</span></div>
     </div>
     <div class="pay-bar">
-      <span class="pill">${isTail ? "补尾款" : `押金 5% · 最低 ${CONFIG.trial.minDeposit}U`}</span>
+      <span class="pill">${isTail ? "付号款" : `${CONFIG.trial.hours} 小时测试服务费`}</span>
       <span class="count">剩余 <b class="num" id="payCd">--:--</b></span>
     </div>
     <div class="pk">
       <div class="row"><span>账号价格</span><b class="num">${money(o.price)} USDT</b></div>
-      <div class="row"><span>${isTail ? "已付押金" : "本次押金"}</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>${isTail ? "本次尾款" : "试满意后补尾款"}</span><b class="num" style="color:var(--accent)">${money(o.tail)} USDT</b></div>
+      <div class="row"><span>${isTail ? "已付测试服务费" : "本次测试服务费"}</span><b class="num">${money(o.deposit)} USDT</b></div>
+      <div class="row"><span>${isTail ? "本次应付号款" : "测试满意后再付"}</span><b class="num" style="color:var(--accent)">${money(o.tail)} USDT</b></div>
       <div class="row"><span>订单号</span><b class="mono">${esc(o.no)}</b></div>
     </div>
-    <div class="trx-sub">${isTail ? "付完尾款，账号就正式归你。" : `付完押金立刻发号，可试 ${CONFIG.trial.hours} 小时。`}手机点按钮直接拉起 TronLink，电脑上会给你二维码。</div>
+    <div class="trx-sub">${isTail ? "付完号款，账号就正式归你。" : `付完 ${money(o.deposit)} 立刻开始 ${CONFIG.trial.hours} 小时计时，把订单号发给客服上号。`}手机点按钮直接拉起 TronLink，电脑上会给你二维码。</div>
     <button class="trx" type="button" id="openWallet">${tronIcon}打开 TronLink 支付 ${money(amt)} USDT</button>
     <button class="btn ${jumped ? "" : "line"}" type="button" id="walletPaid">我已在钱包里付款，继续</button>
     <button class="btn line" type="button" data-close>稍后再说，订单会保留</button>`;
@@ -2138,7 +2145,7 @@ function confirmWalletPaid(){
     if (online) payPending(o); else { finishTrial(o); doneTrial(); }
   } else {
     o.txid = o.txid || ("TRONLINK-" + Date.now());
-    o.status = online ? "待核验押金" : "试号中";
+    o.status = online ? "待核验测试费" : "测试中";
     saveOrder(o);
     if (online) payPending(o); else { trialStart(o); stepTrialAcc(); }
   }
@@ -2163,45 +2170,61 @@ function resumeFromPay(no){
     if (o.status !== "已完成") finishTrial(o);
     doneTrial();
   } else {
-    if (!o.trialStart || o.status === "待付押金" || o.status === "待核验押金") trialStart(o);
-    stepTrialAcc();
+    /* 从钱包回来：还没确认付款的，先回到付款页让用户点「我已在钱包里付款」 */
+    if (o.status === "测试中" && o.trialStart) stepTrialAcc();
+    else { o.payFor = "deposit"; o.amount = o.deposit; saveOrder(o); gotoPay(o, "deposit"); }
   }
 }
-/* 押金核验通过（或本地演示模式直接放号） */
+/* 1U 测试费核验通过（或本地演示模式直接开始计时）
+   注意：这里不再自动发号。付完 1U 就开始 2 小时计时，账号由客服人工发给买家。 */
 function trialStart(o){
-  const p = PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title };
-  const a = takeAccount(p, o.no);
-  o.acc = a.acc; o.pwd = a.pwd;
-  o.trialStart = Date.now(); o.trialExpire = Date.now() + trialMs();
-  o.status = "试号中"; o.swapLeft = CONFIG.trial.maxSwap;
-  logTrial(o, "开始试号");
+  o.trialStart = Date.now();
+  o.trialExpire = Date.now() + trialMs();
+  o.status = "测试中";
+  o.waitService = true;
+  o.acc = o.acc || ""; o.pwd = o.pwd || "";
+  o.swapLeft = (o.swapLeft == null ? CONFIG.trial.maxSwap : o.swapLeft);
+  logTrial(o, "已付测试费，等待客服上号");
   saveOrder(o);
+}
+/* 客服链接：把订单号预填进去，点开直接发消息 */
+function supportHref(o, extra){
+  const base = CONFIG.supportUrl || "https://t.me/H88H85";
+  const txt = extra || ("你好，我要 1U 试号，订单号 " + (o ? o.no : ""));
+  return base + (base.indexOf("?") >= 0 ? "&" : "?") + "text=" + encodeURIComponent(txt);
 }
 function stepTrialAcc(){
   const o = cur && cur.order;
-  if (!o || o.status !== "试号中"){ if (o) openOrderView(o); return; }
+  if (!o || o.status !== "测试中"){ if (o) openOrderView(o); return; }
+  const hasAcc = !!(o.acc && o.pwd);
+  const link = supportHref(o, "你好，我要 1U 试号，测试费已付，订单号 " + o.no);
   $("#buyBody").innerHTML = `
-    ${head("试号中 · 请勿改资料")}
-    <div class="steps"><i>1 押金</i><i class="on">2 拿号试</i><i>3 补尾款</i></div>
+    ${head(hasAcc ? "测试中 · 账号已发出" : "测试中 · 等客服上号")}
+    <div class="steps"><i>1 测试费已付</i><i class="on">2 上号测试</i><i>3 满意付款</i></div>
     <div class="cd-wrap">
-      <div style="font-size:12px;color:var(--ink-3)">剩余试号时间</div>
+      <div style="font-size:12px;color:var(--ink-3)">剩余测试时间</div>
       <div class="cd-big" id="trialCd">--:--:--</div>
       <div style="font-size:12px;color:var(--ink-3)">截止 ${new Date(o.trialExpire).toLocaleString("zh-CN")}</div>
     </div>
-    <div class="stack">
+    ${hasAcc ? `<div class="stack">
       <div class="acc-line"><div style="min-width:0"><span class="k">账号</span><span class="v">${esc(o.acc)}</span></div><button class="ghost" type="button" data-copy="${esc(o.acc)}" data-label="账号已复制">复制</button></div>
       <div class="acc-line"><div style="min-width:0"><span class="k">密码</span><span class="v">${esc(o.pwd)}</span></div><button class="ghost" type="button" data-copy="${esc(o.pwd)}" data-label="密码已复制">复制</button></div>
+    </div>` : `<div class="notice">
+      <b>1U 测试费已记账，下一步找客服上号</b><br>
+      把下面的订单号发给客服，客服核对后就把账号发给你。${CONFIG.trial.hours} 小时从付款那一刻开始算，越早联系客服，能测的时间越多。
     </div>
+    <div class="box" style="border-color:var(--accent);background:var(--accent-soft)"><code style="font-size:17px;font-weight:700;letter-spacing:.4px">${esc(o.no)}</code><button class="ghost" type="button" data-copy="${esc(o.no)}" data-label="订单号已复制">复制</button></div>
+    <a class="btn" href="${link}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">去 Telegram 找客服上号</a>`}
     <div class="rule">
-      <b>试号期间不要改密码、不要绑手机、不要发作品。</b>改了就算你买了，押金不退，账号也会被收回。<br>
-      满意就补尾款，不满意可以换号或全额退款。
+      <b>测试期间不要改密码、不要绑手机、不要发作品。</b>改了就算你买了，需要立即付清号价 ${money(o.price)} USDT。<br>
+      满意就付号款拿走这个号；不满意可以换号，最多还剩 ${o.swapLeft} 次。
     </div>
     <div class="stack">
-      <button class="btn" type="button" data-act="trialTail">满意，补尾款 ${money(o.tail)} USDT</button>
-      <button class="btn trial" type="button" data-act="trialSwap" ${o.swapLeft > 0 ? "" : "disabled"}>${o.swapLeft > 0 ? `不满意，换一个（剩 ${o.swapLeft} 次）` : "换号次数已用完"}</button>
-      <button class="btn line" type="button" data-act="trialRefund">不满意，申请全额退款</button>
+      <button class="btn" type="button" data-act="trialTail">满意，付号款 ${money(o.tail)} USDT</button>
+      <button class="btn trial" type="button" data-act="trialSwap" ${o.swapLeft > 0 ? "" : "disabled"}>${o.swapLeft > 0 ? `不满意，换一个号（剩 ${o.swapLeft} 次）` : "换号次数已用完"}</button>
+      <button class="btn line" type="button" data-act="trialRefund">不想要了，结束订单</button>
     </div>
-    <div style="font-size:12px;color:var(--ink-3)">订单 ${esc(o.no)} · 已换号 ${o.swapped} 次 · 试号记录已存档，售后以记录为准</div>`;
+    <div style="font-size:12px;color:var(--ink-3)">订单 ${esc(o.no)} · 已换号 ${o.swapped} 次 · 客服 ${esc(CONFIG.support.telegram)}</div>`;
   clearInterval(timer);
   tickTrial();
   timer = setInterval(tickTrial, 1000);
@@ -2220,40 +2243,39 @@ function tickTrial(){
   if (left <= 0){ clearInterval(timer); expireTrial(o); }
 }
 function expireTrial(o){
-  if (o.status === "试号中"){
-    o.status = "已超时";
+  if (o.status === "测试中"){
+    o.status = "测试结束";
     setAccState(o.acc, "待检");
-    logTrial(o, "超时未处理");
+    logTrial(o, "测试时间结束");
     saveOrder(o);
   }
   expireView(o);
 }
 function expireView(o){
   $("#buyBody").innerHTML = `
-    ${head("试号已结束")}
-    <div class="notice">试号时间到了，这笔订单已自动结束，账号已收回进入人工核验。</div>
+    ${head("测试时间结束")}
+    <div class="notice">${CONFIG.trial.hours} 小时测试时间已用完，这笔订单自动结束，账号已收回进人工核验。</div>
     <div class="total">
-      <div class="row"><span>押金</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>处理方式</span><b style="color:var(--ok)">全额退还</b></div>
+      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
+      <div class="row"><span>测试服务费</span><b style="color:var(--ink-3)">不退、不抵号价</b></div>
     </div>
-    <div style="color:var(--ink-2);font-size:14px">把订单号 ${esc(o.no)} 发给客服，就能把钱退回来（或直接联系客服继续办理）。</div>
-    <a class="btn" href="${CONFIG.supportUrl}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-close>关闭</button>`;
+    <div style="color:var(--ink-2);font-size:14px">还想继续测、或者想直接买这个号，把订单号 ${esc(o.no)} 发给客服，说明一下就行。</div>
+    <a class="btn" href="${supportHref(o, "你好，我的测试时间到了，订单号 " + o.no)}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
+    <button class="btn line" type="button" data-trial="${esc(o.id)}">重新下一单</button>`;
 }
 function trialSwap(){
   const o = cur && cur.order;
-  if (!o || o.status !== "试号中") return;
-  if (o.swapLeft <= 0){ toast("换号次数已用完，可以补尾款或申请退款"); return; }
-  if (!confirm(`确认换一个账号？\n换号后重新计时 ${CONFIG.trial.hours} 小时，换号机会还剩 ${o.swapLeft - 1} 次。`)) return;
+  if (!o || o.status !== "测试中") return;
+  if (o.swapLeft <= 0){ toast("换号次数已用完，可以直接付号款或结束订单"); return; }
+  if (!confirm(`确认换一个号？\n换号后重新计时 ${CONFIG.trial.hours} 小时，不用再付测试费，换号机会还剩 ${o.swapLeft - 1} 次。\n换号也找客服，把订单号发过去就行。`)) return;
   setAccState(o.acc, "待检");       // 试过的号一律待检，绝不回库存
-  logTrial(o, "不满意换号");
-  const p = PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title };
-  const a = takeAccount(p, o.no);
-  o.acc = a.acc; o.pwd = a.pwd;
+  logTrial(o, "不满意换号（第" + (o.swapped + 1) + "次）");
+  o.acc = ""; o.pwd = "";
   o.swapLeft -= 1; o.swapped += 1;
   o.trialStart = Date.now(); o.trialExpire = Date.now() + trialMs();
+  o.waitService = true;
   saveOrder(o);
-  toast("已换新号，重新计时");
+  toast("已换号并重新计时，找客服要新号");
   stepTrialAcc();
 }
 function trialTail(){
@@ -2270,53 +2292,50 @@ function finishTrial(o){
 }
 function doneTrial(){
   const o = cur && cur.order; if (!o) return;
+  const hasAcc = !!(o.acc && o.pwd);
   $("#buyBody").innerHTML = `
-    ${head("交易完成")}
-    <div class="steps"><i>1 押金</i><i>2 试号</i><i class="on">3 完成</i></div>
+    ${head("付款完成")}
+    <div class="steps"><i>1 测试费</i><i>2 上号测试</i><i class="on">3 完成</i></div>
     <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">账号已经归你了</div>
-    <div class="stack">
+    <div style="font-weight:600">${hasAcc ? "账号已经归你了" : "号款已付，这个号归你了"}</div>
+    ${hasAcc ? `<div class="stack">
       <div class="acc-line"><div style="min-width:0"><span class="k">账号</span><span class="v">${esc(o.acc)}</span></div><button class="ghost" type="button" data-copy="${esc(o.acc)}" data-label="账号已复制">复制</button></div>
       <div class="acc-line"><div style="min-width:0"><span class="k">密码</span><span class="v">${esc(o.pwd)}</span></div><button class="ghost" type="button" data-copy="${esc(o.pwd)}" data-label="密码已复制">复制</button></div>
-    </div>
+    </div>` : `<div class="notice">账号资料客服已经在 Telegram 里发给你了（就是你刚测试的那个号）。如果消息找不到，把订单号发给客服，让他再发一次。</div>`}
     <div class="rule">拿到号后请尽快改密码、绑定你自己的手机。改绑过程中遇到问题，把订单号 ${esc(o.no)} 发给客服。</div>
     <div class="box"><code>${esc(o.no)}</code><button class="ghost" type="button" data-copy="${esc(o.no)}" data-label="订单号已复制">复制</button></div>
-    <a class="btn" href="${CONFIG.supportUrl}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
+    <a class="btn" href="${supportHref(o, "你好，订单 " + o.no + " 已付号款，麻烦确认一下账号")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
     <button class="btn line" type="button" data-close>完成</button>`;
 }
 function trialRefund(){
   const o = cur && cur.order; if (!o) return;
   clearInterval(timer);
   $("#buyBody").innerHTML = `
-    ${head("申请全额退款")}
+    ${head("结束这笔订单")}
     <div class="total">
-      <div class="row"><span>退还押金</span><b class="num" style="color:var(--ok)">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>当前账号</span><span class="mono">${esc(o.acc)}</span></div>
+      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
+      <div class="row"><span>用途</span><span>${CONFIG.trial.hours} 小时测试时间</span></div>
+      <div class="row"><span>退还</span><b style="color:var(--ink-3)">不退</b></div>
     </div>
-    <div>
-      <label class="lbl" for="refundAddr">退款地址（USDT-TRC20，以 T 开头）</label>
-      <input class="field" id="refundAddr" style="width:100%" autocomplete="off" placeholder="T 开头的波场地址">
-      <div class="err" id="err"></div>
-    </div>
-    <div class="rule">提交后账号立刻收回、进入人工核验。押金 <b>${money(o.deposit)} USDT</b> 全额退回，一般 24 小时内到账。</div>
-    <button class="btn" type="button" data-act="trialRefundDo">确认退款</button>
-    <button class="btn line" type="button" data-act="trialBack">返回试号页</button>`;
+    <div class="rule">这 ${money(o.deposit)} USDT 是 ${CONFIG.trial.hours} 小时测试的服务费，付了就已经开始计时，所以不退还、也不抵扣号价。<br>
+      结束订单后账号收回进人工核验，你随时可以重新下一单再测。</div>
+    <button class="btn" type="button" data-act="trialRefundDo">确认结束订单</button>
+    <button class="btn line" type="button" data-act="trialBack">返回，继续测试</button>`;
 }
 function trialRefundDo(){
   const o = cur && cur.order; if (!o) return;
-  const box = $("#refundAddr");
-  const addr = ((box && box.value) || "").trim();
-  if (!/^T[1-9A-HJ-NP-Za-km-z]{20,}$/.test(addr)){ $("#err").textContent = "请填写正确的 USDT-TRC20 地址（以 T 开头）。"; return; }
-  o.refundAddr = addr; o.status = "退款处理中"; o.refundAt = Date.now();
+  clearInterval(timer);
+  o.status = "已结束"; o.closedAt = Date.now();
   setAccState(o.acc, "待检");
-  logTrial(o, "不满意退款");
+  logTrial(o, "测试后没有购买");
   saveOrder(o);
   $("#buyBody").innerHTML = `
-    ${head("退款已提交")}
+    ${head("订单已结束")}
     <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">押金 ${money(o.deposit)} USDT 将全额退回</div>
-    <div style="color:var(--ink-2);font-size:14px">退款地址：<span class="mono">${esc(addr.slice(0,6))}...${esc(addr.slice(-6))}</span><br>订单号 ${esc(o.no)}。一般 24 小时内到账，有问题直接找客服。</div>
-    <button class="btn line" type="button" data-close>完成</button>`;
+    <div style="font-weight:600">这笔订单已经关闭</div>
+    <div style="color:var(--ink-2);font-size:14px">订单号 ${esc(o.no)}。1U 测试服务费已用于这 ${CONFIG.trial.hours} 小时测试，不退还。想再测或者直接买，随时重新下单。</div>
+    <a class="btn" href="${supportHref(o, "你好，我的订单 " + o.no + " 已结束，想咨询一下")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
+    <button class="btn line" type="button" data-close>关闭</button>`;
 }
 
 /* ============ 订单查询：输入订单号或联系方式 ============
@@ -2325,30 +2344,30 @@ function trialRefundDo(){
 function ordHint(t){ return `<div style="color:var(--ink-3);font-size:14px">${t}</div>`; }
 function openOrders(){
   $("#ordQ").value = "";
-  const live = orders().filter(o => o.status === "试号中");
+  const live = orders().filter(o => o.status === "测试中");
   $("#ordList").innerHTML = ordHint("输入订单号或下单时填写的联系方式，查看订单状态。")
-    + (live.length ? `<div style="font-size:12px;color:var(--warn)">你有 ${live.length} 个试号正在进行，输入订单号可以继续看账号。</div>` : "");
+    + (live.length ? `<div style="font-size:12px;color:var(--warn)">你有 ${live.length} 个号正在测试中，输入订单号可以继续查看。</div>` : "");
   $("#dlgOrders").showModal();
   $("#ordQ").focus();
 }
 function orderCard(o){
   const tone = o.status === "已完成" ? "var(--ok)"
-    : o.status === "试号中" ? "var(--accent)"
-    : (o.status === "已超时" || o.status === "已退款" || o.status === "退款处理中") ? "var(--ink-3)"
+    : o.status === "测试中" ? "var(--accent)"
+    : (o.status === "测试结束" || o.status === "已结束" || o.status === "已超时" || o.status === "已退款" || o.status === "退款处理中") ? "var(--ink-3)"
     : "var(--warn)";
   let act = "";
-  if (o.status === "试号中")
-    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">查看账号 · 剩 ${leftTxt(o)}</button>`;
+  if (o.status === "测试中")
+    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">查看 · 剩 ${leftTxt(o)}</button>`;
   else if (o.status === "待付尾款")
-    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">去补尾款</button>`;
-  else if (o.status === "待付押金")
+    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">去付号款</button>`;
+  else if (o.status === "待付测试费")
     act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">继续付款</button>`;
-  else if (o.status === "待核验" || o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待付款")
+  else if (o.status === "待核验" || o.status === "待核验测试费" || o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待付款")
     act = `<button class="ghost" type="button" data-order="${esc(o.no)}">查看进度</button>`;
   else if (o.status === "已完成" && o.type === "trial")
     act = `<button class="ghost" type="button" data-order="${esc(o.no)}">查看账号</button>`;
   const fee = o.type === "trial"
-    ? `押金 ${money(o.deposit)} · 尾款 ${money(o.tail)} · 合计 ${money(o.price)} USDT`
+    ? `测试费 ${money(o.deposit)} · 号款 ${money(o.tail)} · 合计 ${money(Number(o.deposit) + Number(o.tail))} USDT`
     : `${esc(o.qty)} × ${esc(o.price)} USDT · 实付 ${esc(o.amount)} USDT`;
   return `<div class="order">
     <div class="row"><b class="mono">${esc(o.no)}</b><span style="color:${tone};font-weight:600">${esc(o.status)}</span></div>
@@ -2384,15 +2403,29 @@ function openOrder(no){
   openOrderView(o);
 }
 function openOrderView(o){
-  if (o.status === "试号中") stepTrialAcc();
+  if (o.status === "试号中") o.status = "测试中";   // 兼容旧版订单
+  if (o.status === "测试中") stepTrialAcc();
   else if (o.status === "待付尾款"){ o.payFor = "tail"; o.amount = o.tail; saveOrder(o); gotoPay(o, "tail"); }
-  else if (o.status === "待付押金"){ o.payFor = "deposit"; o.amount = o.deposit; saveOrder(o); gotoPay(o, "deposit"); }
-  else if (o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待核验" || o.status === "待付款") payPending(o);
+  else if (o.status === "待付测试费" || o.status === "待付押金"){ o.payFor = "deposit"; o.amount = o.deposit; saveOrder(o); gotoPay(o, "deposit"); }
+  else if (o.status === "待核验测试费" || o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待核验" || o.status === "待付款") payPending(o);
   else if (o.status === "已完成" && o.type === "trial") doneTrial();
   else if (o.status === "已完成") otherDone(o);
-  else if (o.status === "已超时") expireTrial(o);
+  else if (o.status === "测试结束" || o.status === "已超时") expireTrial(o);
+  else if (o.status === "已结束") closedView(o);
   else if (o.status === "退款处理中" || o.status === "已退款") refundView(o);
   else paidDone(o);
+}
+/* 已经结束的订单（测试后不买了） */
+function closedView(o){
+  $("#buyBody").innerHTML = `
+    ${head("订单已结束")}
+    <div class="total">
+      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
+      <div class="row"><span>状态</span><b>${esc(o.status)}</b></div>
+    </div>
+    <div style="color:var(--ink-2);font-size:14px">订单号 ${esc(o.no)}。1U 测试服务费已用于 ${CONFIG.trial.hours} 小时测试，不退还。想再测或者直接买，随时重新下单。</div>
+    <a class="btn" href="${supportHref(o, "你好，我的订单 " + o.no + " 已结束，想咨询一下")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
+    <button class="btn line" type="button" data-close>关闭</button>`;
 }
 function otherDone(o){
   $("#buyBody").innerHTML = `
@@ -2407,7 +2440,7 @@ function refundView(o){
   $("#buyBody").innerHTML = `
     ${head("退款")}
     <div class="total">
-      <div class="row"><span>押金</span><b class="num">${money(o.deposit)} USDT</b></div>
+      <div class="row"><span>退款金额</span><b class="num">${money(o.deposit)} USDT</b></div>
       <div class="row"><span>状态</span><b>${esc(o.status)}</b></div>
     </div>
     <div style="color:var(--ink-2);font-size:14px">退款地址：<span class="mono">${esc((o.refundAddr || "").slice(0,6))}...${esc((o.refundAddr || "").slice(-6))}</span><br>订单号 ${esc(o.no)}，一般 24 小时内到账。没收到就把订单号发给客服。</div>
@@ -2444,7 +2477,7 @@ document.addEventListener("click", e => {
   else if (t.dataset.act === "trialRefundDo") trialRefundDo();
   else if (t.dataset.act === "trialBack"){
     const o = cur && cur.order;
-    if (o && o.status === "待付尾款"){ o.status = "试号中"; saveOrder(o); }
+    if (o && o.status === "待付尾款"){ o.status = "测试中"; saveOrder(o); }
     stepTrialAcc();
   }
   else if (t.id === "submitPaid") submitPay();
