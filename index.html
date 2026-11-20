@@ -149,9 +149,6 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 .qty button{border:0;background:none;width:36px;height:36px;font-size:18px;color:var(--ink-2)}
 .qty span{min-width:32px;text-align:center}
 .total{background:var(--bg);border-radius:var(--r);padding:14px 16px;display:grid;gap:4px}
-/* 金额行右侧不换行，左侧长文案可收缩 */
-.total .row b,.pk .row b{white-space:nowrap}
-.total .row>span,.pk .row>span{min-width:0}
 .total .big{font-family:var(--font-mono);font-size:26px;font-weight:600}
 .box{border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
 .box code{font-family:var(--font-mono);font-size:13px;word-break:break-all;min-width:0}
@@ -164,50 +161,6 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
 @media (max-width:520px){.dlg{padding:20px}}
-/* ===== 先试后付 ===== */
-.btn.trial{background:none;border:1.5px solid var(--accent);color:var(--accent)}
-.btn.trial:hover{background:var(--accent-soft);filter:none}
-.btn.trial:disabled{background:none;border-color:var(--line);color:var(--ink-3)}
-.prow{grid-template-columns:minmax(0,1fr) 80px 110px 198px}
-.acts{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap}
-.prow .acts .btn{padding:6px 10px;font-size:13px;white-space:nowrap}
-.steps{display:flex;gap:6px;font-size:11px;color:var(--ink-3)}
-.steps i{font-style:normal;flex:1;text-align:center;padding:6px 0;border-radius:999px;background:var(--bg)}
-.steps i.on{background:var(--accent);color:#fff;font-weight:600}
-.cd-wrap{background:var(--bg);border-radius:var(--r);padding:14px 16px;display:grid;gap:4px;justify-items:center;text-align:center}
-.cd-big{font-family:var(--font-mono);font-size:34px;font-weight:700;color:var(--accent);line-height:1.15;letter-spacing:1px}
-.cd-big.over{color:var(--price)}
-.stack{display:grid;gap:8px}
-.acc-line{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
-.acc-line .k{display:block;font-size:12px;color:var(--ink-3)}
-.acc-line .v{font-family:var(--font-mono);font-size:15px;font-weight:600;word-break:break-all}
-.rule{background:var(--warn-soft);color:#7a4208;border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.65}
-.rule b{color:#6c3a05}
-.chk{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--ink-2);line-height:1.5}
-.chk input{margin-top:3px;width:16px;height:16px;flex:none;accent-color:var(--accent)}
-/* ===== TronLink 支付 ===== */
-.trx{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;border:0;border-radius:var(--r);
-  background:linear-gradient(135deg,#ef4a3d,#c62828);color:#fff;padding:13px 18px;font-weight:700;font-size:15px;
-  box-shadow:0 6px 18px -8px rgba(198,40,40,.7)}
-.trx:hover{filter:brightness(1.06)}
-.trx:disabled{opacity:.55;cursor:not-allowed;filter:none;box-shadow:none}
-.trx svg{width:19px;height:19px;flex:none}
-.trx-sub{font-size:12px;color:var(--ink-3);text-align:center;line-height:1.6;margin-top:-2px}
-.pk{background:var(--bg);border-radius:var(--r);padding:12px 14px;display:grid;gap:7px}
-.pk .row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;color:var(--ink-2)}
-.pk .row b{color:var(--ink);font-weight:600}
-.wallet-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(198,40,40,.08);color:#c62828;
-  border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
-.fee{display:grid;gap:7px;font-size:13px;background:var(--bg);border-radius:var(--r);padding:12px 14px}
-.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
-.order .acts{margin-top:4px}
-.order .acts .ghost{font-size:13px;padding:6px 12px}
-@media (max-width:640px){
-  .prow{grid-template-columns:1fr 1fr;grid-template-areas:"name name" "stock price" "btn btn";gap:8px 12px}
-  .prow .acts{grid-area:btn;justify-content:stretch}
-  .prow .acts .btn{flex:1;justify-content:center;padding:9px 0;font-size:14px}
-  .cd-big{font-size:30px}
-}
 </style>
 </head>
 <body>
@@ -298,16 +251,11 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
     <div class="dlg-head"><h2 id="guideTitle">使用教程</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>
     <ol style="margin:0;padding-left:20px;display:grid;gap:8px;color:var(--ink-2);font-size:14px">
       <li>选择分类，下方会列出该分类的商品。</li>
-      <li>看清商品名称、库存和单价。想先验证再决定，点“先试后付”；确定要买，点“立即购买”。</li>
-      <li><b>所有账号都支持先上号测试</b>：点“先试后付”，付 1U 测试服务费，就拿到 2 小时测试时间。</li>
-      <li>付完 1U 会给你一个订单号，<b>把订单号发给客服，客服就给你上号</b>。2 小时从付款那一刻开始计时，越早联系客服，能测的时间越多。</li>
-      <li>测试满意 → 按号价付款，账号归你；不满意 → 可以找客服换号，最多 3 次，每次换号重新计时。</li>
-      <li>1U 是 2 小时测试的服务费，<b>不抵扣号价、不退还</b>；不想要了直接结束订单就行。</li>
-      <li>测试期间不要修改密码、不要绑定手机、不要发作品，一旦修改即视为购买，需要付清号价。</li>
-      <li>1U、号款都用 TronLink 支付，只支持 TronLink 钱包：手机上点按钮直接拉起 App，电脑上会用二维码让你在手机钱包里扫。</li>
-      <li>直接购买：选择数量，填写联系方式（查询订单用）。</li>
-      <li>在“查询订单”里输入订单号或联系方式，随时查看进度、继续测试或付号款。</li>
-      <li>拿到账号后，请尽快修改密码并绑定你自己的手机。</li>
+      <li>看清商品名称、库存和单价，点“购买”。</li>
+      <li>选择数量，填写联系方式（查询订单用）。</li>
+      <li>扫描二维码或复制地址，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
+      <li>付款后会自动发货，在“查询订单”里查看卡密</li>
+      <li>收到后建议在90天内修改密码和绑定信息。</li>
     </ol>
     <button class="btn line" type="button" data-close>知道了</button>
   </div>
@@ -1579,12 +1527,11 @@ window.QRLib={QRCode:__m["index"].exports,ECL:__m["QRErrorCorrectLevel"].exports
 /* ============ 站点配置：上线前改这里 ============ */
 const CONFIG = {
   brand: "抖音账号铺",
-  support: { telegram: "@H88H85", wechat: "" },
+  support: { telegram: "：@H88H85", wechat: "" },
   // “联系客服”按钮的链接
   supportUrl: "https://t.me/H88H85",
   // 公告：label 是红色小标题；有 href 时显示为可点击链接。按需增删。
   notices: [
-    { label:"1U 试号", text:"全部账号支持先上号测试：1U 换 2 小时，满意再付款" },
     { label:"永久域名", text:"cccmmm.cc" },
     { label:"补货通知群", text:"https://t.me/H88H86", href:"https://t.me/H88H86" }
   ],
@@ -1592,11 +1539,6 @@ const CONFIG = {
   // 地址未替换时，页面会禁止用户付款。
   walletAddr: "TNpKnPz3cSHdopVgoSJt7U2JMiL5VhdUe4",
   payWindowMinutes: 30,
-  // TronLink 收款页：点“打开 TronLink”后跳到这里（只支持 TronLink 钱包）
-  payApp: "https://02.tktktk.workers.dev",
-  // 先试后付（统一 1U 测试服务费）：所有账号都能先上号测试，付 fee USDT 换 hours 小时测试时间，
-  // 1U 是测试服务费，不抵扣号价、不退还；测试满意后再付号价全额。可换号 maxSwap 次。
-  trial: { fee: 1, hours: 2, maxSwap: 3 },
   // 接入后端后填写，例如 "https://api.example.com"。留空表示演示模式（订单只存在浏览器里）。
   apiBase: ""
 };
@@ -1604,64 +1546,64 @@ const CONFIG = {
 /* ============ 全品类优化版商品数据（含最新增补） ============ */
 const PRODUCTS = [
   // ================= 1. 基础新号（高频消耗品 · 大库存） =================
-  { id: "DY-1001", type: "新白号", title: "新注册未实名", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 10, stock: 88 },
-  { id: "DY-1002", type: "新白号", title: "新注册已实名", desc: "0 粉 · 新注册 · 已实名 · 随拿随用", price: 40, stock: 65 },
+  { id: "DY-1001", type: "新白号", title: "新注册未实名", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 5, stock: 88 },
+  { id: "DY-1002", type: "新白号", title: "新注册已实名", desc: "0 粉 · 新注册 · 已实名 · 随拿随用", price: 20, stock: 65 },
 
   // ================= 2. 抗封老号/满月号（高权重 · 中大库存） =================
-  { id: "DY-1003", type: "满月号", title: "满月未实名", desc: "0 粉 · 注册满30天 · 未实名 · 权重稳定", price: 40, stock: 45 },
-  { id: "DY-1004", type: "满月号", title: "满月已实名", desc: "0 粉 · 注册满30天 · 已实名 · 养号成熟", price: 50, stock: 30 },
-  { id: "DY-1005", type: "高权老号", title: "三年安全老号", desc: "10~500粉 · 注册 3 年 · 已实名 · 高度抗封", price: 65, stock: 20 },
+  { id: "DY-1003", type: "满月号", title: "满月未实名", desc: "0 粉 · 注册满30天 · 未实名 · 权重稳定", price: 20, stock: 45 },
+  { id: "DY-1004", type: "满月号", title: "满月已实名", desc: "0 粉 · 注册满30天 · 已实名 · 养号成熟", price: 25, stock: 30 },
+  { id: "DY-1005", type: "高权老号", title: "三年安全老号", desc: "10~500粉 · 注册 3 年 · 已实名 · 高度抗封", price: 30, stock: 20 },
   // 【新增】高权老号扩充
-  { id: "DY-1032", type: "高权老号", title: "五年极品高权老号", desc: "10~500粉 · 注册 5 年 · 已实名 · 历史干净无违规", price: 95, stock: 12 },
-  { id: "DY-1033", type: "高权老号", title: "四年老白号（自带权重）", desc: "10~500粉 · 注册 4 年 · 未实名 · 极易起号", price: 78, stock: 15 },
-  { id: "DY-1034", type: "高权老号", title: "六年沉淀老号", desc: "10~500粉 · 注册 6 年 · 已实名 · 播放权重极高", price: 138, stock: 8 },
+  { id: "DY-1032", type: "高权老号", title: "五年极品高权老号", desc: "10~500粉 · 注册 5 年 · 已实名 · 历史干净无违规", price: 40, stock: 12 },
+  { id: "DY-1033", type: "高权老号", title: "四年老白号（自带权重）", desc: "10~500粉 · 注册 4 年 · 未实名 · 极易起号", price: 35, stock: 15 },
+  { id: "DY-1034", type: "高权老号", title: "六年沉淀老号", desc: "10~500粉 · 注册 6 年 · 已实名 · 播放权重极高", price: 45, stock: 8 },
 
   // ================= 3. 粉丝号（梯队覆盖 · 常规库存） =================
-  { id: "DY-1006", type: "粉丝号", title: "500粉破播放号", desc: "500 粉 · 破冷启动 · 未实名 · 适合试水", price: 40, stock: 25 },
-  { id: "DY-1007", type: "粉丝号", title: "千粉未实名", desc: "1000 粉 · 干净老号 · 未实名", price: 45, stock: 40 },
-  { id: "DY-1008", type: "粉丝号", title: "千粉已实名", desc: "1000 粉 · 干净老号 · 已实名", price: 55, stock: 35 },
-  { id: "DY-1009", type: "粉丝号", title: "万粉未实名", desc: "10000 粉 · 基础高 · 未实名", price: 120, stock: 15 },
-  { id: "DY-1010", type: "粉丝号", title: "万粉已实名", desc: "10000 粉 · 基础高 · 已实名", price: 130, stock: 12 },
+  { id: "DY-1006", type: "粉丝号", title: "500粉破播放号", desc: "500 粉 · 破冷启动 · 未实名 · 适合试水", price: 20, stock: 25 },
+  { id: "DY-1007", type: "粉丝号", title: "千粉未实名", desc: "1000 粉 · 干净老号 · 未实名", price: 25, stock: 40 },
+  { id: "DY-1008", type: "粉丝号", title: "千粉已实名", desc: "1000 粉 · 干净老号 · 已实名", price: 25, stock: 35 },
+  { id: "DY-1009", type: "粉丝号", title: "万粉未实名", desc: "10000 粉 · 基础高 · 未实名", price: 60, stock: 15 },
+  { id: "DY-1010", type: "粉丝号", title: "万粉已实名", desc: "10000 粉 · 基础高 · 已实名", price: 65, stock: 12 },
 
   // ================= 4. 直播/电商功能号（核心硬通货 · 重点拉满库存） =================
-  { id: "DY-1011", type: "直播号", title: "新号已开播", desc: "0 粉 · 新注册 · 已实名 · 直播权限正常", price: 40, stock: 50 },
-  { id: "DY-1012", type: "直播号", title: "千粉直播号", desc: "1000 粉 · 三年老号 · 已实名 · 稳定绿标", price: 55, stock: 35 },
-  { id: "DY-1013", type: "橱窗号", title: "0粉电商橱窗号", desc: "0 粉 · 老号 · 已开通小黄车橱窗", price: 55, stock: 40 },
+  { id: "DY-1011", type: "直播号", title: "新号已开播", desc: "0 粉 · 新注册 · 已实名 · 直播权限正常", price: 20, stock: 50 },
+  { id: "DY-1012", type: "直播号", title: "千粉直播号", desc: "1000 粉 · 三年老号 · 已实名 · 稳定绿标", price: 25, stock: 35 },
+  { id: "DY-1013", type: "橱窗号", title: "0粉电商橱窗号", desc: "0 粉 · 老号 · 已开通小黄车橱窗", price: 25, stock: 40 },
   { id: "DY-1014", type: "橱窗号", title: "千粉带货橱窗号", desc: "1000 粉 · 老号 · 已开通小黄车橱窗", price: 65, stock: 30 },
   { id: "DY-1015", type: "蓝V号", title: "基础企业蓝V", desc: "0 粉 · 企业认证 · 官方蓝V标识", price: 50, stock: 25 },
-  { id: "DY-1016", type: "蓝V号", title: "千粉企业蓝V", desc: "1000 粉 · 企业认证 · 带团购/POIC标", price: 75, stock: 15 },
+  { id: "DY-1016", type: "蓝V号", title: "千粉企业蓝V", desc: "1000 粉 · 企业认证 · 带团购/POIC标", price: 35, stock: 15 },
 
   // ================= 5. 私人号 / 等级号（精品稀缺 · 少量库存） =================
-  { id: "DY-1017", type: "私人号", title: "高活跃真人老号", desc: "10~500粉 · 注册 2 年 · 已实名 · 常用常刷", price: 60, stock: 3 },
-  { id: "DY-1018", type: "私人号", title: "高权重个人日常号", desc: "10~500粉 · 注册 3 年 · 已实名 · 无违规记录", price: 68, stock: 2 },
+  { id: "DY-1017", type: "私人号", title: "高活跃真人老号", desc: "10~500粉 · 注册 2 年 · 已实名 · 常用常刷", price: 30, stock: 3 },
+  { id: "DY-1018", type: "私人号", title: "高权重个人日常号", desc: "10~500粉 · 注册 3 年 · 已实名 · 无违规记录", price: 35, stock: 2 },
   
   // 原有等级号
-  { id: "DY-1019", type: "等级号", title: "30级消费财富号", desc: "10~500粉 · 老号 · 未实名 · 30级荣誉勋章", price: 45, stock: 3 },
-  { id: "DY-1020", type: "等级号", title: "36级消费财富号", desc: "10~500粉 · 老号 · 已实名 · 36级荣誉勋章", price: 50, stock: 2 },
-  { id: "DY-1021", type: "等级号", title: "42级高等级大哥号", desc: "10~500粉 · 注册 3 年 · 已实名 · 垫榜撑场面", price: 188, stock: 1 },
+  { id: "DY-1019", type: "等级号", title: "30级消费财富号", desc: "10~500粉 · 老号 · 未实名 · 30级荣誉勋章", price: 25, stock: 3 },
+  { id: "DY-1020", type: "等级号", title: "36级消费财富号", desc: "10~500粉 · 老号 · 已实名 · 36级荣誉勋章", price: 28, stock: 2 },
+  { id: "DY-1021", type: "等级号", title: "42级高等级大哥号", desc: "10~500粉 · 注册 3 年 · 已实名 · 垫榜撑场面", price: 35, stock: 1 },
   
   // 【新增】30级到60级随机等级号、大哥号扩充
-  { id: "DY-1035", type: "等级号", title: "33级财富活跃号", desc: "10~500粉 · 注册 2 年 · 已实名 · 33级勋章", price: 48, stock: 4 },
-  { id: "DY-1036", type: "等级号", title: "39级资深消费号", desc: "10~500粉 · 注册 3 年 · 已实名 · 39级勋章", price: 98, stock: 2 },
-  { id: "DY-1037", type: "等级号", title: "45级土豪大佬号", desc: "10~500粉 · 注册 3 年 · 已实名 · 45级财富等级", price: 260, stock: 1 },
-  { id: "DY-1038", type: "等级号", title: "51级核心神豪号", desc: "10~500粉 · 注册 4 年 · 已实名 · 51级尊贵等级", price: 520, stock: 1 },
-  { id: "DY-1039", type: "等级号", title: "58级巅峰神豪大哥号", desc: "10~500粉 · 注册 5 年 · 已实名 · 58级顶级特效", price: 1280, stock: 0 },
-  { id: "DY-1040", type: "等级号", title: "60级大佬号", desc: "10~500粉 · 注册 5 年 · 已实名 · 60级全特效神豪", price: 2880, stock: 0 },
+  { id: "DY-1035", type: "等级号", title: "33级财富活跃号", desc: "10~500粉 · 注册 2 年 · 已实名 · 33级勋章", price: 26, stock: 4 },
+  { id: "DY-1036", type: "等级号", title: "39级资深消费号", desc: "10~500粉 · 注册 3 年 · 已实名 · 39级勋章", price: 32, stock: 2 },
+  { id: "DY-1037", type: "等级号", title: "45级土豪大佬号", desc: "10~500粉 · 注册 3 年 · 已实名 · 45级财富等级", price: 38, stock: 1 },
+  { id: "DY-1038", type: "等级号", title: "51级核心神豪号", desc: "10~500粉 · 注册 4 年 · 已实名 · 51级尊贵等级", price: 50, stock: 1 },
+  { id: "DY-1039", type: "等级号", title: "58级巅峰神豪大哥号", desc: "10~500粉 · 注册 5 年 · 已实名 · 58级顶级特效", price: 80, stock: 0 },
+  { id: "DY-1040", type: "等级号", title: "60级大佬号", desc: "10~500粉 · 注册 5 年 · 已实名 · 60级全特效神豪", price: 100, stock: 0 },
 
   // ================= 6. 垂类成品号（单价适中 · 精准匹配） =================
-  { id: "DY-1022", type: "垂类号", title: "美食探店成品号", desc: "保底 1W+粉 优质老号 · 注册 2 年 · 已实名 · 粘性高", price: 68, stock: 3 },
-  { id: "DY-1023", type: "垂类号", title: "游戏攻略成品号", desc: "3万~4万粉随机 · 注册 1 年 · 已实名 · 流量高", price: 96, stock: 2 },
-  { id: "DY-1024", type: "垂类号", title: "母婴育儿知识号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 宝妈粉多", price: 52, stock: 4 },
+  { id: "DY-1022", type: "垂类号", title: "美食探店成品号", desc: "保底 1W+粉 优质老号 · 注册 2 年 · 已实名 · 粘性高", price: 34, stock: 3 },
+  { id: "DY-1023", type: "垂类号", title: "游戏攻略成品号", desc: "3万~4万粉随机 · 注册 1 年 · 已实名 · 流量高", price: 48, stock: 2 },
+  { id: "DY-1024", type: "垂类号", title: "母婴育儿知识号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 宝妈粉多", price: 35, stock: 4 },
   // 【新增】垂类号扩充
-  { id: "DY-1041", type: "垂类号", title: "汽车资讯/试驾号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 男粉居多", price: 88, stock: 2 },
-  { id: "DY-1042", type: "垂类号", title: "科技数码评测号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 垂直度高", price: 110, stock: 1 },
-  { id: "DY-1043", type: "垂类号", title: "职场干货/认知号", desc: "3万~4万粉随机 · 注册 2 年 · 已实名 · 粉丝粘性强", price: 155, stock: 2 },
-  { id: "DY-1044", type: "垂类号", title: "三农生活/助农号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 轻松开播带货", price: 79, stock: 3 },
+  { id: "DY-1041", type: "垂类号", title: "汽车资讯/试驾号", desc: "1万~2万粉随机 · 注册 2 年 · 已实名 · 男粉居多", price: 44, stock: 2 },
+  { id: "DY-1042", type: "垂类号", title: "科技数码评测号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 垂直度高", price: 55, stock: 1 },
+  { id: "DY-1043", type: "垂类号", title: "职场干货/认知号", desc: "3万~4万粉随机 · 注册 2 年 · 已实名 · 粉丝粘性强", price: 75, stock: 2 },
+  { id: "DY-1044", type: "垂类号", title: "三农生活/助农号", desc: "2万~3万粉随机 · 注册 3 年 · 已实名 · 轻松开播带货", price: 40, stock: 3 },
 
   // ================= 7. 多平台矩阵号（小红书 / 视频号） =================
-  { id: "XHS-2001", type: "其他平台", title: "小红书千粉号", desc: "1000 粉 · 注册1年 · 已实名 · 可接蒲公英", price: 55, stock: 10 },
-  { id: "XHS-2002", type: "其他平台", title: "小红书新白号", desc: "0 粉 · 注册满月 · 未实名 · 包换绑", price: 15, stock: 30 },
-  { id: "SPH-3001", type: "其他平台", title: "微信视频号满月", desc: "0 粉 · 满月老号 · 已实名 · 可做私域引流", price: 45, stock: 20 }
+  { id: "XHS-2001", type: "其他平台", title: "小红书千粉号", desc: "1000 粉 · 注册1年 · 已实名 · 可接蒲公英", price: 25, stock: 10 },
+  { id: "XHS-2002", type: "其他平台", title: "小红书新白号", desc: "0 粉 · 注册满月 · 未实名 · 包换绑", price: 5, stock: 30 },
+  { id: "SPH-3001", type: "其他平台", title: "微信视频号满月", desc: "0 粉 · 满月老号 · 已实名 · 可做私域引流", price: 25, stock: 20 }
 ];
 
 /* ============ 工具 ============ */
@@ -1743,163 +1685,24 @@ function renderList(){
     <div class="prow">
       <div class="pname"><b>${platIcon()}<span>${p.title}</span></b><small>${p.id} · ${p.desc}</small></div>
       ${stockCell(p)}
-      <div class="c-price num">${p.price}<span>USDT</span>${p.stock>0?'<small style="display:block;font-size:11px;font-weight:500;color:var(--ink-3);letter-spacing:0">1U 可试</small>':""}</div>
-      <div class="acts">
-        <button class="btn trial" type="button" data-trial="${p.id}" ${p.stock>0?"":"disabled"}>先试后付</button>
-        <button class="btn" type="button" data-buy="${p.id}" ${p.stock>0?"":"disabled"}>${p.stock>0 ? "立即购买" : "售完"}</button>
-      </div>
+      <div class="c-price num">${p.price}<span>USDT</span></div>
+      <button class="btn" type="button" data-buy="${p.id}" ${p.stock>0?"":"disabled"}>${p.stock>0 ? cartIcon()+"购买" : "售完"}</button>
     </div>`).join("") : `<div class="empty">没有符合条件的商品，换个分类或关键词试试。</div>`;
 }
 
-/* ============ 下单 · 立即购买 / 先试后付 ============ */
+/* ============ 结账流程 ============ */
 const dlg = $("#dlgBuy");
 let cur = null, timer = null;
 
-const money = n => (Math.round(Number(n) * 100) / 100).toFixed(2);
-const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-
-/* 测试服务费：所有账号统一 CONFIG.trial.fee（1 USDT），换 2 小时测试时间。
-   1U 是服务费，不抵扣号价、不退还；测试满意后按号价全额付款。 */
-function depositOf(){ return CONFIG.trial.fee; }
-function tailOf(price){ return Math.round(Number(price) * 100) / 100; }
-function trialMs(){ return CONFIG.trial.hours * 3600 * 1000; }
-
-/* ---- 账号池（本地演示用） ----
-   正式上线请接后端：押金核验通过后由服务端下发账号，同时把该账号置为「测试中」；
-   试号结束（换号 / 退款 / 超时）置为「待检」，人工核验确认干净后，才能回到「可售」。
-   试过的号绝不直接回库存 —— 买家可能改过密码、绑过手机、发过违规内容。 */
-function accList(){ return store.get("accStore", []); }
-function saveAccList(a){ store.set("accStore", a); }
-function genAccount(pid){
-  const head = pid.indexOf("XHS") === 0 ? "xhs" : pid.indexOf("SPH") === 0 ? "sph" : "dy";
-  const pool = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let pw = "";
-  for (let i = 0; i < 9; i++) pw += pool[Math.floor(Math.random() * pool.length)];
-  return { acc: head + "_" + (100000 + Math.floor(Math.random() * 900000)), pwd: pw };
-}
-function takeAccount(p, orderNo){
-  const list = accList();
-  let rec = list.find(a => a.pid === p.id && a.state === "可售");
-  if (!rec){
-    const g = genAccount(p.id);
-    rec = { acc: g.acc, pwd: g.pwd, pid: p.id, state: "可售", order: "", at: Date.now() };
-    list.push(rec);
-  }
-  rec.state = "测试中"; rec.order = orderNo; rec.at = Date.now();
-  saveAccList(list);
-  return { acc: rec.acc, pwd: rec.pwd };
-}
-function setAccState(acc, state){
-  const list = accList(), r = list.find(a => a.acc === acc);
-  if (r){ r.state = state; r.at = Date.now(); saveAccList(list); }
-}
-/* 试号记录：售后争议、人工核验都靠这张表 */
-function logTrial(o, result){
-  const t = store.get("trials", []);
-  t.unshift({ no:o.no, pid:o.id, title:o.title, acc:o.acc, contact:o.contact,
-              start:o.trialStart, end:o.trialExpire, result, at:Date.now() });
-  store.set("trials", t.slice(0, 300));
-}
-function pendingTrials(){ return accList().filter(a => a.state === "待检"); }
-
-/* ---- 订单存取 ---- */
-function orders(){ return store.get("orders", []); }
-function saveOrder(o){
-  const list = orders(), i = list.findIndex(x => x.no === o.no);
-  if (i >= 0) list[i] = o; else list.unshift(o);
-  store.set("orders", list);
-  if (CONFIG.apiBase){
-    fetch(CONFIG.apiBase + "/orders", { method:"PUT", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(o) })
-      .catch(() => { /* 后端暂不可用时订单仍存在本地，客户可联系客服 */ });
-  }
-}
-function newNo(prefix){
-  const d = new Date(), p = n => String(n).padStart(2, "0");
-  return prefix + String(d.getFullYear()).slice(2) + p(d.getMonth() + 1) + p(d.getDate()) + Math.random().toString(36).slice(2, 7).toUpperCase();
-}
-function leftTxt(o){
-  const left = Math.max(0, (o.trialExpire || 0) - Date.now());
-  const h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000);
-  return h > 0 ? h + " 小时 " + m + " 分" : m + " 分钟";
-}
-
-/* ============ 通用付款页（全额 / 押金 / 尾款共用） ============ */
-const copyIcon = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>`;
-// 把地址生成二维码（SVG），黑码白底，四周留白，深色模式下也能被扫描
-function qrSvg(text){
-  const q = new QRLib.QRCode(-1, QRLib.ECL.M); q.addData(text); q.make();
-  const n = q.getModuleCount(), pad = 3; let d = "";
-  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.modules[r][c]) d += `M${c+pad} ${r+pad}h1v1h-1z`;
-  const size = n + pad*2;
-  return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
-}
-function head(title){
-  return `<div class="dlg-head"><h2 id="buyTitle">${title}</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>`;
-}
-function payView(o, title){
-  const addr = CONFIG.walletAddr;
-  const deadline = Date.now() + CONFIG.payWindowMinutes * 60000;
-  $("#buyBody").innerHTML = `
-    ${head(title || "USDT 付款")}
-    <div>
-      <div class="pay-amt"><span class="num">${money(o.amount)} USDT</span><button class="copy-ic" type="button" data-copy="${money(o.amount)}" data-label="金额已复制" aria-label="复制金额">${copyIcon}</button></div>
-      <div class="pay-net">区块网络 · Tron（TRC20）</div>
-    </div>
-    <div class="pay-bar">
-      <span class="pill">请严格按照数额付款</span>
-      <span class="count">剩余 <b class="num" id="cd">--:--</b></span>
-    </div>
-    <div class="row pay-line"><span style="color:var(--ink-3)">商户订单</span><b class="mono">${o.no}</b></div>
-    <div class="qr-box">${qrSvg(addr)}</div>
-    <div class="addr-box">
-      <div class="row"><span style="color:var(--ink-3);font-size:13px">收款地址</span><button class="copy-ic" type="button" data-copy="${addr}" data-label="地址已复制" aria-label="复制地址">${copyIcon}</button></div>
-      <div class="addr mono"><em>${addr.slice(0,4)}</em>${addr.slice(4,-6)}<em>${addr.slice(-6)}</em></div>
-    </div>
-    <div>
-      <label class="lbl" for="txid">转账完成后填写交易哈希（TxID）</label>
-      <input class="field" id="txid" style="width:100%" autocomplete="off" placeholder="在钱包的转账记录里复制，一般 64 位" value="${o.txid || ""}">
-      <div class="err" id="err"></div>
-    </div>
-    <button class="btn" type="button" id="submitPaid">我已付款，提交核验</button>
-    ${o.payFor === "tail" ? '<button class="btn line" type="button" data-act="trialBack">返回试号页，再试一会儿</button>' : ""}`;
-  clearInterval(timer);
-  const tick = () => {
-    const left = Math.max(0, deadline - Date.now());
-    const m = String(Math.floor(left/60000)).padStart(2,"0"), s = String(Math.floor(left%60000/1000)).padStart(2,"0");
-    const el = $("#cd"); if (el){ el.textContent = left ? `${m}:${s}` : "已超时"; el.parentElement.classList.toggle("over", !left); }
-    if (!left) clearInterval(timer);
-  };
-  tick(); timer = setInterval(tick, 1000);
-}
-async function submitPay(){
-  const o = cur && cur.order; if (!o) return;
-  const box = $("#txid");
-  const txid = ((box && box.value) || "").trim();
-  if (txid.length < 16){ $("#err").textContent = "请填写完整的交易哈希。"; return; }
-  const online = !!CONFIG.apiBase;
-  if (o.payFor === "deposit"){
-    o.txid = txid;
-    o.status = online ? "待核验测试费" : "测试中";
-    if (!online) trialStart(o); else saveOrder(o);
-    if (online) payPending(o); else stepTrialAcc();
-  } else if (o.payFor === "tail"){
-    o.tailTxid = txid;
-    o.status = online ? "待核验尾款" : "已完成";
-    if (!online) finishTrial(o); else saveOrder(o);
-    if (online) payPending(o); else doneTrial();
-  } else {
-    o.txid = txid; o.status = "待核验"; saveOrder(o);
-    paidDone(o);
-  }
-}
-
-/* ============ 立即购买 ============ */
 function openBuy(id){
   const p = PRODUCTS.find(x => x.id === id); if (!p || p.stock <= 0) return;
   cur = { p, qty:1, net:"TRC20", contact:"", order:null };
   stepConfirm(); dlg.showModal();
 }
 function closeBuy(){ clearInterval(timer); dlg.close(); }
+function head(title){
+  return `<div class="dlg-head"><h2 id="buyTitle">${title}</h2><button class="x" type="button" data-close aria-label="关闭">×</button></div>`;
+}
 function stepConfirm(){
   const { p } = cur;
   const walletOk = !isPlaceholder(CONFIG.walletAddr);
@@ -1930,19 +1733,62 @@ function stepConfirm(){
     ${walletOk ? "" : `<div class="notice">商家尚未配置收款地址，暂时无法付款。请联系客服 ${CONFIG.support.telegram}。</div>`}
     <button class="btn" type="button" id="toPay" ${walletOk?"":"disabled"}>下一步：查看收款信息</button>`;
 }
-function stepFullPay(){
+const copyIcon = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15"/></svg>`;
+// 把地址生成二维码（SVG），黑码白底，四周留白，深色模式下也能被扫描
+function qrSvg(text){
+  const q = new QRLib.QRCode(-1, QRLib.ECL.M); q.addData(text); q.make();
+  const n = q.getModuleCount(), pad = 3; let d = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.modules[r][c]) d += `M${c+pad} ${r+pad}h1v1h-1z`;
+  const size = n + pad*2;
+  return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+}
+function stepPay(){
   const { p } = cur;
   const base = p.price * cur.qty;
-  const tail = (Math.floor(Math.random()*49) + 1) / 100; // 小数尾巴，方便人工对账识别
-  const o = {
-    no: newNo("DY"), type:"full", payFor:"full", status:"待付款",
-    amount:(base + tail).toFixed(2), id:p.id, title:p.title, price:p.price, qty:cur.qty,
-    net:"TRC20", contact:cur.contact, created:Date.now(), txid:""
+  const tail = (Math.floor(Math.random()*49) + 1) / 100; // 0.01–0.49，用于后台识别订单
+  const amount = (base + tail).toFixed(2);
+  const no = "DY" + new Date().toISOString().slice(2,10).replace(/-/g,"") + Math.random().toString(36).slice(2,7).toUpperCase();
+  cur.order = { no, id:p.id, title:p.title, qty:cur.qty, net:"TRC20", amount, contact:cur.contact, created:Date.now(), status:"待付款", txid:"" };
+  const addr = CONFIG.walletAddr;
+  const deadline = Date.now() + CONFIG.payWindowMinutes*60000;
+  $("#buyBody").innerHTML = `
+    ${head("USDT 付款")}
+    <div>
+      <div class="pay-amt"><span class="num">${amount} USDT</span><button class="copy-ic" type="button" data-copy="${amount}" data-label="金额已复制" aria-label="复制金额">${copyIcon}</button></div>
+      <div class="pay-net">区块网络 · Tron（TRC20）</div>
+    </div>
+    <div class="pay-bar">
+      <span class="pill">请严格按照数额进行付款</span>
+      <span class="count">到期时间 <b class="num" id="cd">--:--</b></span>
+    </div>
+    <div class="row pay-line"><span style="color:var(--ink-3)">商户订单</span><b class="mono">${no}</b></div>
+    <div class="qr-box">${qrSvg(addr)}</div>
+    <div class="addr-box">
+      <div class="row"><span style="color:var(--ink-3);font-size:13px">收款地址</span><button class="copy-ic" type="button" data-copy="${addr}" data-label="地址已复制" aria-label="复制地址">${copyIcon}</button></div>
+      <div class="addr mono"><em>${addr.slice(0,4)}</em>${addr.slice(4,-6)}<em>${addr.slice(-6)}</em></div>
+    </div>
+    <div>
+    <button class="btn" type="button" id="`;
+  clearInterval(timer);
+  const tick = () => {
+    const left = Math.max(0, deadline - Date.now());
+    const m = String(Math.floor(left/60000)).padStart(2,"0"), s = String(Math.floor(left%60000/1000)).padStart(2,"0");
+    const el = $("#cd"); if (el){ el.textContent = left ? `${m}:${s}` : "已超时"; el.parentElement.classList.toggle("over", !left); }
+    if (!left) clearInterval(timer);
   };
-  cur.order = o; saveOrder(o);
-  payView(o, "USDT 付款");
+  tick(); timer = setInterval(tick, 1000);
 }
-function paidDone(o){
+async function submitOrder(){
+  const txid = $("#txid").value.trim();
+  if (txid.length < 16){ $("#err").textContent = "请填写完整的交易哈希。"; return; }
+  cur.order.txid = txid; cur.order.status = "待核验";
+  const orders = store.get("orders", []); orders.unshift(cur.order); store.set("orders", orders);
+  if (CONFIG.apiBase){
+    try {
+      await fetch(CONFIG.apiBase + "/orders", { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify(cur.order) });
+    } catch(e){ /* 后端暂不可用时，订单仍保存在本地，客户可联系客服 */ }
+  }
+  clearInterval(timer);
   $("#buyBody").innerHTML = `
     ${head("订单已提交")}
     <div class="ok-mark" aria-hidden="true">✓</div>
@@ -1950,431 +1796,21 @@ function paidDone(o){
       <div style="font-weight:600;margin-bottom:4px">我们会核验这笔转账</div>
       <div style="color:var(--ink-2);font-size:14px">核验通过后，账号资料会发到你填写的联系方式。请记下订单号，有问题时发给客服。</div>
     </div>
-    <div class="box"><code>${o.no}</code><button class="ghost" type="button" data-copy="${o.no}" data-label="订单号已复制">复制</button></div>
+    <div class="box"><code>${cur.order.no}</code><button class="ghost" type="button" data-copy="${cur.order.no}" data-label="订单号已复制">复制</button></div>
     <div style="font-size:13px;color:var(--ink-3)">客服：Telegram ${CONFIG.support.telegram} · 微信 ${CONFIG.support.wechat}</div>
     <button class="btn line" type="button" data-close>完成</button>`;
-}
-function payPending(o){
-  $("#buyBody").innerHTML = `
-    ${head("等待核验")}
-    <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">已提交，正在核验这笔转账</div>
-    <div style="color:var(--ink-2);font-size:14px">核验通过后会自动继续，回到「查询订单」输入订单号就能看到下一步。一般几分钟内完成。</div>
-    <div class="box"><code>${o.no}</code><button class="ghost" type="button" data-copy="${o.no}" data-label="订单号已复制">复制</button></div>
-    <button class="btn line" type="button" data-close>关闭</button>`;
-}
-
-/* ============ 先试后付（统一 1U 测试服务费） ============ */
-function openTrial(id){
-  const p = PRODUCTS.find(x => x.id === id); if (!p || p.stock <= 0) return;
-  const fee = depositOf(), tail = tailOf(p.price);
-  cur = { p, contact:"", order:null };
-  $("#buyBody").innerHTML = `
-    ${head("1U 试号")}
-    <div class="steps"><i class="on">1 付 1U 测试费</i><i>2 找客服上号</i><i>3 满意再付款</i></div>
-    <div>
-      <div class="row"><b>${p.title}</b><span class="mono">${p.id}</span></div>
-      <div style="color:var(--ink-3);font-size:13px;margin-top:2px">${p.desc}</div>
-    </div>
-    <div class="total">
-      <div class="row"><span>账号价格</span><b class="num">${money(p.price)} USDT</b></div>
-      <div class="row"><span>测试服务费（${CONFIG.trial.hours} 小时测试时间）</span><b class="num" style="color:var(--accent)">${money(fee)} USDT</b></div>
-      <div class="row"><span>测试满意后付款</span><b class="num">${money(tail)} USDT</b></div>
-    </div>
-    <div class="fee">
-      <div class="row"><span>测试时间</span><b>${CONFIG.trial.hours} 小时</b></div>
-      <div class="row"><span>可换号</span><b>${CONFIG.trial.maxSwap} 次</b></div>
-      <div class="row"><span>1U 用途</span><b>测试服务费</b></div>
-    </div>
-    <div class="rule">
-      <b>试号说明</b><br>
-      · <b>所有账号都能先上号测试</b>：付 ${money(fee)} USDT 换 ${CONFIG.trial.hours} 小时测试时间。<br>
-      · 付完把<b>订单号发给客服</b>，客服看到就给你上号；${CONFIG.trial.hours} 小时从付款那一刻开始计时，越早联系客服测的时间越多。<br>
-      · 测试满意 → 按号价 ${money(p.price)} USDT 付款，账号归你。<br>
-      · <b>这 1U 是测试服务费</b>，不抵扣号价、不退还；不满意不用买，直接结束订单即可。<br>
-      · 测试期间<b>请勿修改密码、绑定手机、发布作品</b>，一经修改即视为购买，需立即付清号价。<br>
-      · 不满意可以换号，最多 ${CONFIG.trial.maxSwap} 次，每次换号重新计时；试过的号一律进人工核验，不会再发给别人。
-    </div>
-    <div>
-      <label class="lbl" for="contact">联系方式（手机号 / 邮箱 / Telegram）</label>
-      <input class="field" id="contact" style="width:100%" value="${cur.contact}" placeholder="用于客服给你上号、查询订单">
-      <div class="err" id="err"></div>
-    </div>
-    <label class="chk"><input type="checkbox" id="agree"><span>我已阅读试号说明，测试期间不改密码、不绑定手机</span></label>
-    <div id="walletHint" style="font-size:12px;color:var(--ink-3);text-align:center;margin-top:-6px">下一步在本页付款，点按钮才跳到 TronLink，仅支持 TronLink 钱包</div>
-    <button class="btn" type="button" id="toTrialPay" disabled>付 ${money(fee)} USDT，开始 ${CONFIG.trial.hours} 小时测试</button>`;
-  dlg.showModal();
-  clearInterval(timer);
-}
-function stepTrialPay(){
-  const p = cur.p, dep = depositOf(p.price);
-  const o = {
-    no: newNo("TS"), type:"trial", payFor:"deposit", status:"待付测试费",
-    id:p.id, title:p.title, price:p.price, deposit:dep, tail:tailOf(p.price), amount:dep,
-    contact:cur.contact, created:Date.now(), txid:"", acc:"", pwd:"",
-    swapLeft:CONFIG.trial.maxSwap, swapped:0, trialStart:0, trialExpire:0, waitService:true
-  };
-  cur.order = o; saveOrder(o);
-  gotoPay(o, "deposit");
-}
-/* ============ TronLink 付款（就在本页，只支持 TronLink 钱包） ============
-   押金、尾款都不再跳独立页面：在本页里点“打开 TronLink”才跳转到 CONFIG.payApp，
-   手机上直接拉起 App，电脑上给二维码；从钱包切回来会回到这一页继续。 */
-const PAY_KEY = "payJump";
-const tronIcon = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.2 4.3 21 7.6 11.4 21 3.2 4.3Z" fill="#fff"/><path d="M10.1 8.2 8.6 12.9l3.4-2.3-1.9-2.4Z" fill="#c62828" opacity=".55"/></svg>`;
-const tronBadge = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M3.2 4.3 21 7.6 11.4 21 3.2 4.3Z" fill="#c62828"/></svg>`;
-
-function inTronLink(){ return !!(window.tronLink || window.tronWeb); }
-function isPhone(){ return /android|iphone|ipad|ipod|harmonyos|mobile/i.test(navigator.userAgent); }
-/* TronLink 官方 deep link：把收款页交给 App 内置浏览器打开 */
-function walletDeepLink(url){
-  const param = JSON.stringify({ url:url, action:"open", protocol:"tronlink", version:"1.0" });
-  return "tronlinkoutside://pull.activity?param=" + encodeURIComponent(param);
-}
-function payDeadline(no){
-  const key = "payDeadline_" + no;
-  let t = 0;
-  try { t = Number(sessionStorage.getItem(key) || 0); } catch(e){}
-  if (!t || t < Date.now() - CONFIG.payWindowMinutes * 60000){
-    t = Date.now() + CONFIG.payWindowMinutes * 60000;
-    try { sessionStorage.setItem(key, String(t)); } catch(e){}
-  }
-  return t;
-}
-function readPayJump(no){
-  try {
-    const j = JSON.parse(sessionStorage.getItem(PAY_KEY) || "null");
-    if (!j || !j.no) return null;
-    if (no && j.no !== no) return null;
-    if (Date.now() - (j.at || 0) > 60 * 60000){ sessionStorage.removeItem(PAY_KEY); return null; }
-    return j;
-  } catch(e){ return null; }
-}
-/* 押金 / 尾款：进入本页的付款界面 */
-function gotoPay(o, kind){
-  if (!cur) cur = { p: PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, price:o.price, desc:"" }, contact:o.contact || "", order:o };
-  cur.order = o;
-  o.payFor = kind === "tail" ? "tail" : "deposit";
-  o.amount = kind === "tail" ? o.tail : o.deposit;
-  if (!dlg.open) dlg.showModal();
-  stepWalletPay(o, kind);
-}
-function stepWalletPay(o, kind){
-  const isTail = kind === "tail";
-  const amt = isTail ? o.tail : o.deposit;
-  const p = (cur && cur.p) || PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, desc:"" };
-  const jumped = !!readPayJump(o.no);
-  $("#buyBody").innerHTML = `
-    ${head(isTail ? "付号款 · TronLink" : "付 1U 测试费 · TronLink")}
-    <div class="steps"><i class="${isTail ? "" : "on"}">1 付测试费</i><i>2 找客服上号</i><i class="${isTail ? "on" : ""}">3 付号款</i></div>
-    <div>
-      <div class="row"><b>${esc(p.title)}</b><span class="mono">${esc(o.id)}</span></div>
-      <div style="color:var(--ink-3);font-size:13px;margin-top:2px">${esc(p.desc || "")}</div>
-    </div>
-    <div>
-      <div class="pay-amt"><span class="num">${money(amt)} <span style="font-size:14px;font-weight:600">USDT</span></span></div>
-      <div style="margin-top:6px"><span class="wallet-badge">${tronBadge} 仅支持 TronLink 钱包</span></div>
-    </div>
-    <div class="pay-bar">
-      <span class="pill">${isTail ? "付号款" : `${CONFIG.trial.hours} 小时测试服务费`}</span>
-      <span class="count">剩余 <b class="num" id="payCd">--:--</b></span>
-    </div>
-    <div class="pk">
-      <div class="row"><span>账号价格</span><b class="num">${money(o.price)} USDT</b></div>
-      <div class="row"><span>${isTail ? "已付测试服务费" : "本次测试服务费"}</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>${isTail ? "本次应付号款" : "测试满意后再付"}</span><b class="num" style="color:var(--accent)">${money(o.tail)} USDT</b></div>
-      <div class="row"><span>订单号</span><b class="mono">${esc(o.no)}</b></div>
-    </div>
-    <div class="trx-sub">${isTail ? "付完号款，账号就正式归你。" : `付完 ${money(o.deposit)} 立刻开始 ${CONFIG.trial.hours} 小时计时，把订单号发给客服上号。`}手机点按钮直接拉起 TronLink，电脑上会给你二维码。</div>
-    <button class="trx" type="button" id="openWallet">${tronIcon}打开 TronLink 支付 ${money(amt)} USDT</button>
-    <button class="btn ${jumped ? "" : "line"}" type="button" id="walletPaid">我已在钱包里付款，继续</button>
-    <button class="btn line" type="button" data-close>稍后再说，订单会保留</button>`;
-  clearInterval(timer);
-  const tick = () => {
-    const left = Math.max(0, payDeadline(o.no) - Date.now());
-    const m = String(Math.floor(left / 60000)).padStart(2, "0");
-    const s = String(Math.floor(left % 60000 / 1000)).padStart(2, "0");
-    const el = $("#payCd");
-    if (el){ el.textContent = left ? m + ":" + s : "已超时"; el.parentElement.classList.toggle("over", !left); }
-    if (!left) clearInterval(timer);
-  };
-  tick(); timer = setInterval(tick, 1000);
-}
-/* 点“打开 TronLink”：手机拉起 App，电脑给二维码 */
-function openWallet(){
-  const o = cur && cur.order; if (!o) return;
-  try { sessionStorage.setItem(PAY_KEY, JSON.stringify({ no:o.no, kind:o.payFor || "deposit", at:Date.now() })); } catch(e){}
-  const url = CONFIG.payApp;
-  if (inTronLink()){ location.href = url; return; }
-  if (isPhone()){
-    const t0 = Date.now();
-    location.href = walletDeepLink(url);
-    setTimeout(() => {
-      if (Date.now() - t0 < 2600 && !document.hidden) walletSheet();
-    }, 1600);
-    return;
-  }
-  walletSheet();
-}
-/* 扫码 / 复制链接视图（同一个弹层里） */
-function walletSheet(){
-  const o = cur && cur.order; if (!o) return;
-  const url = CONFIG.payApp;
-  clearInterval(timer);
-  $("#buyBody").innerHTML = `
-    ${head("在 TronLink 里完成支付")}
-    <div class="steps"><i class="on">1 打开钱包</i><i>2 支付</i><i>3 回来继续</i></div>
-    ${isPhone() ? "" : `<div class="qr-box">${qrSvg(url)}</div>`}
-    <div class="trx-sub">${isPhone()
-      ? "长按复制下面的链接，粘贴到 TronLink 的内置浏览器里打开。"
-      : "用手机上的 TronLink 扫这个码，或在钱包内置浏览器里打开下面的链接。"}</div>
-    <div class="box"><code>${esc(url)}</code><button class="ghost" type="button" data-copy="${esc(url)}" data-label="支付链接已复制">复制</button></div>
-    <div class="rule">支付完成后回到本页，点下面的按钮继续。订单号 <b>${esc(o.no)}</b>，共 <b>${money(o.amount)} USDT</b>。</div>
-    <button class="btn" type="button" data-act="backPay">我付好了，返回本页</button>
-    <button class="btn line" type="button" data-act="reopenWallet">再试一次拉起 TronLink</button>`;
-}
-/* 从钱包返回：把订单标记为已付，接着发号 / 完成 */
-function confirmWalletPaid(){
-  const o = cur && cur.order; if (!o) return;
-  try { sessionStorage.removeItem(PAY_KEY); } catch(e){}
-  const online = !!CONFIG.apiBase;
-  if (o.payFor === "tail"){
-    o.tailTxid = o.tailTxid || ("TRONLINK-" + Date.now());
-    o.status = online ? "待核验尾款" : "已完成";
-    saveOrder(o);
-    if (online) payPending(o); else { finishTrial(o); doneTrial(); }
-  } else {
-    o.txid = o.txid || ("TRONLINK-" + Date.now());
-    o.status = online ? "待核验测试费" : "测试中";
-    saveOrder(o);
-    if (online) payPending(o); else { trialStart(o); stepTrialAcc(); }
-  }
-}
-/* 从钱包切回浏览器、或刷新后，自动回到这笔订单的付款页 */
-function resumeWallet(){
-  const j = readPayJump(); if (!j) return false;
-  const o = orders().find(x => x.no === j.no); if (!o) return false;
-  cur = { p: PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, price:o.price, desc:"" }, contact:o.contact || "", order:o };
-  if (!dlg.open) dlg.showModal();
-  stepWalletPay(o, j.kind === "tail" ? "tail" : "deposit");
-  return true;
-}
-/* 从付款页回来：押金已付 → 直接发号；尾款已付 → 直接完成 */
-function resumeFromPay(no){
-  const o = orders().find(x => x.no === no);
-  if (!o){ toast("没找到这笔订单，请在「查询订单」里输入订单号查看"); return; }
-  const p = PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, price:o.price };
-  cur = { p, qty:1, contact:o.contact || "", order:o };
-  if (!dlg.open) dlg.showModal();
-  if (o.payFor === "tail"){
-    if (o.status !== "已完成") finishTrial(o);
-    doneTrial();
-  } else {
-    /* 从钱包回来：还没确认付款的，先回到付款页让用户点「我已在钱包里付款」 */
-    if (o.status === "测试中" && o.trialStart) stepTrialAcc();
-    else { o.payFor = "deposit"; o.amount = o.deposit; saveOrder(o); gotoPay(o, "deposit"); }
-  }
-}
-/* 1U 测试费核验通过（或本地演示模式直接开始计时）
-   注意：这里不再自动发号。付完 1U 就开始 2 小时计时，账号由客服人工发给买家。 */
-function trialStart(o){
-  o.trialStart = Date.now();
-  o.trialExpire = Date.now() + trialMs();
-  o.status = "测试中";
-  o.waitService = true;
-  o.acc = o.acc || ""; o.pwd = o.pwd || "";
-  o.swapLeft = (o.swapLeft == null ? CONFIG.trial.maxSwap : o.swapLeft);
-  logTrial(o, "已付测试费，等待客服上号");
-  saveOrder(o);
-}
-/* 客服链接：把订单号预填进去，点开直接发消息 */
-function supportHref(o, extra){
-  const base = CONFIG.supportUrl || "https://t.me/H88H85";
-  const txt = extra || ("你好，我要 1U 试号，订单号 " + (o ? o.no : ""));
-  return base + (base.indexOf("?") >= 0 ? "&" : "?") + "text=" + encodeURIComponent(txt);
-}
-function stepTrialAcc(){
-  const o = cur && cur.order;
-  if (!o || o.status !== "测试中"){ if (o) openOrderView(o); return; }
-  const hasAcc = !!(o.acc && o.pwd);
-  const link = supportHref(o, "你好，我要 1U 试号，测试费已付，订单号 " + o.no);
-  $("#buyBody").innerHTML = `
-    ${head(hasAcc ? "测试中 · 账号已发出" : "测试中 · 等客服上号")}
-    <div class="steps"><i>1 测试费已付</i><i class="on">2 上号测试</i><i>3 满意付款</i></div>
-    <div class="cd-wrap">
-      <div style="font-size:12px;color:var(--ink-3)">剩余测试时间</div>
-      <div class="cd-big" id="trialCd">--:--:--</div>
-      <div style="font-size:12px;color:var(--ink-3)">截止 ${new Date(o.trialExpire).toLocaleString("zh-CN")}</div>
-    </div>
-    ${hasAcc ? `<div class="stack">
-      <div class="acc-line"><div style="min-width:0"><span class="k">账号</span><span class="v">${esc(o.acc)}</span></div><button class="ghost" type="button" data-copy="${esc(o.acc)}" data-label="账号已复制">复制</button></div>
-      <div class="acc-line"><div style="min-width:0"><span class="k">密码</span><span class="v">${esc(o.pwd)}</span></div><button class="ghost" type="button" data-copy="${esc(o.pwd)}" data-label="密码已复制">复制</button></div>
-    </div>` : `<div class="notice">
-      <b>1U 测试费已记账，下一步找客服上号</b><br>
-      把下面的订单号发给客服，客服核对后就把账号发给你。${CONFIG.trial.hours} 小时从付款那一刻开始算，越早联系客服，能测的时间越多。
-    </div>
-    <div class="box" style="border-color:var(--accent);background:var(--accent-soft)"><code style="font-size:17px;font-weight:700;letter-spacing:.4px">${esc(o.no)}</code><button class="ghost" type="button" data-copy="${esc(o.no)}" data-label="订单号已复制">复制</button></div>
-    <a class="btn" href="${link}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">去 Telegram 找客服上号</a>`}
-    <div class="rule">
-      <b>测试期间不要改密码、不要绑手机、不要发作品。</b>改了就算你买了，需要立即付清号价 ${money(o.price)} USDT。<br>
-      满意就付号款拿走这个号；不满意可以换号，最多还剩 ${o.swapLeft} 次。
-    </div>
-    <div class="stack">
-      <button class="btn" type="button" data-act="trialTail">满意，付号款 ${money(o.tail)} USDT</button>
-      <button class="btn trial" type="button" data-act="trialSwap" ${o.swapLeft > 0 ? "" : "disabled"}>${o.swapLeft > 0 ? `不满意，换一个号（剩 ${o.swapLeft} 次）` : "换号次数已用完"}</button>
-      <button class="btn line" type="button" data-act="trialRefund">不想要了，结束订单</button>
-    </div>
-    <div style="font-size:12px;color:var(--ink-3)">订单 ${esc(o.no)} · 已换号 ${o.swapped} 次 · 客服 ${esc(CONFIG.support.telegram)}</div>`;
-  clearInterval(timer);
-  tickTrial();
-  timer = setInterval(tickTrial, 1000);
-}
-function tickTrial(){
-  const o = cur && cur.order; if (!o) return;
-  const left = Math.max(0, (o.trialExpire || 0) - Date.now());
-  const el = $("#trialCd");
-  if (el){
-    const h = String(Math.floor(left / 3600000)).padStart(2, "0");
-    const m = String(Math.floor(left % 3600000 / 60000)).padStart(2, "0");
-    const s = String(Math.floor(left % 60000 / 1000)).padStart(2, "0");
-    el.textContent = h + ":" + m + ":" + s;
-    el.classList.toggle("over", left < 5*60000);
-  }
-  if (left <= 0){ clearInterval(timer); expireTrial(o); }
-}
-function expireTrial(o){
-  if (o.status === "测试中"){
-    o.status = "测试结束";
-    setAccState(o.acc, "待检");
-    logTrial(o, "测试时间结束");
-    saveOrder(o);
-  }
-  expireView(o);
-}
-function expireView(o){
-  $("#buyBody").innerHTML = `
-    ${head("测试时间结束")}
-    <div class="notice">${CONFIG.trial.hours} 小时测试时间已用完，这笔订单自动结束，账号已收回进人工核验。</div>
-    <div class="total">
-      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>测试服务费</span><b style="color:var(--ink-3)">不退、不抵号价</b></div>
-    </div>
-    <div style="color:var(--ink-2);font-size:14px">还想继续测、或者想直接买这个号，把订单号 ${esc(o.no)} 发给客服，说明一下就行。</div>
-    <a class="btn" href="${supportHref(o, "你好，我的测试时间到了，订单号 " + o.no)}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-trial="${esc(o.id)}">重新下一单</button>`;
-}
-function trialSwap(){
-  const o = cur && cur.order;
-  if (!o || o.status !== "测试中") return;
-  if (o.swapLeft <= 0){ toast("换号次数已用完，可以直接付号款或结束订单"); return; }
-  if (!confirm(`确认换一个号？\n换号后重新计时 ${CONFIG.trial.hours} 小时，不用再付测试费，换号机会还剩 ${o.swapLeft - 1} 次。\n换号也找客服，把订单号发过去就行。`)) return;
-  setAccState(o.acc, "待检");       // 试过的号一律待检，绝不回库存
-  logTrial(o, "不满意换号（第" + (o.swapped + 1) + "次）");
-  o.acc = ""; o.pwd = "";
-  o.swapLeft -= 1; o.swapped += 1;
-  o.trialStart = Date.now(); o.trialExpire = Date.now() + trialMs();
-  o.waitService = true;
-  saveOrder(o);
-  toast("已换号并重新计时，找客服要新号");
-  stepTrialAcc();
-}
-function trialTail(){
-  const o = cur && cur.order; if (!o) return;
-  o.payFor = "tail"; o.amount = o.tail; o.status = "待付尾款";
-  saveOrder(o);
-  gotoPay(o, "tail");
-}
-function finishTrial(o){
-  o.status = "已完成"; o.doneAt = Date.now();
-  setAccState(o.acc, "已售");
-  logTrial(o, "满意成交");
-  saveOrder(o);
-}
-function doneTrial(){
-  const o = cur && cur.order; if (!o) return;
-  const hasAcc = !!(o.acc && o.pwd);
-  $("#buyBody").innerHTML = `
-    ${head("付款完成")}
-    <div class="steps"><i>1 测试费</i><i>2 上号测试</i><i class="on">3 完成</i></div>
-    <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">${hasAcc ? "账号已经归你了" : "号款已付，这个号归你了"}</div>
-    ${hasAcc ? `<div class="stack">
-      <div class="acc-line"><div style="min-width:0"><span class="k">账号</span><span class="v">${esc(o.acc)}</span></div><button class="ghost" type="button" data-copy="${esc(o.acc)}" data-label="账号已复制">复制</button></div>
-      <div class="acc-line"><div style="min-width:0"><span class="k">密码</span><span class="v">${esc(o.pwd)}</span></div><button class="ghost" type="button" data-copy="${esc(o.pwd)}" data-label="密码已复制">复制</button></div>
-    </div>` : `<div class="notice">账号资料客服已经在 Telegram 里发给你了（就是你刚测试的那个号）。如果消息找不到，把订单号发给客服，让他再发一次。</div>`}
-    <div class="rule">拿到号后请尽快改密码、绑定你自己的手机。改绑过程中遇到问题，把订单号 ${esc(o.no)} 发给客服。</div>
-    <div class="box"><code>${esc(o.no)}</code><button class="ghost" type="button" data-copy="${esc(o.no)}" data-label="订单号已复制">复制</button></div>
-    <a class="btn" href="${supportHref(o, "你好，订单 " + o.no + " 已付号款，麻烦确认一下账号")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-close>完成</button>`;
-}
-function trialRefund(){
-  const o = cur && cur.order; if (!o) return;
-  clearInterval(timer);
-  $("#buyBody").innerHTML = `
-    ${head("结束这笔订单")}
-    <div class="total">
-      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>用途</span><span>${CONFIG.trial.hours} 小时测试时间</span></div>
-      <div class="row"><span>退还</span><b style="color:var(--ink-3)">不退</b></div>
-    </div>
-    <div class="rule">这 ${money(o.deposit)} USDT 是 ${CONFIG.trial.hours} 小时测试的服务费，付了就已经开始计时，所以不退还、也不抵扣号价。<br>
-      结束订单后账号收回进人工核验，你随时可以重新下一单再测。</div>
-    <button class="btn" type="button" data-act="trialRefundDo">确认结束订单</button>
-    <button class="btn line" type="button" data-act="trialBack">返回，继续测试</button>`;
-}
-function trialRefundDo(){
-  const o = cur && cur.order; if (!o) return;
-  clearInterval(timer);
-  o.status = "已结束"; o.closedAt = Date.now();
-  setAccState(o.acc, "待检");
-  logTrial(o, "测试后没有购买");
-  saveOrder(o);
-  $("#buyBody").innerHTML = `
-    ${head("订单已结束")}
-    <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">这笔订单已经关闭</div>
-    <div style="color:var(--ink-2);font-size:14px">订单号 ${esc(o.no)}。1U 测试服务费已用于这 ${CONFIG.trial.hours} 小时测试，不退还。想再测或者直接买，随时重新下单。</div>
-    <a class="btn" href="${supportHref(o, "你好，我的订单 " + o.no + " 已结束，想咨询一下")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-close>关闭</button>`;
 }
 
 /* ============ 订单查询：输入订单号或联系方式 ============
    演示模式下只能查到本浏览器里提交过的订单。配置了 CONFIG.apiBase 后，改为请求
    GET {apiBase}/orders?q=关键词，后端返回订单数组（字段同本页保存的订单）。 */
-function ordHint(t){ return `<div style="color:var(--ink-3);font-size:14px">${t}</div>`; }
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const ordHint = t => `<div style="color:var(--ink-3);font-size:14px">${t}</div>`;
 function openOrders(){
   $("#ordQ").value = "";
-  const live = orders().filter(o => o.status === "测试中");
-  $("#ordList").innerHTML = ordHint("输入订单号或下单时填写的联系方式，查看订单状态。")
-    + (live.length ? `<div style="font-size:12px;color:var(--warn)">你有 ${live.length} 个号正在测试中，输入订单号可以继续查看。</div>` : "");
+  $("#ordList").innerHTML = ordHint("输入订单号或下单时填写的联系方式，查看订单状态。");
   $("#dlgOrders").showModal();
   $("#ordQ").focus();
-}
-function orderCard(o){
-  const tone = o.status === "已完成" ? "var(--ok)"
-    : o.status === "测试中" ? "var(--accent)"
-    : (o.status === "测试结束" || o.status === "已结束" || o.status === "已超时" || o.status === "已退款" || o.status === "退款处理中") ? "var(--ink-3)"
-    : "var(--warn)";
-  let act = "";
-  if (o.status === "测试中")
-    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">查看 · 剩 ${leftTxt(o)}</button>`;
-  else if (o.status === "待付尾款")
-    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">去付号款</button>`;
-  else if (o.status === "待付测试费")
-    act = `<button class="ghost solid" type="button" data-order="${esc(o.no)}">继续付款</button>`;
-  else if (o.status === "待核验" || o.status === "待核验测试费" || o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待付款")
-    act = `<button class="ghost" type="button" data-order="${esc(o.no)}">查看进度</button>`;
-  else if (o.status === "已完成" && o.type === "trial")
-    act = `<button class="ghost" type="button" data-order="${esc(o.no)}">查看账号</button>`;
-  const fee = o.type === "trial"
-    ? `测试费 ${money(o.deposit)} · 号款 ${money(o.tail)} · 合计 ${money(Number(o.deposit) + Number(o.tail))} USDT`
-    : `${esc(o.qty)} × ${esc(o.price)} USDT · 实付 ${esc(o.amount)} USDT`;
-  return `<div class="order">
-    <div class="row"><b class="mono">${esc(o.no)}</b><span style="color:${tone};font-weight:600">${esc(o.status)}</span></div>
-    <div>${esc(o.title)}${o.type === "trial" ? ` <span class="badge">先试后付</span>` : ""}</div>
-    <div class="num" style="color:var(--ink-3)">${fee} · ${new Date(o.created).toLocaleString("zh-CN")}</div>
-    ${act ? `<div class="acts">${act}</div>` : ""}
-  </div>`;
 }
 async function searchOrders(){
   const q = $("#ordQ").value.trim();
@@ -2389,98 +1825,29 @@ async function searchOrders(){
   }
   if (!found){
     const key = q.toLowerCase();
-    found = orders().filter(o => o.no.toLowerCase() === key || o.no.toLowerCase().indexOf(key) === 0 || String(o.contact || "").toLowerCase() === key);
+    found = store.get("orders", []).filter(o => o.no.toLowerCase() === key || o.no.toLowerCase().includes(key) || String(o.contact || "").toLowerCase() === key);
     note = `<div style="font-size:12px;color:var(--ink-3)">当前只能查到在这个浏览器里提交的订单。在别的设备下的单，请联系客服 ${esc(CONFIG.support.telegram)}。</div>`;
   }
-  box.innerHTML = (found.length ? found.map(orderCard).join("") : ordHint("没有找到相关订单，请检查订单号或联系方式是否填写正确。")) + note;
-}
-/* 从订单卡继续办理（刷新页面后靠它恢复倒计时和账号页） */
-function openOrder(no){
-  const o = orders().find(x => x.no === no); if (!o) return;
-  cur = { p: PRODUCTS.find(x => x.id === o.id) || { id:o.id, title:o.title, price:o.price, stock:1 }, contact:o.contact, order:o };
-  $("#dlgOrders").close();
-  if (!dlg.open) dlg.showModal();
-  openOrderView(o);
-}
-function openOrderView(o){
-  if (o.status === "试号中") o.status = "测试中";   // 兼容旧版订单
-  if (o.status === "测试中") stepTrialAcc();
-  else if (o.status === "待付尾款"){ o.payFor = "tail"; o.amount = o.tail; saveOrder(o); gotoPay(o, "tail"); }
-  else if (o.status === "待付测试费" || o.status === "待付押金"){ o.payFor = "deposit"; o.amount = o.deposit; saveOrder(o); gotoPay(o, "deposit"); }
-  else if (o.status === "待核验测试费" || o.status === "待核验押金" || o.status === "待核验尾款" || o.status === "待核验" || o.status === "待付款") payPending(o);
-  else if (o.status === "已完成" && o.type === "trial") doneTrial();
-  else if (o.status === "已完成") otherDone(o);
-  else if (o.status === "测试结束" || o.status === "已超时") expireTrial(o);
-  else if (o.status === "已结束") closedView(o);
-  else if (o.status === "退款处理中" || o.status === "已退款") refundView(o);
-  else paidDone(o);
-}
-/* 已经结束的订单（测试后不买了） */
-function closedView(o){
-  $("#buyBody").innerHTML = `
-    ${head("订单已结束")}
-    <div class="total">
-      <div class="row"><span>已付测试服务费</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>状态</span><b>${esc(o.status)}</b></div>
-    </div>
-    <div style="color:var(--ink-2);font-size:14px">订单号 ${esc(o.no)}。1U 测试服务费已用于 ${CONFIG.trial.hours} 小时测试，不退还。想再测或者直接买，随时重新下单。</div>
-    <a class="btn" href="${supportHref(o, "你好，我的订单 " + o.no + " 已结束，想咨询一下")}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-close>关闭</button>`;
-}
-function otherDone(o){
-  $("#buyBody").innerHTML = `
-    ${head("订单完成")}
-    <div class="ok-mark" aria-hidden="true">✓</div>
-    <div style="font-weight:600">这笔订单已经完成</div>
-    <div class="box"><code>${esc(o.no)}</code><button class="ghost" type="button" data-copy="${esc(o.no)}" data-label="订单号已复制">复制</button></div>
-    <div style="font-size:13px;color:var(--ink-3)">客服：Telegram ${CONFIG.support.telegram}</div>
-    <button class="btn line" type="button" data-close>关闭</button>`;
-}
-function refundView(o){
-  $("#buyBody").innerHTML = `
-    ${head("退款")}
-    <div class="total">
-      <div class="row"><span>退款金额</span><b class="num">${money(o.deposit)} USDT</b></div>
-      <div class="row"><span>状态</span><b>${esc(o.status)}</b></div>
-    </div>
-    <div style="color:var(--ink-2);font-size:14px">退款地址：<span class="mono">${esc((o.refundAddr || "").slice(0,6))}...${esc((o.refundAddr || "").slice(-6))}</span><br>订单号 ${esc(o.no)}，一般 24 小时内到账。没收到就把订单号发给客服。</div>
-    <a class="btn" href="${CONFIG.supportUrl}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">联系客服</a>
-    <button class="btn line" type="button" data-close>关闭</button>`;
+  box.innerHTML = (found.length ? found.map(o => `
+    <div class="order">
+      <div class="row"><b class="mono">${esc(o.no)}</b><span style="color:var(--accent)">${esc(o.status)}</span></div>
+      <div>${esc(o.title)} × ${esc(o.qty)}</div>
+      <div class="num" style="color:var(--ink-3)">${esc(o.amount)} USDT · ${esc(o.net)} · ${new Date(o.created).toLocaleString("zh-CN")}</div>
+    </div>`).join("") : ordHint("没有找到相关订单，请检查订单号或联系方式是否填写正确。")) + note;
 }
 
 /* ============ 事件 ============ */
 document.addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.dataset.type){ state.type = t.dataset.type; state.q = ""; $("#q").value = ""; renderCats(); renderList(); }
-  else if (t.dataset.trial) openTrial(t.dataset.trial);
   else if (t.dataset.buy) openBuy(t.dataset.buy);
-  else if (t.dataset.order) openOrder(t.dataset.order);
   else if (t.dataset.qty && cur){ cur.qty = Math.min(Math.max(1, cur.qty + Number(t.dataset.qty)), cur.p.stock); cur.contact = ($("#contact")||{}).value ?? cur.contact; stepConfirm(); }
   else if (t.id === "toPay"){
     cur.contact = $("#contact").value.trim();
     if (cur.contact.length < 3){ $("#err").textContent = "请填写联系方式，用于接收账号资料。"; return; }
-    stepFullPay();
+    stepPay();
   }
-  else if (t.id === "toTrialPay"){
-    cur.contact = $("#contact").value.trim();
-    if (cur.contact.length < 3){ $("#err").textContent = "请填写联系方式，方便联系你。"; return; }
-    if (!$("#agree").checked){ $("#err").textContent = "请先勾选同意试号规则。"; return; }
-    stepTrialPay();
-  }
-  else if (t.id === "openWallet") openWallet();
-  else if (t.id === "walletPaid") confirmWalletPaid();
-  else if (t.dataset.act === "backPay"){ const o = cur && cur.order; if (o) stepWalletPay(o, o.payFor === "tail" ? "tail" : "deposit"); }
-  else if (t.dataset.act === "reopenWallet") openWallet();
-  else if (t.dataset.act === "trialTail") trialTail();
-  else if (t.dataset.act === "trialSwap") trialSwap();
-  else if (t.dataset.act === "trialRefund") trialRefund();
-  else if (t.dataset.act === "trialRefundDo") trialRefundDo();
-  else if (t.dataset.act === "trialBack"){
-    const o = cur && cur.order;
-    if (o && o.status === "待付尾款"){ o.status = "测试中"; saveOrder(o); }
-    stepTrialAcc();
-  }
-  else if (t.id === "submitPaid") submitPay();
+  else if (t.id === "submitPaid") submitOrder();
   else if (t.dataset.copy) copy(t.dataset.copy, t.dataset.label);
   else if (t.hasAttribute("data-close")){ const d = t.closest("dialog"); if (d === dlg) closeBuy(); else d.close(); }
   else if (t.dataset.act === "orders") openOrders();
@@ -2489,9 +1856,6 @@ document.addEventListener("click", e => {
   else if (t.dataset.act === "register") openAuth("register");
   else if (t.dataset.act === "captcha") drawCaptcha();
   else if (t.dataset.act === "logout"){ session.set(null); renderAcct(); toast("已退出登录"); }
-});
-document.addEventListener("change", e => {
-  if (e.target.id === "agree"){ const b = $("#toTrialPay"); if (b) b.disabled = !e.target.checked; }
 });
 document.addEventListener("submit", e => {
   if (e.target.id === "authForm"){ e.preventDefault(); submitAuth(); }
@@ -2610,16 +1974,6 @@ $("#q").addEventListener("input", e => { state.q = e.target.value; renderCats();
   $("#brand").textContent = CONFIG.brand; document.title = CONFIG.brand + " · 抖音账号商店";
   $("#supportLine").textContent = `Telegram客服 ${CONFIG.support.telegram}   ${CONFIG.support.wechat}`;
   renderNotices(); renderCats(); renderList();
-  /* 从 TronLink 付款页返回：?claim=订单号 */
-  let claim = "";
-  try { claim = new URLSearchParams(location.search).get("claim") || ""; } catch(e){}
-  if (claim){
-    try { history.replaceState({}, "", location.pathname); } catch(e){}
-    setTimeout(() => resumeFromPay(claim), 60);
-  } else {
-    /* 从 TronLink 切回来 / 刷新：自动回到这笔订单的付款页 */
-    setTimeout(resumeWallet, 60);
-  }
 })();
 </script>
 </body>
