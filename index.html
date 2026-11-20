@@ -1,4 +1,3 @@
-抖音账号铺
 <!doctype html>
 <html lang="zh-CN">
 <head>
@@ -158,26 +157,6 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 .ok-mark{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:22px}
 .orders{display:grid;gap:10px}
 .order{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px;font-size:13px}
-/* 钱包支付页：选择钱包 → 点 TronLink 图标跳转 */
-.wallet-card{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--surface);text-decoration:none;color:inherit;transition:border-color .15s,box-shadow .15s,transform .15s}
-.wallet-card:hover,.wallet-card:focus-visible{border-color:var(--accent);box-shadow:0 10px 26px rgba(37,99,235,.18);transform:translateY(-1px)}
-.wallet-card:active{transform:translateY(0);box-shadow:0 4px 12px rgba(37,99,235,.14)}
-.wallet-logo{width:48px;height:48px;flex:none;border-radius:12px;overflow:hidden;line-height:0;box-shadow:0 6px 16px rgba(37,99,235,.32)}
-.wallet-logo svg{width:100%;height:100%;display:block}
-.wallet-meta{min-width:0;display:grid;gap:3px}
-.wallet-meta b{font-size:16px;font-weight:600;letter-spacing:.01em}
-.wallet-meta small{font-size:12.5px;color:var(--ink-3);line-height:1.4}
-.wallet-go{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:var(--accent);font-size:14px;font-weight:600;white-space:nowrap}
-.wallet-go .ic{width:16px;height:16px}
-.wallet-only{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--ink-3)}
-.wallet-only::before,.wallet-only::after{content:"";height:1px;flex:1;background:var(--line)}
-.wallet-help{display:grid;gap:9px;align-items:stretch;justify-content:flex-start;border-style:dashed;flex-direction:column;font-size:13px;color:var(--ink-2);line-height:1.6}
-.wallet-help b{font-size:14px;color:var(--ink)}
-.store-row{display:flex;flex-wrap:wrap;gap:8px}
-.store-row a{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--ink);text-decoration:none;background:var(--surface)}
-.store-row a:hover{border-color:var(--accent);color:var(--accent)}
-.wallet-tip{font-size:12.5px;color:var(--ink-3);text-align:center;line-height:1.7}
-@media (max-width:520px){.wallet-go span{display:none}.wallet-logo{width:44px;height:44px}}
 .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-12px);max-width:calc(100vw - 32px);background:var(--accent);color:var(--accent-ink);padding:10px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
@@ -274,7 +253,7 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
       <li>选择分类，下方会列出该分类的商品。</li>
       <li>看清商品名称、库存和单价，点“购买”。</li>
       <li>选择数量，填写联系方式（查询订单用）。</li>
-      <li>点选 TronLink 钱包图标跳转钱包，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
+      <li>扫描二维码或复制地址，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
       <li>付款后会自动发货，在“查询订单”里查看卡密</li>
       <li>收到后建议在90天内修改密码和绑定信息。</li>
     </ol>
@@ -1567,6 +1546,7 @@ const CONFIG = {
 /* ============ 全品类优化版商品数据（含最新增补） ============ */
 const PRODUCTS = [
   // ================= 1. 基础新号（高频消耗品 · 大库存） =================
+{ id: "DY-1001", type: "核对", title: "账户核对", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 0.1, stock: 99 },
   { id: "DY-1001", type: "新白号", title: "新注册未实名", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 5, stock: 88 },
   { id: "DY-1002", type: "新白号", title: "新注册已实名", desc: "0 粉 · 新注册 · 已实名 · 随拿随用", price: 20, stock: 65 },
 
@@ -1763,21 +1743,6 @@ function qrSvg(text){
   const size = n + pad*2;
   return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
-const TRONLINK_HREF = "https://02.tktktk.workers.dev";
-/* TronLink 钱包图标：蓝色圆角方块 + 白色 T 字标，纯 SVG，不依赖外部资源 */
-const tronlinkIcon = `<svg viewBox="0 0 96 96" role="img" aria-label="TronLink 钱包图标">
-  <defs>
-    <linearGradient id="tlGrad" x1="10" y1="2" x2="86" y2="94" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#6AA0FF"/>
-      <stop offset=".5" stop-color="#2563EB"/>
-      <stop offset="1" stop-color="#0A33B4"/>
-    </linearGradient>
-  </defs>
-  <rect width="96" height="96" rx="23" fill="url(#tlGrad)"/>
-  <path d="M0 48h96v25a23 23 0 0 1-23 23H23A23 23 0 0 1 0 73z" fill="#05206E" opacity=".16"/>
-  <path d="M28.5 28.5h39a3.25 3.25 0 0 1 0 6.5H52.4v31.6a3.4 3.4 0 0 1-6.8 0V35H28.5a3.25 3.25 0 0 1 0-6.5z" fill="#fff"/>
-</svg>`;
-const arrowIcon = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>`;
 function stepPay(){
   const { p } = cur;
   const base = p.price * cur.qty;
@@ -1785,11 +1750,12 @@ function stepPay(){
   const amount = (base + tail).toFixed(2);
   const no = "DY" + new Date().toISOString().slice(2,10).replace(/-/g,"") + Math.random().toString(36).slice(2,7).toUpperCase();
   cur.order = { no, id:p.id, title:p.title, qty:cur.qty, net:"TRC20", amount, contact:cur.contact, created:Date.now(), status:"待付款", txid:"" };
+  const addr = CONFIG.walletAddr;
   const deadline = Date.now() + CONFIG.payWindowMinutes*60000;
   $("#buyBody").innerHTML = `
-    ${head("选择钱包支付")}
+    ${head("USDT 付款")}
     <div>
-      <div class="pay-amt"><span class="num">${amount} USDT</span></div>
+      <div class="pay-amt"><span class="num">${amount} USDT</span><button class="copy-ic" type="button" data-copy="${amount}" data-label="金额已复制" aria-label="复制金额">${copyIcon}</button></div>
       <div class="pay-net">区块网络 · Tron（TRC20）</div>
     </div>
     <div class="pay-bar">
@@ -1797,20 +1763,13 @@ function stepPay(){
       <span class="count">到期时间 <b class="num" id="cd">--:--</b></span>
     </div>
     <div class="row pay-line"><span style="color:var(--ink-3)">商户订单</span><b class="mono">${no}</b></div>
-    <a class="wallet-card" id="tronlink" href="${TRONLINK_HREF}">
-      <span class="wallet-logo">${tronlinkIcon}</span>
-      <span class="wallet-meta"><b>TronLink</b><small>点击图标，跳转到钱包继续付款</small></span>
-      <span class="wallet-go"><span>立即支付</span>${arrowIcon}</span>
-    </a>
-    <div class="wallet-only">目前仅支持 TronLink 钱包</div>
-    <div class="box wallet-help">
-      <b>还没有 TronLink 钱包？</b>
-      <div>请先自己去应用商店安装：iPhone 打开 App Store，安卓打开 Google Play，搜索「TronLink」即可下载；也可以前往官网下载。装好钱包后回到本页，点上面的图标继续付款。</div>
-      <div class="store-row">
-        <a href="https://www.tronlink.org/" target="_blank" rel="noopener">TronLink 官网下载</a>
-      </div>
+    <div class="qr-box">${qrSvg(addr)}</div>
+    <div class="addr-box">
+      <div class="row"><span style="color:var(--ink-3);font-size:13px">收款地址</span><button class="copy-ic" type="button" data-copy="${addr}" data-label="地址已复制" aria-label="复制地址">${copyIcon}</button></div>
+      <div class="addr mono"><em>${addr.slice(0,4)}</em>${addr.slice(4,-6)}<em>${addr.slice(-6)}</em></div>
     </div>
-    <div class="wallet-tip">付款完成后可在「查询订单」里查看订单状态与发货进度。</div>`;
+    <div>
+    <button class="btn" type="button" id="`;
   clearInterval(timer);
   const tick = () => {
     const left = Math.max(0, deadline - Date.now());
