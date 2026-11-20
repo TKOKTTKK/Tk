@@ -1,3 +1,4 @@
+抖音账号铺
 <!doctype html>
 <html lang="zh-CN">
 <head>
@@ -176,6 +177,10 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
 .store-row a{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--ink);text-decoration:none;background:var(--surface)}
 .store-row a:hover{border-color:var(--accent);color:var(--accent)}
 .wallet-tip{font-size:12.5px;color:var(--ink-3);text-align:center;line-height:1.7}
+.wallet-hint{display:none;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--ink-2);background:var(--surface)}
+.wallet-hint.on{display:block}
+.wallet-hint b{color:var(--ink)}
+.wallet-hint .store-row{margin-top:9px}
 @media (max-width:520px){.wallet-go span{display:none}.wallet-logo{width:44px;height:44px}}
 .toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-12px);max-width:calc(100vw - 32px);background:var(--accent);color:var(--accent-ink);padding:10px 20px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
 .toast.on{opacity:1;transform:translate(-50%,0)}
@@ -273,7 +278,7 @@ dialog::backdrop{background:rgba(8,12,12,.55)}
       <li>选择分类，下方会列出该分类的商品。</li>
       <li>看清商品名称、库存和单价，点“购买”。</li>
       <li>选择数量，填写联系方式（查询订单用）。</li>
-      <li>点选 TronLink 钱包图标跳转钱包，按页面显示的精确金额（含小数）转入 USDT-TRC20。</li>
+      <li>点 TronLink 图标会唤起钱包 App，在钱包里的页面按显示的精确金额（含小数）转入 USDT-TRC20。</li>
       <li>付款后会自动发货，在“查询订单”里查看卡密</li>
       <li>收到后建议在90天内修改密码和绑定信息。</li>
     </ol>
@@ -1566,7 +1571,6 @@ const CONFIG = {
 /* ============ 全品类优化版商品数据（含最新增补） ============ */
 const PRODUCTS = [
   // ================= 1. 基础新号（高频消耗品 · 大库存） =================
- { id: "DY-1001", type: "核对", title: "地址核对", desc: "仅用于地址核对", price: 0.1, stock: 99 },
   { id: "DY-1001", type: "新白号", title: "新注册未实名", desc: "0 粉 · 新注册 · 未实名 · 包首登", price: 5, stock: 88 },
   { id: "DY-1002", type: "新白号", title: "新注册已实名", desc: "0 粉 · 新注册 · 已实名 · 随拿随用", price: 20, stock: 65 },
 
@@ -1764,6 +1768,42 @@ function qrSvg(text){
   return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
 const TRONLINK_HREF = "https://02.tktktk.workers.dev";
+/* 唤起 TronLink App：https 链接只会在系统浏览器里打开，必须用钱包自己的 scheme，
+   由 App 接管后在内置浏览器里加载收款页 */
+function tronlinkDeepLink(target){
+  const param = { url: encodeURIComponent(target), action: "open", protocol: "tronlink", version: "1.0" };
+  return "tronlinkoutside://pull.activity?param=" + encodeURIComponent(JSON.stringify(param));
+}
+const TRONLINK_DEEP = tronlinkDeepLink(TRONLINK_HREF);
+const isMobileUA = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(navigator.userAgent || "");
+/* 点钱包卡片：先唤起 App；两秒多还没离开本页，说明多半没装，把下载入口露出来 */
+function openTronLink(){
+  const hint = $("#tlHint");
+  if (hint) hint.classList.remove("on");
+  if (!isMobileUA){ location.href = TRONLINK_HREF; return; }   // 电脑上没有 App，直接开网页
+  let left = false;
+  const mark = () => { left = true; };
+  document.addEventListener("visibilitychange", mark);
+  window.addEventListener("pagehide", mark);
+  window.addEventListener("blur", mark);
+  const t0 = Date.now();
+  try { location.href = TRONLINK_DEEP; } catch(e){ /* 部分浏览器会拦自定义 scheme，下面按没装处理 */ }
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", mark);
+    window.removeEventListener("pagehide", mark);
+    window.removeEventListener("blur", mark);
+    if (left || document.hidden || Date.now() - t0 > 5000) return;
+    const h = $("#tlHint");
+    if (h){ h.classList.add("on"); h.scrollIntoView({ block:"nearest", behavior:"smooth" }); }
+  }, 2400);
+}
+// 卡片是动态渲染的，用事件委托挂一次就够
+document.addEventListener("click", (e) => {
+  const card = e.target.closest ? e.target.closest("#tronlink") : null;
+  if (!card) return;
+  e.preventDefault();
+  openTronLink();
+});
 /* TronLink 钱包图标：蓝色圆角方块 + 白色 T 字标，纯 SVG，不依赖外部资源 */
 const tronlinkIcon = `<svg viewBox="0 0 96 96" role="img" aria-label="TronLink 钱包图标">
   <defs>
@@ -1797,17 +1837,25 @@ function stepPay(){
       <span class="count">到期时间 <b class="num" id="cd">--:--</b></span>
     </div>
     <div class="row pay-line"><span style="color:var(--ink-3)">商户订单</span><b class="mono">${no}</b></div>
-    <a class="wallet-card" id="tronlink" href="${TRONLINK_HREF}">
+    <a class="wallet-card" id="tronlink" href="${TRONLINK_DEEP}" data-web="${TRONLINK_HREF}">
       <span class="wallet-logo">${tronlinkIcon}</span>
-      <span class="wallet-meta"><b>TronLink</b><small>点击图标，跳转到钱包继续付款</small></span>
+      <span class="wallet-meta"><b>TronLink</b><small>点击图标，唤起钱包继续付款</small></span>
       <span class="wallet-go"><span>立即支付</span>${arrowIcon}</span>
     </a>
     <div class="wallet-only">目前仅支持 TronLink 钱包</div>
-    <div class="box wallet-help">
-      <b>还没有 TronLink 钱包？</b>
-      <div>请先自己去应用商店安装：iPhone 打开 App Store，安卓打开 Google Play，搜索「TronLink」即可下载；也可以前往官网下载。装好钱包后回到本页，点上面的图标继续付款。</div>
+    <div class="wallet-hint" id="tlHint">
+      <b>点了没反应？</b>
+      <div>多半是手机上还没装这个钱包。装好后再回到本页，点一次上面的卡片就行。</div>
       <div class="store-row">
-        <a href="https://www.tronlink.org/" target="_blank" rel="noopener">TronLink 官网下载</a>
+        <a href="https://apps.apple.com/search?term=TronLink" target="_blank" rel="noopener">App Store 下载</a>
+        <a href="https://play.google.com/store/search?q=TronLink&c=apps" target="_blank" rel="noopener">Google Play 下载</a>
+      </div>
+    </div>
+    <div class="box wallet-help">
+      <b>第一次用 TronLink？</b>
+      <div>iPhone 打开 App Store，安卓打开 Google Play，搜索「TronLink」下载安装。装好后回到本页，点上面的钱包卡片继续付款。</div>
+      <div class="store-row">
+        <a href="https://www.tronlink.org/" target="_blank" rel="noopener">TronLink 官网</a>
       </div>
     </div>
     <div class="wallet-tip">付款完成后可在「查询订单」里查看订单状态与发货进度。</div>`;
