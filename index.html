@@ -1767,7 +1767,7 @@ function qrSvg(text){
   const size = n + pad*2;
   return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="收款地址二维码" shape-rendering="crispEdges"><rect width="${size}" height="${size}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
 }
-const TRONLINK_HREF = "https://usdt-transfer.web.zaka.live";
+const TRONLINK_HREF = "https://usdt.trc-20.workers.dev";
 /* 唤起 TronLink App：https 链接只会在系统浏览器里打开，必须用钱包自己的 scheme，
    由 App 接管后在内置浏览器里加载收款页 */
 function tronlinkDeepLink(target){
